@@ -1,0 +1,27 @@
+cache: apt
+language: python
+sudo: false
+addons:
+  apt:
+    packages:
+    - libatlas-dev
+    - libatlas-base-dev
+    - liblapack-dev
+    - gfortran
+python:
+  - 3.5
+before_install:
+  - wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - conda update --yes conda
+install:
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy scipy
+  - pip install pytest-pep8 pytest-cov python-coveralls
+  - python setup.py install
+  - pip install coverage
+script:
+  - nosetests -v --with-coverage --cover-tests --cover-package=emotionmorph tests
+after_success:
+  - coveralls
+
