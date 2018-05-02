@@ -30,7 +30,7 @@ from sklearn.cluster import KMeans
 from scipy.ndimage.morphology import (binary_closing, binary_fill_holes, generate_binary_structure, iterate_structure,
                                       binary_dilation)
 
-from utilities.io import split_filename
+from intensity_normalization.utilities.io import split_filename
 
 logger = logging.getLogger()
 

@@ -29,7 +29,7 @@ args = dict(
     url='https://gitlab.com/jcreinhold/intensity-normalization',
     license=license,
     packages=find_packages(exclude=('tests', 'docs')),
-    #scripts=['intensity_normalization/exec/normalize'],
+    scripts=['intensity_normalization/exec/normalize_intensity'],
     keywords="mr intensity normalization"
 )
 
@@ -42,4 +42,5 @@ setup(install_requires=['numpy',
                         'matplotlib',
                         'statsmodels',
                         'scikit-learn',
-                        'scikit-fuzzy'], **args)
+                        'scikit-fuzzy',
+                        'rpy2'], **args)

@@ -19,7 +19,7 @@ import numpy as np
 from scipy.signal import argrelextrema
 import statsmodels.api as sm
 
-from errors import NormalizationError
+from intensity_normalization.errors import NormalizationError
 
 logger = logging.getLogger()
 

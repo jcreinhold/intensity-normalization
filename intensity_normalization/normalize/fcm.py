@@ -26,42 +26,36 @@ import nibabel as nib
 import numpy as np
 from skfuzzy import cmeans
 
-from utilities.io import split_filename
+from intensity_normalization.utilities import io, mask
+from intensity_normalization.errors import NormalizationError
 
 logger = logging.getLogger()
 
 
-def fcm_normalize(img, brain_mask=None, wm_mask=None, norm_value=1000):
-    if not (brain_mask is None) ^ (wm_mask is None):
-        raise ValueError('Only one of {Mask, Peak-File} should be given')
+def fcm_normalize(img, wm_mask, norm_value=1000):
+    """
+    Use FCM generated mask to
 
-    image = os.path.abspath(os.path.expanduser(img))
-    if brain_mask is not None:
-        brain_mask = os.path.abspath(os.path.expanduser(brain_mask))
-    if wm_mask is not None:
-        wm_mask = os.path.abspath(os.path.expanduser(wm_mask))
+    Args:
+        img: target nifti object opened by nibabel
+        wm_mask: wm_mask nifti object opened by nibabel
+        norm_value: value at which to place the WM mean
 
-    dirname, base, _ = split_filename(image)
-    obj = nib.load(image)
-    img_data = obj.get_data()
+    Returns:
+        normalized: nifti object img with WM mean at norm_value
+    """
 
-    if wm_mask is not None:
-        wm_mask = nib.load(wm_mask).get_data() > 0
-    else:
-        obj = nib.load(image)
-        img_data = obj.get_data()
-        mask_data = nib.load(brain_mask).get_data() > 0
-        [t1_cntr, t1_mem, _, _, _, _, _] = cmeans(img_data[mask_data].reshape(-1, len(mask_data[mask_data])),
-                                                  3, 2, 0.005, 50)
-        t1_mem_list = [t1_mem[i] for i, _ in sorted(enumerate(t1_cntr), key=lambda x: x[1])]  # CSF/GM/WM
-        t1_mem = np.zeros(img_data.shape + (3,))
-        for i in range(3):
-            t1_mem[..., i][mask_data] = t1_mem_list[i]
-        wm_mask = t1_mem[..., 2] > 0.8
-        nib.Nifti1Image(wm_mask, obj.affine, obj.header).to_filename(os.path.join(dirname, base + '_wmmask.nii.gz'))
+    img_data = img.get_data()
     wm_mean = img_data[wm_mask].mean()
-    nib.Nifti1Image(obj.get_data() / wm_mean * norm_value,
-                    obj.affine, obj.header).to_filename(os.path.join(dirname, base + '_norm.nii.gz'))
+    normalized = nib.Nifti1Image(img.get_data() / wm_mean * norm_value,
+                    img.affine, img.header)
+    return normalized
+
+
+def find_wm_mask(img, brain_mask, threshold=0.8):
+    t1_mem = mask.class_mask(img, brain_mask)
+    wm_mask = t1_mem[..., 2] > threshold
+    return wm_mask
 
 
 def parse_args():
@@ -71,13 +65,26 @@ def parse_args():
     parser.add_argument('--wm-mask', type=str)
     parser.add_argument('--norm-value', type=float, default=1000)
     args = parser.parse_args()
+    if not (args.brain_mask is None) ^ (args.wm_mask is None):
+        raise NormalizationError('Only one of {brain mask, wm mask} should be given')
     return args
 
 
 def main():
     args = parse_args()
     try:
-        fcm_normalize(args.image, args.brain_mask, args.wm_mask, args.norm_value)
+        img = io.open_nii(args.image)
+        dirname, base, _ = io.split_filename(args.image)
+        if args.brain_mask is not None:
+            brain_mask = io.open_nii(args.brain_mask)
+            wm_mask = find_wm_mask(img, brain_mask)
+            outfile = os.path.join(dirname, base + '_wmmask.nii.gz')
+            io.save_nii(img, outfile, data=wm_mask)
+        if args.wm_mask is not None:
+            wm_mask = io.open_nii(args.brain_mask)
+            normalized = fcm_normalize(img, wm_mask, args.norm_value)
+            outfile = os.path.join(dirname, base + '_norm.nii.gz')
+            io.save_nii(normalized, outfile, is_nii=True)
         return 0
     except Exception as e:
         logger.exception(e)

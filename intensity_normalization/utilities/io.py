@@ -13,6 +13,8 @@ from __future__ import print_function, division
 
 import os
 
+import nibabel as nib
+
 
 def split_filename(filepath):
     path = os.path.dirname(filepath)
@@ -23,3 +25,18 @@ def split_filename(filepath):
         ext = ext2 + ext
     return path, base, ext
 
+
+def open_nii(filepath):
+    image = os.path.abspath(os.path.expanduser(filepath))
+    obj = nib.load(image)
+    return obj
+
+
+def save_nii(obj, outfile, data=None, is_nii=False):
+    if not is_nii:
+        if data is None:
+            data = obj.get_data()
+        nib.Nifti1Image(data, obj.affine, obj.header)\
+            .to_filename(outfile)
+    else:
+        obj.to_filename(outfile)
