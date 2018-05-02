@@ -23,8 +23,6 @@ import os
 import sys
 
 import nibabel as nib
-import numpy as np
-from skfuzzy import cmeans
 
 from intensity_normalization.utilities import io, mask
 from intensity_normalization.errors import NormalizationError
@@ -34,25 +32,36 @@ logger = logging.getLogger()
 
 def fcm_normalize(img, wm_mask, norm_value=1000):
     """
-    Use FCM generated mask to
+    Use FCM generated mask to normalize the WM of a target image
 
     Args:
-        img: target nifti object opened by nibabel
-        wm_mask: wm_mask nifti object opened by nibabel
-        norm_value: value at which to place the WM mean
+        img (nibabel.nifti1.Nifti1Image): target MR brain image
+        wm_mask (nibabel.nifti1.Nifti1Image): white matter mask for img
+        norm_value (float): value at which to place the WM mean
 
     Returns:
-        normalized: nifti object img with WM mean at norm_value
+        normalized (nibabel.nifti1.Nifti1Image): img with WM mean at norm_value
     """
 
     img_data = img.get_data()
     wm_mean = img_data[wm_mask].mean()
-    normalized = nib.Nifti1Image(img.get_data() / wm_mean * norm_value,
-                    img.affine, img.header)
+    normalized = nib.Nifti1Image((img.get_data() / wm_mean) * norm_value,
+                                 img.affine, img.header)
     return normalized
 
 
 def find_wm_mask(img, brain_mask, threshold=0.8):
+    """
+    find WM mask using FCM with a membership threshold
+
+    Args:
+        img (nibabel.nifti1.Nifti1Image): target nibabel nifti object
+        brain_mask (nibabel.nifti1.Nifti1Image): target nibabel nifti object brain mask
+        threshold (float): membership threshold
+
+    Returns:
+        wm_mask (np.ndarray): white matter mask for img
+    """
     t1_mem = mask.class_mask(img, brain_mask)
     wm_mask = t1_mem[..., 2] > threshold
     return wm_mask

@@ -120,7 +120,6 @@ def gmm_normalize(img_filename, mask_filename=None, norm_value=1000, contrast='t
             classes = km.predict(np.expand_dims(img_data.flatten(), 1)).reshape(img_data.shape)
             means = [np.mean(img_data[classes == i]) for i in range(4)]
             raw_mask = (classes == np.argmin(means)) == 0.0
-            # noinspection PyTypeChecker
             filled_raw_mask = fill_2p5d(raw_mask)
             dist2_5by5_kernel = iterate_structure(generate_binary_structure(3, 1), 2)
             closed_mask = binary_closing(filled_raw_mask, dist2_5by5_kernel, 5)

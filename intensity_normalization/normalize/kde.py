@@ -25,6 +25,17 @@ logger = logging.getLogger()
 
 
 def kde_normalize(vol, contrast):
+    """
+    use kernel density estimate of histogram to normalize
+    the white matter of a target image
+
+    Args:
+        vol:
+        contrast:
+
+    Returns:
+
+    """
     temp = vol[np.nonzero(vol)]
     if contrast.upper() == 'T1C' or contrast.upper() == 'FLC':
         q = np.percentile(temp, 96.0)

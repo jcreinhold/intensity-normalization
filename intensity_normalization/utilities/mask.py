@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-mask
+intensity_normalization.utilities.mask
 
+create a tissue class mask of a target image
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: May 01, 2018
@@ -10,18 +11,21 @@ Created on: May 01, 2018
 
 import numpy as np
 from skfuzzy import cmeans
+from sklearn.mixture import GaussianMixture
 
 
-def class_mask(img, brain_mask=None, hard_seg=False):
+def fcm_class_mask(img, brain_mask=None, hard_seg=False):
     """
-    creates a mask of a target brain
+    creates a mask of tissue classes for a target brain with fuzzy c-means
 
     Args:
-        img:
-        brain_mask:
+        img: target image nifti object
+        brain_mask: mask nifti object that covers the brain of the img
+        hard_seg (bool): pick the maximum membership as the true class in output
 
     Returns:
-
+        mask (np.ndarray): membership values for each of three classes in the image
+            (or class determinations w/ hard_seg)
     """
     img_data = img.get_data()
     if brain_mask is not None:
@@ -39,3 +43,21 @@ def class_mask(img, brain_mask=None, hard_seg=False):
         tmp_mask[mask_data] = np.argmax(mask[mask_data], axis=1) + 1
         mask = tmp_mask
     return mask
+
+
+def gmm_class_mask(img, brain_mask=None, contrast='t1'):
+    img_data = img.get_data()
+    if brain_mask is not None:
+        mask_data = brain_mask.get_data() > 0
+    else:
+        mask_data = img_data > 0
+
+    gmm = GaussianMixture(3)
+    gmm.fit(np.expand_dims(img_data[mask_data == 1].flatten(), 1))
+
+    means = gmm.means_.T.tolist()[0]
+    weights = gmm.weights_.tolist()
+
+    wm_peak = max(means) if contrast == 't1' else \
+            max(zip(means, weights), key=lambda x: x[1])[0]
+    return wm_peak
