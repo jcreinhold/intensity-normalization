@@ -55,8 +55,8 @@ def find_wm_mask(img, brain_mask, threshold=0.8):
     find WM mask using FCM with a membership threshold
 
     Args:
-        img (nibabel.nifti1.Nifti1Image): target nibabel nifti object
-        brain_mask (nibabel.nifti1.Nifti1Image): target nibabel nifti object brain mask
+        img (nibabel.nifti1.Nifti1Image): target img
+        brain_mask (nibabel.nifti1.Nifti1Image): brain mask for img
         threshold (float): membership threshold
 
     Returns:

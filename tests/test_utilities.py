@@ -38,6 +38,10 @@ class TestUtilities(unittest.TestCase):
         m = mask.gmm_class_mask(self.img, self.brain_mask, return_wm_peak=False, hard_seg=False)
         self.assertEqual(m.shape[3], 3)
 
+    def test_bg_mask(self):
+        bkgd = mask.background_mask(self.img).get_data()
+        self.assertEqual(np.sum(bkgd), np.size(bkgd))
+
     def tearDown(self):
         del self.img, self.brain_mask
 

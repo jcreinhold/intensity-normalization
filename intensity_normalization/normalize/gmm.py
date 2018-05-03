@@ -16,7 +16,7 @@ from __future__ import print_function, division
 
 import argparse
 import logging
-import math
+
 import os
 import sys
 
@@ -26,118 +26,45 @@ try:
     from sklearn.mixture import GaussianMixture
 except ImportError:
     from sklearn.mixture import GMM as GaussianMixture
-from sklearn.cluster import KMeans
-from scipy.ndimage.morphology import (binary_closing, binary_fill_holes, generate_binary_structure, iterate_structure,
-                                      binary_dilation)
 
-from intensity_normalization.utilities.io import split_filename
-from intensity_normalization.utilities.mask import gmm_class_mask
+from intensity_normalization.utilities import io
+from intensity_normalization.utilities.mask import gmm_class_mask, background_mask
 
 logger = logging.getLogger()
 
 
-def otsu(img, bins=64):
-    steplength = (img.max() - img.min()) / float(bins)
-    initial_threshold = img.min() + steplength
-    
-    best_bcv = 0
-    best_threshold = initial_threshold
-    
-    for threshold in np.arange(initial_threshold, img.max(), steplength):
-        mask_fg = (img >= threshold)
-        mask_bg = (img < threshold)
-        
-        wfg = np.count_nonzero(mask_fg)
-        wbg = np.count_nonzero(mask_bg)
-        
-        if 0 == wfg or 0 == wbg:
-            continue
-        
-        mfg = img[mask_fg].mean()
-        mbg = img[mask_bg].mean()
-        
-        bcv = wfg * wbg * math.pow(mbg - mfg, 2)
-        
-        if bcv > best_bcv:
-            best_bcv = bcv
-            best_threshold = threshold
-    
-    return best_threshold
+def gmm_normalize(img, brain_mask=None, norm_value=1000, contrast='t1', bg_mask=None, wm_peak=None):
+    """
+    normalize the white matter of an image using a GMM to find the tissue classes
 
+    Args:
+        img (nibabel.nifti1.Nifti1Image): target MR image
+        brain_mask (nibabel.nifti1.Nifti1Image): brain mask for img
+        norm_value (float): value at which to place the WM mean
+        contrast (str): MR contrast type for img
+        bg_mask (nibabel.nifti1.Nifti1Image): if provided, use to zero bkgd
+        wm_peak (float): previously calculated WM peak
 
-def fill_2p5d(img):
-    out_img = np.zeros_like(img)
-    for slice_num in range(img.shape[2]):
-        out_img[:, :, slice_num] = binary_fill_holes(img[:, :, slice_num])
-    return out_img
+    Returns:
+        normalized (nibabel.nifti1.Nifti1Image): gmm wm peak normalized image
+    """
 
-
-def gmm_normalize(img_filename, mask_filename=None, norm_value=1000, contrast='t1', keep_bg=False,
-                  bg_mask=None, wm_peak=None):
-    logger.info('Loading image:', img_filename)
-    path, base, ext = split_filename(img_filename)
-    obj = nib.load(img_filename)
-    img_data = obj.get_data().astype(np.float32)
-    
-    if mask_filename is None and wm_peak is None:
-        raise RuntimeError('Mask or WM Peak must be specified.')
-    
     if wm_peak is None:
-        logger.info('Loading Mask:', mask_filename)
-        mask_data = nib.load(mask_filename).get_data().astype(np.float32)
-        
-        logger.info('Fitting GMM...')
-        gmm = GaussianMixture(3)
-        gmm.fit(np.expand_dims(img_data[mask_data == 1].flatten(), 1))
-        
-        means = gmm.means_.T.tolist()[0]
-        weights = gmm.weights_.tolist()
-        
-        wm_peak = max(means) if contrast == 't1' else max(zip(means, weights), key=lambda x: x[1])[0]
-        logger.info('WM Peak Found at', wm_peak)
-        
-        logger.info('Saving WM Peak...')
-        np.save(os.path.join(path, base + '_wmpeak.npy'), wm_peak)
-        
-    else:
-        logger.info('WM Peak loaded: ', wm_peak)
-    
+        wm_peak = gmm_class_mask(img, brain_mask=brain_mask, contrast=contrast)
+
+    img_data = img.get_data()
     logger.info('Normalizing Data...')
     norm_data = img_data/wm_peak*norm_value
     norm_data[norm_data < 0.1] = 0.0
     
-    if keep_bg:
-        masked_image = norm_data
-    else:
-        if bg_mask is None:
-            logger.info('Finding background...')
-            # threshold = otsu(img_data)
-            # raw_mask = img_data > threshold
-            km = KMeans(4)
-            rand_mask = np.random.rand(*img_data.shape) > 0.75
-            logger.info('Fitting KMeans...')
-            km.fit(np.expand_dims(img_data[rand_mask], 1))
-            logger.info('Generating Mask...')
-            classes = km.predict(np.expand_dims(img_data.flatten(), 1)).reshape(img_data.shape)
-            means = [np.mean(img_data[classes == i]) for i in range(4)]
-            raw_mask = (classes == np.argmin(means)) == 0.0
-            filled_raw_mask = fill_2p5d(raw_mask)
-            dist2_5by5_kernel = iterate_structure(generate_binary_structure(3, 1), 2)
-            closed_mask = binary_closing(filled_raw_mask, dist2_5by5_kernel, 5)
-            filled_closed_mask = fill_2p5d(np.logical_or(closed_mask, filled_raw_mask)).astype(np.float32)
-            final_mask = binary_dilation(filled_closed_mask, generate_binary_structure(3, 1), 2)
-            
-            logger.info('Saving background mask...')
-            nib.Nifti1Image(final_mask, obj.affine, obj.header).to_filename(os.path.join(path, base + '_bgmask' + ext))
-        else:
-            logger.info('Loading background mask: ', bg_mask)
-            final_mask = nib.load(bg_mask).get_data().astype(np.float32)
-        
+    if bg_mask is not None:
         logger.info('Applying background mask...')
-        masked_image = norm_data * final_mask
-    
-    logger.info('Saving output...')
-    nib.Nifti1Image(masked_image, obj.affine, obj.header).to_filename(os.path.join(path, base + '_norm' + ext))
+        masked_image = norm_data * bg_mask.get_data()
+    else:
+        masked_image = norm_data
+
+    normalized = nib.Nifti1Image(masked_image, img.affine, img.header)
+    return normalized
     
 
 def parse_args():
@@ -145,7 +72,9 @@ def parse_args():
     parser.add_argument('-i', '--image', type=str, required=True)
     parser.add_argument('-m', '--mask', type=str)
     parser.add_argument('-b', '--background-mask', type=str)
-    parser.add_argument('-w', '--wm-peak', type=str)
+    parser.add_argument('-w', '--wm-peak', default=str)
+    parser.add_argument('--save-wm-peak', action='store_true', default=False)
+    parser.add_argument('--find-background-mask', action='store_true', default=False)
     parser.add_argument('--norm-value', type=float, default=1000)
     parser.add_argument('--contrast', type=str, choices=['t1', 't2'], default='t1')
     parser.add_argument('--keep-bg', action='store_true', default=False)
@@ -155,14 +84,28 @@ def parse_args():
 
 def main():
     args = parse_args()
-    peak = None
-    if args.wm_peak is not None:
-        peak = float(np.load(args.wm_peak))
     try:
-        gmm_normalize(args.image, args.mask, args.norm_value, args.contrast, args.keep_bg, args.background_mask, peak)
+        img = io.open_nii(args.image)
+        mask = io.open_nii(args.brain_mask)
+        dirname, base, ext = io.split_filename(args.image)
+        if args.find_background_mask:
+            bg_mask = background_mask(img)
+            bgfile = os.path.join(dirname, base + '_bgmask' + ext)
+            io.save_nii(bg_mask, bgfile, is_nii=True)
+        if args.wm_peak is not None:
+            logger.info('Loading WM peak: ', args.wm_peak)
+            peak = float(np.load(args.wm_peak))
+        else:
+            peak = gmm_class_mask(img, brain_mask=mask, contrast=args.contrast)
+            if args.save_wm_peak:
+                np.save(os.path.join(dirname, base + '_wmpeak.npy'), peak)
+        normalized = gmm_normalize(img, mask, args.norm_value, args.contrast,
+                                   args.background_mask, peak)
+        outfile = os.path.join(dirname, base + '_norm' + ext)
+        io.save_nii(normalized, outfile, is_nii=True)
         return 0
-    except Exception as exc:
-        logger.exception(exc)
+    except Exception as e:
+        logger.exception(e)
         return 1
 
 
