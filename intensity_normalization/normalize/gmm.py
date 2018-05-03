@@ -31,6 +31,7 @@ from scipy.ndimage.morphology import (binary_closing, binary_fill_holes, generat
                                       binary_dilation)
 
 from intensity_normalization.utilities.io import split_filename
+from intensity_normalization.utilities.mask import gmm_class_mask
 
 logger = logging.getLogger()
 

@@ -19,8 +19,8 @@ def fcm_class_mask(img, brain_mask=None, hard_seg=False):
     creates a mask of tissue classes for a target brain with fuzzy c-means
 
     Args:
-        img: target image nifti object
-        brain_mask: mask nifti object that covers the brain of the img
+        img (nibabel.nifti1.Nifti1Image): target image
+        brain_mask (nibabel.nifti1.Nifti1Image): mask covering the brain of img
         hard_seg (bool): pick the maximum membership as the true class in output
 
     Returns:
@@ -45,19 +45,55 @@ def fcm_class_mask(img, brain_mask=None, hard_seg=False):
     return mask
 
 
-def gmm_class_mask(img, brain_mask=None, contrast='t1'):
+def gmm_class_mask(img, brain_mask=None, contrast='t1', return_wm_peak=True, hard_seg=False):
+    """
+    get a tissue class mask using gmms (or just the WM peak, for legacy use)
+
+    Args:
+        img (nibabel.nifti1.Nifti1Image): target img
+        brain_mask (nibabel.nifti1.Nifti1Image): brain mask for img
+        contrast (str): string to describe img's MR contrast
+        return_wm_peak (bool): if true, return only the wm peak
+        hard_seg (bool): if true and return_wm_peak false, then return
+            hard segmentation of tissue classes
+
+    Returns:
+        if return_wm_peak true:
+            wm_peak (float): represents the mean intensity for WM
+        else:
+            mask (np.ndarray):
+                if hard_seg, then mask is the same size as img
+                else, mask is the same size as img * 3, where
+                the new dimensions hold the probabilities of tissue class
+    """
     img_data = img.get_data()
     if brain_mask is not None:
         mask_data = brain_mask.get_data() > 0
     else:
         mask_data = img_data > 0
 
+    brain = np.expand_dims(img_data[mask_data].flatten(), 1)
     gmm = GaussianMixture(3)
-    gmm.fit(np.expand_dims(img_data[mask_data == 1].flatten(), 1))
+    gmm.fit(brain)
 
-    means = gmm.means_.T.tolist()[0]
-    weights = gmm.weights_.tolist()
-
-    wm_peak = max(means) if contrast == 't1' else \
+    weights = gmm.weights_
+    if return_wm_peak:
+        means = gmm.means_.T.squeeze()
+        wm_peak = max(means) if contrast == 't1' else \
             max(zip(means, weights), key=lambda x: x[1])[0]
-    return wm_peak
+        return wm_peak
+    else:
+        classes = np.argsort(weights)
+        if hard_seg:
+            tmp_predicted = gmm.predict(brain)
+            predicted = np.zeros(tmp_predicted.shape)
+            for i, c in enumerate(classes):
+                predicted[tmp_predicted == c] = i + 1
+            mask = np.zeros(img_data.shape)
+            mask[mask_data] = predicted + 1
+        else:
+            predicted_proba = gmm.predict_proba(brain)
+            mask = np.zeros((*img_data.shape, 3))
+            for i, c in enumerate(classes):
+                mask[mask_data, i] = predicted_proba[:, c]
+        return mask

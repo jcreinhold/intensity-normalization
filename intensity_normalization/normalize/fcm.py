@@ -62,7 +62,7 @@ def find_wm_mask(img, brain_mask, threshold=0.8):
     Returns:
         wm_mask (np.ndarray): white matter mask for img
     """
-    t1_mem = mask.class_mask(img, brain_mask)
+    t1_mem = mask.fcm_class_mask(img, brain_mask)
     wm_mask = t1_mem[..., 2] > threshold
     return wm_mask
 

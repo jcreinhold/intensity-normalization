@@ -26,9 +26,17 @@ class TestUtilities(unittest.TestCase):
         self.img = io.open_nii(os.path.join(self.wd, 'test_data/', self.test_fn))
         self.brain_mask = io.open_nii(os.path.join(self.wd, 'test_data/', self.mask_fn))
 
-    def test_mask(self):
+    def test_fcm_mask(self):
         m = mask.fcm_class_mask(self.img, self.brain_mask, hard_seg=True)
         self.assertEqual(len(np.unique(m)), 4)
+
+    def test_gmm_mask(self):
+        wm_peak = mask.gmm_class_mask(self.img, self.brain_mask, return_wm_peak=True)
+        self.assertAlmostEqual(wm_peak, 300)
+        m = mask.gmm_class_mask(self.img, self.brain_mask, return_wm_peak=False, hard_seg=True)
+        self.assertEqual(len(np.unique(m)), 4)
+        m = mask.gmm_class_mask(self.img, self.brain_mask, return_wm_peak=False, hard_seg=False)
+        self.assertEqual(m.shape[3], 3)
 
     def tearDown(self):
         del self.img, self.brain_mask
