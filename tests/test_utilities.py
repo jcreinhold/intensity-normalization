@@ -20,11 +20,11 @@ from intensity_normalization.utilities import io, mask
 class TestUtilities(unittest.TestCase):
 
     def setUp(self):
-        self.wd = os.path.dirname(os.path.abspath(__file__))
-        self.test_fn = 'test.nii.gz'
-        self.mask_fn = 'mask.nii.gz'
-        self.img = io.open_nii(os.path.join(self.wd, 'test_data/', self.test_fn))
-        self.brain_mask = io.open_nii(os.path.join(self.wd, 'test_data/', self.mask_fn))
+        wd = os.path.dirname(os.path.abspath(__file__))
+        self.data_dir = os.path.join(wd, 'test_data', 'images')
+        self.mask_dir = os.path.join(wd, 'test_data', 'masks')
+        self.img = io.open_nii(os.path.join(self.data_dir, 'test.nii.gz'))
+        self.brain_mask = io.open_nii(os.path.join(self.mask_dir, 'mask.nii.gz'))
 
     def test_fcm_mask(self):
         m = mask.fcm_class_mask(self.img, self.brain_mask, hard_seg=True)
