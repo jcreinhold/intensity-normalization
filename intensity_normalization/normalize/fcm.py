@@ -44,7 +44,8 @@ def fcm_normalize(img, wm_mask, norm_value=1000):
     """
 
     img_data = img.get_data()
-    wm_mean = img_data[wm_mask].mean()
+    wm_mask_data = wm_mask.get_data()
+    wm_mean = img_data[wm_mask_data].mean()
     normalized = nib.Nifti1Image((img.get_data() / wm_mean) * norm_value,
                                  img.affine, img.header)
     return normalized
@@ -60,11 +61,12 @@ def find_wm_mask(img, brain_mask, threshold=0.8):
         threshold (float): membership threshold
 
     Returns:
-        wm_mask (np.ndarray): white matter mask for img
+        wm_mask (nibabel.nifti1.Nifti1Image): white matter mask for img
     """
     t1_mem = mask.fcm_class_mask(img, brain_mask)
     wm_mask = t1_mem[..., 2] > threshold
-    return wm_mask
+    wm_mask_nifti = nib.Nifti1Image(wm_mask, img.affine, img.header)
+    return wm_mask_nifti
 
 
 def parse_args():
@@ -88,7 +90,7 @@ def main():
             brain_mask = io.open_nii(args.brain_mask)
             wm_mask = find_wm_mask(img, brain_mask)
             outfile = os.path.join(dirname, base + '_wmmask.nii.gz')
-            io.save_nii(img, outfile, data=wm_mask)
+            io.save_nii(wm_mask, outfile, is_nii=True)
         if args.wm_mask is not None:
             wm_mask = io.open_nii(args.brain_mask)
             normalized = fcm_normalize(img, wm_mask, args.norm_value)

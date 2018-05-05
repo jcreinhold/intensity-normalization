@@ -14,7 +14,7 @@ import unittest
 
 import numpy as np
 
-from intensity_normalization.normalize import fcm, gmm
+from intensity_normalization.normalize import fcm, gmm, kde
 from intensity_normalization.utilities import io
 
 
@@ -35,9 +35,10 @@ class TestNormalization(unittest.TestCase):
         normalized = gmm.gmm_normalize(self.img, self.brain_mask, norm_value=self.norm_val)
         self.assertEqual(np.max(normalized.get_data()), self.norm_val)
 
-    def test_gmmm_normalization(self):
-        normalized = gmm.gmm_normalize(self.img, self.brain_mask, norm_value=self.norm_val)
-        self.assertEqual(np.max(normalized.get_data()), self.norm_val)
+    def test_kde_normalization(self):
+        normalized = kde.kde_normalize(self.img, self.brain_mask, contrast='T1', norm_value=self.norm_val)
+        # testing data only has one voxel at maximum intensity, so peak found at "GM"
+        self.assertAlmostEqual(np.max(normalized.get_data()), 1498.0831, places=4)
 
     def tearDown(self):
         del self.img, self.brain_mask

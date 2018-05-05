@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-tests.test_utilties
+tests.test_utilities
 
 test the functions located in utilities submodule for runtime errors
 
@@ -39,7 +39,7 @@ class TestUtilities(unittest.TestCase):
         self.assertEqual(m.shape[3], 3)
 
     def test_bg_mask(self):
-        bkgd = mask.background_mask(self.img).get_data()
+        bkgd = mask.background_mask(self.img, seed=0).get_data()
         self.assertEqual(np.sum(bkgd), np.size(bkgd))
 
     def tearDown(self):

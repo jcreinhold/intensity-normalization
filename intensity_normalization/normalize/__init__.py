@@ -1,1 +1,1 @@
-from . import fcm, gmm, kde
+from . import fcm, gmm, kde, hm, ravel, whitestripe

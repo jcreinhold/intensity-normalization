@@ -15,6 +15,7 @@ from __future__ import print_function, division
 
 import logging
 
+import nibabel as nib
 import numpy as np
 from scipy.signal import argrelextrema
 import statsmodels.api as sm
@@ -24,17 +25,39 @@ from intensity_normalization.errors import NormalizationError
 logger = logging.getLogger()
 
 
-def kde_normalize(vol, contrast):
+def kde_normalize(img, mask, contrast='T1', norm_value=1000):
     """
-    use kernel density estimate of histogram to normalize
-    the white matter of a target image
+    use kernel density estimation to find the peak of the white
+    matter in the histogram of a skull-stripped image. Normalize
+    the WM of the non-skull-stripped image to norm_value
 
     Args:
-        vol:
-        contrast:
+        img (nibabel.nifti1.Nifti1Image): target MR image
+        mask (nibabel.nifti1.Nifti1Image): brain mask of img
+        contrast (str): contrast of img (T1,T1C,T2,PD,FL,FLC)
+        norm_value (float): value at which to place WM peak
 
     Returns:
+        normalized (nibabel.nifti1.Nifti1Image): WM normalized img
+    """
+    masked = img.get_data() * mask.get_data()
+    wm_peak = kde_wm_peak(masked, contrast)
+    normalized = nib.Nifti1Image((img.get_data() / wm_peak) * norm_value,
+                                 img.affine, img.header)
+    return normalized
 
+
+def kde_wm_peak(vol, contrast):
+    """
+    use kernel density estimate of histogram to find the
+    the white matter peak in the histogram of a target image
+
+    Args:
+        vol (np.ndarray): target MR image data
+        contrast (str): contrast of the target MR image
+
+    Returns:
+        x (float): WM peak in vol
     """
     temp = vol[np.nonzero(vol)]
     if contrast.upper() == 'T1C' or contrast.upper() == 'FLC':

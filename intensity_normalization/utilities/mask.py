@@ -109,23 +109,26 @@ def gmm_class_mask(img, brain_mask=None, contrast='t1', return_wm_peak=True, har
         return mask
 
 
-def fill_2p5d(img):
+def __fill_2p5d(img):
+    """ helper function for background_mask """
     out_img = np.zeros_like(img)
     for slice_num in range(img.shape[2]):
         out_img[:, :, slice_num] = binary_fill_holes(img[:, :, slice_num])
     return out_img
 
 
-def background_mask(img):
+def background_mask(img, seed=0):
     """
     create a background mask for a given mr img
 
     Args:
         img (nibabel.nifti1.Nifti1Image): img from which to extract background
+        seed (int): since random sampling used, pick seed for reproducibility
 
     Returns:
         background (nibabel.nifti1.Nifti1Image): background mask
     """
+    np.random.seed(seed)
     logger.info('Finding Background...')
     img_data = img.get_data()
     km = KMeans(4)
@@ -136,10 +139,10 @@ def background_mask(img):
     classes = km.predict(np.expand_dims(img_data.flatten(), 1)).reshape(img_data.shape)
     means = [np.mean(img_data[classes == i]) for i in range(4)]
     raw_mask = (classes == np.argmin(means)) == 0.0
-    filled_raw_mask = fill_2p5d(raw_mask)
+    filled_raw_mask = __fill_2p5d(raw_mask)
     dist2_5by5_kernel = iterate_structure(generate_binary_structure(3, 1), 2)
     closed_mask = binary_closing(filled_raw_mask, dist2_5by5_kernel, 5)
-    filled_closed_mask = fill_2p5d(np.logical_or(closed_mask, filled_raw_mask)).astype(np.float32)
+    filled_closed_mask = __fill_2p5d(np.logical_or(closed_mask, filled_raw_mask)).astype(np.float32)
     bg_mask = binary_dilation(filled_closed_mask, generate_binary_structure(3, 1), 2)
     background = nib.Nifti1Image(bg_mask, img.affine, img.header)
     return background
