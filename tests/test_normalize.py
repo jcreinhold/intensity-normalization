@@ -14,7 +14,7 @@ import unittest
 
 import numpy as np
 
-from intensity_normalization.normalize import fcm, gmm, kde, hm
+from intensity_normalization.normalize import fcm, gmm, kde, hm, whitestripe
 from intensity_normalization.utilities import io
 
 
@@ -25,6 +25,8 @@ class TestNormalization(unittest.TestCase):
         self.data_dir = os.path.join(wd, 'test_data', 'images')
         self.mask_dir = os.path.join(wd, 'test_data', 'masks')
         self.img = io.open_nii(os.path.join(self.data_dir, 'test.nii.gz'))
+        self.data_dir_r = os.path.join(wd, 'test_data', 'images', 'r')
+        self.img_r = io.open_nii(os.path.join(self.data_dir_r, 'test.nii.gz'))
         self.brain_mask = io.open_nii(os.path.join(self.mask_dir, 'mask.nii.gz'))
         self.norm_val = 1000
 
@@ -33,7 +35,7 @@ class TestNormalization(unittest.TestCase):
         normalized = fcm.fcm_normalize(self.img, wm_mask, norm_value=self.norm_val)
         self.assertEqual(np.max(normalized.get_data()), self.norm_val)
 
-    def test_gmmm_normalization(self):
+    def test_gmm_normalization(self):
         normalized = gmm.gmm_normalize(self.img, self.brain_mask, norm_value=self.norm_val)
         self.assertEqual(np.max(normalized.get_data()), self.norm_val)
 
@@ -45,6 +47,10 @@ class TestNormalization(unittest.TestCase):
     def test_hm_normalization(self):
         normalized = hm.hm_normalize(self.data_dir, 'T1', mask_dir=self.mask_dir, write_to_disk=False)
         self.assertEqual(np.sum(normalized.shape), np.sum((9261, 1)))
+
+    def test_ws_normalization(self):
+        normalized = whitestripe.ws_normalize(self.data_dir_r, 'T1', mask_dir=None, write_to_disk=False, slices=(4,7))
+        self.assertEqual(np.sum(normalized.shape), np.sum(self.img_r.get_data().shape))
 
     def tearDown(self):
         del self.img, self.brain_mask
