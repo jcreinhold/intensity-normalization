@@ -31,6 +31,7 @@ def fcm_class_mask(img, brain_mask=None, hard_seg=False):
     Args:
         img (nibabel.nifti1.Nifti1Image): target image
         brain_mask (nibabel.nifti1.Nifti1Image): mask covering the brain of img
+            (none if already skull-stripped)
         hard_seg (bool): pick the maximum membership as the true class in output
 
     Returns:
@@ -62,6 +63,7 @@ def gmm_class_mask(img, brain_mask=None, contrast='t1', return_wm_peak=True, har
     Args:
         img (nibabel.nifti1.Nifti1Image): target img
         brain_mask (nibabel.nifti1.Nifti1Image): brain mask for img
+            (none if already skull-stripped)
         contrast (str): string to describe img's MR contrast
         return_wm_peak (bool): if true, return only the wm peak
         hard_seg (bool): if true and return_wm_peak false, then return
@@ -146,3 +148,21 @@ def background_mask(img, seed=0):
     bg_mask = binary_dilation(filled_closed_mask, generate_binary_structure(3, 1), 2)
     background = nib.Nifti1Image(bg_mask, img.affine, img.header)
     return background
+
+
+def csf_mask(img, brain_mask=None):
+    """
+    create a binary mask of csf using fcm segmentation
+
+    Args:
+        img (nibabel.nifti1.Nifti1Image): target img
+        brain_mask (nibabel.nifti1.Nifti1Image): brain mask for img
+            (none if already skull-stripped)
+
+    Returns:
+        csf (np.ndarray): binary CSF mask for img
+    """
+    tissue_mask = fcm_class_mask(img, brain_mask=brain_mask, hard_seg=True)
+    csf = tissue_mask
+    csf[tissue_mask != 1] = 0
+    return csf

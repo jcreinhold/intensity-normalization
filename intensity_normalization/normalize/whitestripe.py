@@ -51,6 +51,8 @@ def ws_normalize(data_dir, contrast, mask_dir=None, output_dir=None, write_to_di
         output_dir (str): directory to save images if you do not want them saved in
             same directory as data_dir
         write_to_disk (bool): write the normalized data to disk or nah
+        slices (tuple): two ints in tuple corresponding to region from which to sample
+            for the whitestripe procedure
 
     Returns:
         normalized (np.ndarray): set of normalized images from data_dir
@@ -100,6 +102,7 @@ def parse_args():
     parser.add_argument('-c', '--contrast', type=str, default='T1')
     parser.add_argument('-m', '--mask_dir', type=str, default=None)
     parser.add_argument('-o', '--output_dir', type=str, default=None)
+    parser.add_argument('--slices', type=tuple, default=(80,120))
     args = parser.parse_args()
     return args
 
@@ -107,7 +110,7 @@ def parse_args():
 def main():
     args = parse_args()
     try:
-        _ = ws_normalize(args.data_dir, args.contrast, args.mask_dir, args.output_dir)
+        _ = ws_normalize(args.data_dir, args.contrast, args.mask_dir, args.output_dir, slices=args.slices)
         return 0
     except Exception as e:
         logger.exception(e)
