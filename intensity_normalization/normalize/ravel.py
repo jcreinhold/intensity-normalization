@@ -38,7 +38,7 @@ from intensity_normalization.utilities.mask import csf_mask
 
 ravel = importr('RAVEL')
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 def ravel_normalize(img_dir, csf_mask, contrast, mask_dir=None, output_dir=None, write_to_disk=True):

@@ -21,7 +21,7 @@ from skfuzzy import cmeans
 from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 def fcm_class_mask(img, brain_mask=None, hard_seg=False):

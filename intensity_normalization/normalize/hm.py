@@ -25,23 +25,17 @@ Created on: May 01, 2018
 
 from __future__ import print_function, division
 
-import argparse
 from glob import glob
-import logging
 import os
-import sys
 
 import numpy as np
 from rpy2.robjects.vectors import StrVector
 from rpy2.robjects.packages import importr
 from rpy2.rinterface import NULL
 
-from intensity_normalization.errors import NormalizationError
 from intensity_normalization.utilities import io
 
 ravel = importr('RAVEL')
-
-logger = logging.getLogger()
 
 
 def hm_normalize(img_dir, template_mask, contrast, output_dir=None, write_to_disk=True):
@@ -82,27 +76,3 @@ def hm_normalize(img_dir, template_mask, contrast, output_dir=None, write_to_dis
                                     type=contrast, writeToDisk=write_to_disk, returnMatrix=True, verbose=False)
     normalized = np.array(normalizedR)
     return normalized
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--img-dir', type=str, required=True)
-    parser.add_argument('-c', '--contrast', type=str, default='T1')
-    parser.add_argument('-m', '--mask-dir', type=str, default=None)
-    parser.add_argument('-o', '--output-dir', type=str, default=None)
-    args = parser.parse_args()
-    return args
-
-
-def main():
-    args = parse_args()
-    try:
-        _ = hm_normalize(args.img_dir, args.contrast, args.mask_dir, args.output_dir)
-        return 0
-    except Exception as e:
-        logger.exception(e)
-        return 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())

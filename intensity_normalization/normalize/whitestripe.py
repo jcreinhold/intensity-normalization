@@ -20,11 +20,11 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: Apr 27, 2018
 """
 
-import argparse
+from __future__ import print_function, division
+
 from glob import glob
 import logging
 import os
-import sys
 
 import numpy as np
 from rpy2.robjects.vectors import StrVector, IntVector
@@ -37,7 +37,7 @@ from intensity_normalization.utilities import io
 nb = importr('neurobase')
 ws = importr('WhiteStripe')
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_disk=True, slices=(80, 120)):
@@ -94,28 +94,3 @@ def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_dis
             nb.write_nifti(brain, output_fn)
     normalized = np.array(brain)
     return normalized
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--img-dir', type=str, required=True)
-    parser.add_argument('-c', '--contrast', type=str, default='T1')
-    parser.add_argument('-m', '--mask-dir', type=str, default=None)
-    parser.add_argument('-o', '--output-dir', type=str, default=None)
-    parser.add_argument('--slices', type=tuple, default=(80,120))
-    args = parser.parse_args()
-    return args
-
-
-def main():
-    args = parse_args()
-    try:
-        _ = ws_normalize(args.img_dir, args.contrast, args.mask_dir, args.output_dir, slices=args.slices)
-        return 0
-    except Exception as e:
-        logger.exception(e)
-        return 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())

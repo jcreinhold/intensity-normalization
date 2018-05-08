@@ -13,10 +13,7 @@ Created on: Apr 24, 2018
 
 from __future__ import print_function, division
 
-import argparse
 import logging
-import os
-import sys
 
 import nibabel as nib
 import numpy as np
@@ -24,9 +21,8 @@ from scipy.signal import argrelextrema
 import statsmodels.api as sm
 
 from intensity_normalization.errors import NormalizationError
-from intensity_normalization.utilities import io
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 def kde_normalize(img, mask=None, contrast='T1', norm_value=1000):
@@ -100,35 +96,3 @@ def kde_wm_peak(vol, contrast):
     else:
         raise NormalizationError("Contrast must be one of T1,T1C,T2,PD,FL,FLC.")
     return x
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--image', type=str, required=True)
-    parser.add_argument('-m', '--brain-mask', type=str, default=None)
-    parser.add_argument('-c', '--contrast', type=str, default='T1')
-    parser.add_argument('--norm-value', type=float, default=1000)
-    args = parser.parse_args()
-    return args
-
-
-def main():
-    args = parse_args()
-    try:
-        img = io.open_nii(args.image)
-        if args.brain_mask is not None:
-            mask = io.open_nii(args.brain_mask)
-        else:
-            mask = None
-        dirname, base, _ = io.split_filename(args.image)
-        normalized = kde_normalize(img, mask, args.norm_value)
-        outfile = os.path.join(dirname, base + '_norm.nii.gz')
-        io.save_nii(normalized, outfile, is_nii=True)
-        return 0
-    except Exception as e:
-        logger.exception(e)
-        return 1
-
-
-if __name__ == '__main__':
-    sys.exit(main())

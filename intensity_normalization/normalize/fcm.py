@@ -17,17 +17,13 @@ Created on: Apr 24, 2018
 
 from __future__ import print_function, division
 
-import argparse
 import logging
-import os
-import sys
 
 import nibabel as nib
 
-from intensity_normalization.utilities import io, mask
-from intensity_normalization.errors import NormalizationError
+from intensity_normalization.utilities import mask
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 def fcm_normalize(img, wm_mask, norm_value=1000):
@@ -67,40 +63,3 @@ def find_wm_mask(img, brain_mask, threshold=0.8):
     wm_mask = t1_mem[..., 2] > threshold
     wm_mask_nifti = nib.Nifti1Image(wm_mask, img.affine, img.header)
     return wm_mask_nifti
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--image', type=str, required=True)
-    parser.add_argument('-m', '--brain-mask', type=str, default=None)
-    parser.add_argument('-w', '--wm-mask', type=str, default=None)
-    parser.add_argument('--norm-value', type=float, default=1000)
-    args = parser.parse_args()
-    if not (args.brain_mask is None) ^ (args.wm_mask is None):
-        raise NormalizationError('Only one of {brain mask, wm mask} should be given')
-    return args
-
-
-def main():
-    args = parse_args()
-    try:
-        img = io.open_nii(args.image)
-        dirname, base, _ = io.split_filename(args.image)
-        if args.brain_mask is not None:
-            brain_mask = io.open_nii(args.brain_mask)
-            wm_mask = find_wm_mask(img, brain_mask)
-            outfile = os.path.join(dirname, base + '_wmmask.nii.gz')
-            io.save_nii(wm_mask, outfile, is_nii=True)
-        if args.wm_mask is not None:
-            wm_mask = io.open_nii(args.brain_mask)
-            normalized = fcm_normalize(img, wm_mask, args.norm_value)
-            outfile = os.path.join(dirname, base + '_norm.nii.gz')
-            io.save_nii(normalized, outfile, is_nii=True)
-        return 0
-    except Exception as e:
-        logger.exception(e)
-        return 1
-
-
-if __name__ == '__main__':
-    sys.exit(main())
