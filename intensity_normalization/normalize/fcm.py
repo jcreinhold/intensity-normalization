@@ -71,9 +71,9 @@ def find_wm_mask(img, brain_mask, threshold=0.8):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image', type=str, required=True)
-    parser.add_argument('--brain-mask', type=str)
-    parser.add_argument('--wm-mask', type=str)
+    parser.add_argument('-i', '--image', type=str, required=True)
+    parser.add_argument('-m', '--brain-mask', type=str, default=None)
+    parser.add_argument('-w', '--wm-mask', type=str, default=None)
     parser.add_argument('--norm-value', type=float, default=1000)
     args = parser.parse_args()
     if not (args.brain_mask is None) ^ (args.wm_mask is None):

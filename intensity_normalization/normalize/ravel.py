@@ -41,16 +41,16 @@ ravel = importr('RAVEL')
 logger = logging.getLogger()
 
 
-def ravel_normalize(data_dir, csf_mask, contrast, mask_dir=None, output_dir=None, write_to_disk=True):
+def ravel_normalize(img_dir, csf_mask, contrast, mask_dir=None, output_dir=None, write_to_disk=True):
     """
     Use RAVEL [1] to normalize the intensities of a set of MR images to eliminate
     unwanted technical variation in images (but, hopefully, preserve biological variation)
 
     Args:
-        data_dir (str): directory containing MR images to be normalized
+        img_dir (str): directory containing MR images to be normalized
+        template_mask (str): if images are not skull-stripped, then provide brain mask
         csf_mask (str): path to csf mask for data in data_dir
         contrast (str): contrast of MR images to be normalized (T1, T2, FLAIR or PD)
-        mask_dir (str): if images are not skull-stripped, then provide brain mask
         output_dir (str): directory to save images if you do not want them saved in
             same directory as data_dir
         write_to_disk (bool): write the normalized data to disk or nah
@@ -64,7 +64,7 @@ def ravel_normalize(data_dir, csf_mask, contrast, mask_dir=None, output_dir=None
             in magnetic resonance imaging studies,” Neuroimage, vol. 132,
             pp. 198–212, 2016.
     """
-    data = glob(os.path.join(data_dir, '*.nii*'))
+    data = glob(os.path.join(img_dir, '*.nii*'))
     input_files = StrVector(data)
     if mask_dir is None:
         mask_files = NULL
@@ -88,12 +88,12 @@ def ravel_normalize(data_dir, csf_mask, contrast, mask_dir=None, output_dir=None
     return normalized
 
 
-def csf_mask_intersection(data_dir, mask_dir=None, prob=0.9):
+def csf_mask_intersection(img_dir, mask_dir=None, prob=0.9):
     """
     use all nifti T1w images in data_dir to create csf mask in common areas
 
     Args:
-        data_dir (str): directory containing MR images to be normalized
+        img_dir (str): directory containing MR images to be normalized
         mask_dir (str): if images are not skull-stripped, then provide brain mask
         prob (float): given all data, proportion of data labeled as csf to be
             used for intersection
@@ -103,7 +103,7 @@ def csf_mask_intersection(data_dir, mask_dir=None, prob=0.9):
     """
     if not (0 <= prob <= 1):
         raise NormalizationError('prob must be between 0 and 1. {} given.'.format(prob))
-    data = glob(os.path.join(data_dir, '*.nii*'))
+    data = glob(os.path.join(img_dir, '*.nii*'))
     if mask_dir is None:
         masks = [None] * len(data)
     else:
@@ -115,13 +115,14 @@ def csf_mask_intersection(data_dir, mask_dir=None, prob=0.9):
     return intersection
 
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--data_dir', type=str, required=True)
-    parser.add_argument('--csf-mask', type=str, required=True)
+    parser.add_argument('-i', '--img-dir', type=str, required=True)
+    parser.add_argument('-cm', '--csf-mask', type=str, required=True)
     parser.add_argument('-c', '--contrast', type=str, default='T1')
-    parser.add_argument('-m', '--mask_dir', type=str, default=None)
-    parser.add_argument('-o', '--output_dir', type=str, default=None)
+    parser.add_argument('-m', '--mask-dir', type=str, default=None)
+    parser.add_argument('-o', '--output-dir', type=str, default=None)
     args = parser.parse_args()
     return args
 

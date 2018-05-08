@@ -40,22 +40,22 @@ ws = importr('WhiteStripe')
 logger = logging.getLogger()
 
 
-def ws_normalize(data_dir, contrast, mask_dir=None, output_dir=None, write_to_disk=True, slices=(80,120)):
+def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_disk=True, slices=(80, 120)):
     """
     Use histogram matching method ([1,2]) to normalize the intensities of a set of MR images
 
     Args:
-        data_dir (str): directory containing MR images to be normalized
+        img_dir (str): directory containing MR images to be normalized
         contrast (str): contrast of MR images to be normalized (T1, T2, FLAIR or PD)
         mask_dir (str): if images are not skull-stripped, then provide brain mask
         output_dir (str): directory to save images if you do not want them saved in
-            same directory as data_dir
+            same directory as img_dir
         write_to_disk (bool): write the normalized data to disk or nah
         slices (tuple): two ints in tuple corresponding to region from which to sample
             for the whitestripe procedure
 
     Returns:
-        normalized (np.ndarray): set of normalized images from data_dir
+        normalized (np.ndarray): set of normalized images from img_dir
 
     References:
         [1] R. T. Shinohara, E. M. Sweeney, J. Goldsmith, N. Shiee,
@@ -64,7 +64,7 @@ def ws_normalize(data_dir, contrast, mask_dir=None, output_dir=None, write_to_di
             techniques for magnetic resonance imaging,” NeuroImage Clin.,
             vol. 6, pp. 9–19, 2014.
     """
-    data = glob(os.path.join(data_dir, '*.nii*'))
+    data = glob(os.path.join(img_dir, '*.nii*'))
     if mask_dir is None:
         masks = [NULL] * len(data)
     else:
@@ -98,10 +98,10 @@ def ws_normalize(data_dir, contrast, mask_dir=None, output_dir=None, write_to_di
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--data_dir', type=str, required=True)
+    parser.add_argument('-i', '--img-dir', type=str, required=True)
     parser.add_argument('-c', '--contrast', type=str, default='T1')
-    parser.add_argument('-m', '--mask_dir', type=str, default=None)
-    parser.add_argument('-o', '--output_dir', type=str, default=None)
+    parser.add_argument('-m', '--mask-dir', type=str, default=None)
+    parser.add_argument('-o', '--output-dir', type=str, default=None)
     parser.add_argument('--slices', type=tuple, default=(80,120))
     args = parser.parse_args()
     return args
@@ -110,7 +110,7 @@ def parse_args():
 def main():
     args = parse_args()
     try:
-        _ = ws_normalize(args.data_dir, args.contrast, args.mask_dir, args.output_dir, slices=args.slices)
+        _ = ws_normalize(args.img_dir, args.contrast, args.mask_dir, args.output_dir, slices=args.slices)
         return 0
     except Exception as e:
         logger.exception(e)
