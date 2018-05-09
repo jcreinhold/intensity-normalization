@@ -18,15 +18,12 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: Apr 27, 2018
 """
 
-import argparse
 from functools import reduce
 from glob import glob
 import logging
 from operator import add
 import os
-import sys
 
-import nibabel as nib
 import numpy as np
 from rpy2.robjects.vectors import StrVector
 from rpy2.robjects.packages import importr
@@ -41,7 +38,7 @@ ravel = importr('RAVEL')
 logger = logging.getLogger(__name__)
 
 
-def ravel_normalize(img_dir, csf_mask, contrast, mask_dir=None, output_dir=None, write_to_disk=True):
+def ravel_normalize(img_dir, template_mask, csf_mask, contrast, output_dir=None, write_to_disk=True):
     """
     Use RAVEL [1] to normalize the intensities of a set of MR images to eliminate
     unwanted technical variation in images (but, hopefully, preserve biological variation)
@@ -66,14 +63,6 @@ def ravel_normalize(img_dir, csf_mask, contrast, mask_dir=None, output_dir=None,
     """
     data = glob(os.path.join(img_dir, '*.nii*'))
     input_files = StrVector(data)
-    if mask_dir is None:
-        mask_files = NULL
-    else:
-        masks = glob(os.path.join(mask_dir, '*.nii*'))
-        if len(data) != len(masks):
-            NormalizationError('Number of images and masks must be equal, Images: {}, Masks: {}'
-                               .format(len(data), len(masks)))
-        mask_files = StrVector(masks)
     if output_dir is None:
         output_files = NULL
     else:
@@ -82,7 +71,7 @@ def ravel_normalize(img_dir, csf_mask, contrast, mask_dir=None, output_dir=None,
             _, base, ext = io.split_filename(fn)
             out_fns.append(os.path.join(output_dir, base, ext))
         output_files = StrVector(out_fns)
-    normalizedR = ravel.normalizeRAVEL(input_files, control_mask=csf_mask, output_files=output_files, brain_mask=mask_files,
+    normalizedR = ravel.normalizeRAVEL(input_files, control_mask=csf_mask, output_files=output_files, brain_mask=template_mask,
                                        type=contrast, writeToDisk=write_to_disk, returnMatrix=True, verbose=False)
     normalized = np.array(normalizedR)
     return normalized
@@ -113,32 +102,3 @@ def csf_mask_intersection(img_dir, mask_dir=None, prob=0.9):
     intersection = np.zeros(csf_sum.shape)
     intersection[csf_sum > np.floor(len(data) * prob)] = 1
     return intersection
-
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--img-dir', type=str, required=True)
-    parser.add_argument('-cm', '--csf-mask', type=str, required=True)
-    parser.add_argument('-c', '--contrast', type=str, default='T1')
-    parser.add_argument('-m', '--mask-dir', type=str, default=None)
-    parser.add_argument('-o', '--output-dir', type=str, default=None)
-    args = parser.parse_args()
-    return args
-
-
-def main():
-    args = parse_args()
-    try:
-        if not os.path.isfile(args.csf_mask):
-            csf_mask_inter = csf_mask_intersection(args.data_dir, args.mask_dir)
-            nib.Nifti1Image(csf_mask_inter, None).to_filename(args.save_csf_mask)
-        _ = ravel_normalize(args.data_dir, args.csf_mask, args.contrast, args.mask_dir, args.output_dir)
-        return 0
-    except Exception as e:
-        logger.exception(e)
-        return 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())

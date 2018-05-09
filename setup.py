@@ -29,7 +29,12 @@ args = dict(
     url='https://gitlab.com/jcreinhold/intensity-normalization',
     license=license,
     packages=find_packages(exclude=('tests', 'docs')),
-    scripts=['intensity_normalization/exec/normalize_intensity'],
+    scripts=['intensity_normalization/exec/fcm_normalize',
+             'intensity_normalization/exec/gmm_normalize',
+             'intensity_normalization/exec/hm_normalize',
+             'intensity_normalization/exec/kde_normalize',
+             'intensity_normalization/exec/ravel_normalize',
+             'intensity_normalization/exec/ws_normalize'],
     keywords="mr intensity normalization"
 )
 

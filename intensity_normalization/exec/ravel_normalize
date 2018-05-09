@@ -9,9 +9,81 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: May 08, 2018
 """
 
+import argparse
+from glob import glob
+import logging
+import os
+import shutil
 import sys
 
-from intensity_normalization.normalize.ravel import main
+import nibabel as nib
+
+from intensity_normalization.errors import NormalizationError
+from intensity_normalization.normalize import ravel
+from intensity_normalization.utilities import register
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--img-dir', type=str, required=True)
+    parser.add_argument('-cm', '--csf-mask', type=str, default=None)
+    parser.add_argument('-c', '--contrast', type=str, default='T1')
+    parser.add_argument('-m', '--mask-dir', type=str, default=None)
+    parser.add_argument('-o', '--output-dir', type=str, default=None)
+    parser.add_argument('--register', action='store_true', default=False)
+    parser.add_argument('--template-img', default=0)
+    parser.add_argument('--cleanup-intermediate-files', action='store_true', default=False)
+    parser.add_argument('-v', '--verbosity', action="count",
+                        help="increase output verbosity (e.g., -vv is more than -v)")
+    args = parser.parse_args()
+    return args
+
+
+def main():
+    args = parse_args()
+    if args.verbosity == 1:
+        level = logging.getLevelName('INFO')
+    elif args.verbosity == 2:
+        level = logging.getLevelName('DEBUG')
+    else:
+        level = logging.getLevelName('WARNING')
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
+    logger = logging.getLogger(__name__)
+    try:
+        if args.register:
+            if isinstance(args.template_img, int):
+               template_img = glob(os.path.join(args.img_dir, '*.nii*'))[args.template_img]
+               template_mask = glob(os.path.join(args.mask_dir, '*.nii*'))[args.template_img]
+            elif isinstance(args.template_img, str):
+               template_img = args.template_img
+            else:
+                raise NormalizationError('template_img must be an integer or a string corresponding to the image number '
+                                         'or the full path of the image file')
+            logger.info('Starting registration')
+            register.register_to_template(args.img_dir, template_img=template_img)
+            logger.info('Creating CSF Mask')
+            csf_mask_inter = ravel.csf_mask_intersection(args.data_dir, args.mask_dir)
+            csf_mask = os.path.join(os.getcwd(), 'csf_mask.nii.gz') if args.csf_mask is None else args.csf_mask
+            nib.Nifti1Image(csf_mask_inter, None).to_filename(csf_mask)
+            reg_dir = os.path.join(os.getcwd(), 'registered')
+            out_dir = os.path.join(os.getcwd(), 'normalized_registered')
+            logger.info('Normalizing the images according to RAVEL')
+            _ = ravel.ravel_normalize(reg_dir, csf_mask, args.contrast, args.mask_dir, out_dir)
+            tx_dir = os.path.join(os.getcwd(), 'reg_tforms')
+            logger.info('Moving images back to original domain')
+            register.unregister(reg_dir, tx_dir, template_img)
+            if args.cleanup_intermediate_files:
+                shutil.rmtree(reg_dir)
+                shutil.rmtree(out_dir)
+                shutil.rmtree(tx_dir)
+        else:
+            if args.csf_mask is None:
+                raise NormalizationError('If registration not done, then csf mask must be provided')
+            _ = ravel.ravel_normalize(args.data_dir, args.csf_mask, args.contrast, args.mask_dir, args.output_dir)
+        return 0
+    except Exception as e:
+        logger.exception(e)
+        return 1
 
 
 if __name__ == "__main__":
