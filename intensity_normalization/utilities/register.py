@@ -59,9 +59,10 @@ def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0):
     img_fns = list(set(img_fns) - set(template_img))
     template = ants.image_read(template_img)
 
-    for fn in img_fns:
+    for i, fn in enumerate(img_fns):
         img = ants.image_read(fn)
         _, base, _ = split_filename(fn)
+        logger.info('Registering image {} out of {}'.format(i, len(img_fns)))
         tx = ants.registration(template, img, type_of_transform='SyN')
         moved = ants.apply_transforms(fixed=template, moving=img, interpolator='linear',
                                       transformlist=tx['fwdtransforms'])
@@ -94,10 +95,11 @@ def unregister(reg_dir, tx_dir, template_img, out_dir=None):
         if os.path.exists(tx_dir):
             logger.warning('normalize_unreg directory already exists,'
                            'may overwrite existing registered images!')
-    for fn, tx_fn in zip(reg_fns, tx_fns):
+    for i, (fn, tx_fn) in enumerate(zip(reg_fns, tx_fns)):
         _, base, _ = split_filename(fn)
         img = ants.image_read(fn)
         tx = np.load(tx_fn)
+        logger.info('De-registering image {} out of {}'.format(i, len(reg_fns)))
         unmoved = ants.apply_transforms(fixed=template, moving=img, interpolator='linear',
                                         transformlist=tx['fwdtransforms'])
         ants.image_write(unmoved,os.path.join(out_dir, base + '_norm.nii.gz'))

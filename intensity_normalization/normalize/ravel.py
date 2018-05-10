@@ -38,7 +38,7 @@ ravel = importr('RAVEL')
 logger = logging.getLogger(__name__)
 
 
-def ravel_normalize(img_dir, template_mask, csf_mask, contrast, output_dir=None, write_to_disk=True):
+def ravel_normalize(img_dir, template_mask, csf_mask, contrast, output_dir=None, write_to_disk=True, **kwargs):
     """
     Use RAVEL [1] to normalize the intensities of a set of MR images to eliminate
     unwanted technical variation in images (but, hopefully, preserve biological variation)
@@ -51,6 +51,7 @@ def ravel_normalize(img_dir, template_mask, csf_mask, contrast, output_dir=None,
         output_dir (str): directory to save images if you do not want them saved in
             same directory as data_dir
         write_to_disk (bool): write the normalized data to disk or nah
+        kwargs: ravel keyword arguments not included here
 
     Returns:
         normalized (np.ndarray): set of normalized images from data_dir
@@ -72,7 +73,7 @@ def ravel_normalize(img_dir, template_mask, csf_mask, contrast, output_dir=None,
             out_fns.append(os.path.join(output_dir, base, ext))
         output_files = StrVector(out_fns)
     normalizedR = ravel.normalizeRAVEL(input_files, control_mask=csf_mask, output_files=output_files, brain_mask=template_mask,
-                                       type=contrast, writeToDisk=write_to_disk, returnMatrix=True, verbose=False)
+                                       WhiteStripe_Type=contrast, writeToDisk=write_to_disk, returnMatrix=True, verbose=False, **kwargs)
     normalized = np.array(normalizedR)
     return normalized
 
@@ -97,6 +98,7 @@ def csf_mask_intersection(img_dir, mask_dir=None, prob=0.9):
         masks = [None] * len(data)
     else:
         masks = glob(os.path.join(mask_dir, '*.nii*'))
+    logger.info('creating csf masks for all images')
     csf = [csf_mask(img, brain_mask=mask) for img, mask in zip(data, masks)]
     csf_sum = reduce(add, csf)
     intersection = np.zeros(csf_sum.shape)

@@ -32,7 +32,8 @@ def parse_args():
     parser.add_argument('-o', '--output-dir', type=str, default=None)
     parser.add_argument('--register', action='store_true', default=False)
     parser.add_argument('--template-img', default=0)
-    parser.add_argument('--cleanup-intermediate-files', action='store_true', default=False)
+    parser.add_argument('--template-mask', default=0)
+    parser.add_argument('--clean-intermediate-files', action='store_true', default=False)
     parser.add_argument('-v', '--verbosity', action="count",
                         help="increase output verbosity (e.g., -vv is more than -v)")
     args = parser.parse_args()
@@ -51,13 +52,15 @@ def main():
     logger = logging.getLogger(__name__)
     try:
         if args.register:
-            if isinstance(args.template_img, int):
+            if isinstance(args.template_img, int) and isinstance(args.template_mask, int):
                template_img = glob(os.path.join(args.img_dir, '*.nii*'))[args.template_img]
                template_mask = glob(os.path.join(args.mask_dir, '*.nii*'))[args.template_img]
-            elif isinstance(args.template_img, str):
+            elif isinstance(args.template_img, str) and isinstance(args.template_mask, str):
                template_img = args.template_img
+               template_mask = args.template_mask
             else:
-                raise NormalizationError('template_img must be an integer or a string corresponding to the image number '
+                raise NormalizationError('template_img, template_mask must be an integer '
+                                         'or a string corresponding to the image number '
                                          'or the full path of the image file')
             logger.info('Starting registration')
             register.register_to_template(args.img_dir, template_img=template_img)
@@ -68,18 +71,20 @@ def main():
             reg_dir = os.path.join(os.getcwd(), 'registered')
             out_dir = os.path.join(os.getcwd(), 'normalized_registered')
             logger.info('Normalizing the images according to RAVEL')
-            _ = ravel.ravel_normalize(reg_dir, csf_mask, args.contrast, args.mask_dir, out_dir)
+            _ = ravel.ravel_normalize(reg_dir, template_mask, csf_mask, args.contrast, out_dir)
             tx_dir = os.path.join(os.getcwd(), 'reg_tforms')
             logger.info('Moving images back to original domain')
-            register.unregister(reg_dir, tx_dir, template_img)
-            if args.cleanup_intermediate_files:
+            register.unregister(reg_dir, tx_dir, template_img, args.output_dir)
+            if args.clean_intermediate_files:
                 shutil.rmtree(reg_dir)
                 shutil.rmtree(out_dir)
                 shutil.rmtree(tx_dir)
         else:
             if args.csf_mask is None:
                 raise NormalizationError('If registration not done, then csf mask must be provided')
-            _ = ravel.ravel_normalize(args.data_dir, args.csf_mask, args.contrast, args.mask_dir, args.output_dir)
+            if not isinstance(args.template_mask, str):
+                raise NormalizationError('template mask must be provided for the registered imgs')
+            _ = ravel.ravel_normalize(args.data_dir, args.template_mask, args.csf_mask, args.contrast, args.output_dir)
         return 0
     except Exception as e:
         logger.exception(e)
