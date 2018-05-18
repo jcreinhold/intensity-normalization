@@ -44,7 +44,8 @@ def hm_normalize(img_dir, template_mask, contrast, output_dir=None, write_to_dis
 
     Args:
         img_dir (str): directory containing MR images registered to a template
-        template_mask (str): are not skull-stripped, then provide brain mask
+        template_mask (str): since images are registered, provide brain mask
+            for the template (fixed) image
         contrast (str): contrast of MR images to be normalized (T1, T2, FLAIR or PD)
         output_dir (str): directory to save images if you do not want them saved in
             same directory as data_dir

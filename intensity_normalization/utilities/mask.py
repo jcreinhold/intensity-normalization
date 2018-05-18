@@ -12,6 +12,7 @@ Created on: May 01, 2018
 from __future__ import print_function, division
 
 import logging
+import warnings
 
 import nibabel as nib
 import numpy as np
@@ -139,7 +140,9 @@ def background_mask(img, seed=0):
     km.fit(np.expand_dims(img_data[rand_mask], 1))
     logger.info('Generating Mask...')
     classes = km.predict(np.expand_dims(img_data.flatten(), 1)).reshape(img_data.shape)
-    means = [np.mean(img_data[classes == i]) for i in range(4)]
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore')
+        means = [np.mean(img_data[classes == i]) for i in range(4)]
     raw_mask = (classes == np.argmin(means)) == 0.0
     filled_raw_mask = __fill_2p5d(raw_mask)
     dist2_5by5_kernel = iterate_structure(generate_binary_structure(3, 1), 2)

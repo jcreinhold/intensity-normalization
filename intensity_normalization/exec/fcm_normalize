@@ -23,10 +23,16 @@ from intensity_normalization.utilities import io
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--image', type=str, required=True)
-    parser.add_argument('-m', '--brain-mask', type=str, default=None)
-    parser.add_argument('-w', '--wm-mask', type=str, default=None)
-    parser.add_argument('--norm-value', type=float, default=1000)
+    parser.add_argument('-i', '--image', type=str, required=True,
+                        help='path to a nifti MR image of the brain')
+    parser.add_argument('-m', '--brain-mask', type=str, default=None,
+                        help='path to a nifti brain mask for the image, '
+                             'provide this if not providing WM mask, (step 1)')
+    parser.add_argument('-w', '--wm-mask', type=str, default=None,
+                        help='path to a nifti mask of the WM (found through FCM), '
+                             'provide this if not providing the brain mask (step 2)')
+    parser.add_argument('--norm-value', type=float, default=1000,
+                        help='normalize the WM of the image to this value (default 1000)')
     parser.add_argument('-v', '--verbosity', action="count",
                         help="increase output verbosity (e.g., -vv is more than -v)")
     args = parser.parse_args()
@@ -39,7 +45,7 @@ def main():
     args = parse_args()
     if args.verbosity == 1:
         level = logging.getLevelName('INFO')
-    elif args.verbosity == 2:
+    elif args.verbosity >= 2:
         level = logging.getLevelName('DEBUG')
     else:
         level = logging.getLevelName('WARNING')

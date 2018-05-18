@@ -20,11 +20,22 @@ from intensity_normalization.normalize import whitestripe
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--img-dir', type=str, required=True)
-    parser.add_argument('-c', '--contrast', type=str, default='T1')
-    parser.add_argument('-m', '--mask-dir', type=str, default=None)
-    parser.add_argument('-o', '--output-dir', type=str, default=None)
-    parser.add_argument('--slices', type=tuple, default=(80,120))
+    parser.add_argument('-i', '--img-dir', type=str, required=True,
+                        help = 'path to directory with images to be processed '
+                               '(should all be of one contrast)')
+    parser.add_argument('-c', '--contrast', type=str, default='T1',
+                        help='contrast of the images in img-dir')
+    parser.add_argument('-m', '--mask-dir', type=str, default=None,
+                        help='if images are not skull-stripped, directory for '
+                             'corresponding brain masks for img-dir (not intelligently sorted, '
+                             'so ordering must be consistent in directory)')
+    parser.add_argument('-o', '--output-dir', type=str, default=None,
+                        help='if you want the normalized images saved in a particular location,'
+                             'provide that directory here (must already exist)')
+    parser.add_argument('--slices', type=tuple, default=(80,120),
+                        help='this argument is used in WhiteStripe, it uses the provided'
+                             'slice range to extract a region by which to normalize the histogram'
+                             'of the entire image')
     parser.add_argument('-v', '--verbosity', action="count",
                         help="increase output verbosity (e.g., -vv is more than -v)")
     args = parser.parse_args()
@@ -35,7 +46,7 @@ def main():
     args = parse_args()
     if args.verbosity == 1:
         level = logging.getLevelName('INFO')
-    elif args.verbosity == 2:
+    elif args.verbosity >= 2:
         level = logging.getLevelName('DEBUG')
     else:
         level = logging.getLevelName('WARNING')

@@ -22,10 +22,15 @@ from intensity_normalization.utilities import io
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--image', type=str, required=True)
-    parser.add_argument('-m', '--brain-mask', type=str, default=None)
-    parser.add_argument('-c', '--contrast', type=str, default='T1')
-    parser.add_argument('--norm-value', type=float, default=1000)
+    parser.add_argument('-i', '--image', type=str, required=True,
+                        help='path to a nifti MR image of the brain')
+    parser.add_argument('-m', '--brain-mask', type=str, default=None,
+                        help='path to a nifti brain mask for the image,'
+                             'if image is not skull-stripped')
+    parser.add_argument('-c', '--contrast', type=str, default='T1',
+                        help='contrast of the image (e.g., T1, T2, etc.)')
+    parser.add_argument('--norm-value', type=float, default=1000,
+                        help='value by which to normalize the WM peak, default 1000')
     parser.add_argument('-v', '--verbosity', action="count",
                         help="increase output verbosity (e.g., -vv is more than -v)")
     args = parser.parse_args()
@@ -36,7 +41,7 @@ def main():
     args = parse_args()
     if args.verbosity == 1:
         level = logging.getLevelName('INFO')
-    elif args.verbosity == 2:
+    elif args.verbosity >= 2:
         level = logging.getLevelName('DEBUG')
     else:
         level = logging.getLevelName('WARNING')

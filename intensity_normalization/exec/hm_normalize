@@ -20,10 +20,17 @@ from intensity_normalization.normalize import hm
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--img-dir', type=str, required=True)
-    parser.add_argument('-c', '--contrast', type=str, default='T1')
-    parser.add_argument('-m', '--mask-dir', type=str, default=None)
-    parser.add_argument('-o', '--output-dir', type=str, default=None)
+    parser.add_argument('-i', '--img-dir', type=str, required=True,
+                        help='path to directory with images to be processed '
+                             '(should all be of one contrast)')
+    parser.add_argument('-c', '--contrast', type=str, default='T1',
+                        help='contrast of the images in img-dir')
+    parser.add_argument('-t', '--template-mask', type=str, default=None,
+                        help='path to the template mask (all imgs in img-dir '
+                             'must be registered to this')
+    parser.add_argument('-o', '--output-dir', type=str, default=None,
+                        help='if you want the normalized images saved in a particular location,'
+                             'provide that directory here (must already exist)')
     parser.add_argument('-v', '--verbosity', action="count",
                         help="increase output verbosity (e.g., -vv is more than -v)")
     args = parser.parse_args()
@@ -34,14 +41,14 @@ def main():
     args = parse_args()
     if args.verbosity == 1:
         level = logging.getLevelName('INFO')
-    elif args.verbosity == 2:
+    elif args.verbosity >= 2:
         level = logging.getLevelName('DEBUG')
     else:
         level = logging.getLevelName('WARNING')
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
     logger = logging.getLogger(__name__)
     try:
-        _ = hm.hm_normalize(args.img_dir, args.contrast, args.mask_dir, args.output_dir)
+        _ = hm.hm_normalize(args.img_dir, args.template_mask, args.contrast, args.output_dir)
         return 0
     except Exception as e:
         logger.exception(e)

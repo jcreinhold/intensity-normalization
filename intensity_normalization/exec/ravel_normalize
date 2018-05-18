@@ -25,15 +25,30 @@ from intensity_normalization.utilities import register
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--img-dir', type=str, required=True)
-    parser.add_argument('-cm', '--csf-mask', type=str, default=None)
-    parser.add_argument('-c', '--contrast', type=str, default='T1')
-    parser.add_argument('-m', '--mask-dir', type=str, default=None)
-    parser.add_argument('-o', '--output-dir', type=str, default=None)
-    parser.add_argument('--register', action='store_true', default=False)
-    parser.add_argument('--template-img', default=0)
-    parser.add_argument('--template-mask', default=0)
-    parser.add_argument('--clean-intermediate-files', action='store_true', default=False)
+    parser.add_argument('-i', '--img-dir', type=str, required=True,
+                        help='path to directory with images to be processed '
+                             '(should all be of one contrast)')
+    parser.add_argument('-cm', '--csf-mask', type=str, default=None,
+                        help='if created, path to a csf mask for the registered imgs')
+    parser.add_argument('-c', '--contrast', type=str, default='T1',
+                        help='contrast of the images in img-dir, (e.g, T1, T2, etc.)')
+    parser.add_argument('-m', '--mask-dir', type=str, default=None,
+                        help='if images are not skull-stripped, directory for '
+                             'corresponding brain masks for img-dir (not intelligently sorted, '
+                             'so ordering must be consistent in directory)')
+    parser.add_argument('-o', '--output-dir', type=str, default=None,
+                        help='save the normalized images to this path (directory must already exist)')
+    parser.add_argument('--register', action='store_true', default=False,
+                        help='if you want this script to do the deformable registration to a template '
+                             '(template defaults to the first image in the set of provided images), then '
+                             'set this flag')
+    parser.add_argument('--template-img', default=0,
+                        help='path to desired template image, or number in the set of provided images')
+    parser.add_argument('--template-mask', default=0,
+                        help='path to desired template image brain mask, or number in the set of provided images')
+    parser.add_argument('--clean-intermediate-files', action='store_true', default=False,
+                        help='this algorithm creates many intermediate files (when using the registration routine) '
+                             'setting this flag will remove the intermediate files after they are no longer needed')
     parser.add_argument('-v', '--verbosity', action="count",
                         help="increase output verbosity (e.g., -vv is more than -v)")
     args = parser.parse_args()
@@ -44,7 +59,7 @@ def main():
     args = parse_args()
     if args.verbosity == 1:
         level = logging.getLevelName('INFO')
-    elif args.verbosity == 2:
+    elif args.verbosity >= 2:
         level = logging.getLevelName('DEBUG')
     else:
         level = logging.getLevelName('WARNING')

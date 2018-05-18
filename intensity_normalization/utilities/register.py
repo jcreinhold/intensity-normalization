@@ -39,7 +39,8 @@ def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0):
         None, writes registration transforms and registered images to disk
     """
 
-    img_fns = glob(os.path.join(img_dir, '*.nii*'))
+    img_fns = sorted(glob(os.path.join(img_dir, '*.nii*')))
+    logger.debug('Input images: {}'.format(img_fns))
 
     if isinstance(template_img, int):
         template_img = img_fns[template_img]
@@ -47,27 +48,51 @@ def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0):
     if tx_dir is None:
         tx_dir = os.path.join(os.getcwd(), 'reg_tforms')
         if os.path.exists(tx_dir):
-            logger.warning('normalize_reg_tforms directory already exists,'
+            logger.warning('normalize_reg_tforms directory already exists, '
                            'may overwrite existing tforms!')
+        else:
+            os.mkdir(tx_dir)
 
     if out_dir is None:
         out_dir = os.path.join(os.getcwd(), 'registered')
         if os.path.exists(out_dir):
-            logger.warning('normalize_reg directory already exists,'
+            logger.warning('normalize_reg directory already exists, '
                            'may overwrite existing registered images!')
+        else:
+            os.mkdir(out_dir)
 
-    img_fns = list(set(img_fns) - set(template_img))
+    img_fns = [fn for fn in img_fns if fn != template_img]
     template = ants.image_read(template_img)
 
-    for i, fn in enumerate(img_fns):
+    _, base, _ = split_filename(template_img)
+    logger.debug('Template image: {}'.format(base))
+    for i, fn in enumerate(img_fns, 1):
+        _, base, _ = split_filename(fn)
+        logger.debug('Image to register ({}): {}'.format(i, base))
+
+    for i, fn in enumerate(img_fns, 1):
         img = ants.image_read(fn)
         _, base, _ = split_filename(fn)
-        logger.info('Registering image {} out of {}'.format(i, len(img_fns)))
-        tx = ants.registration(template, img, type_of_transform='SyN')
-        moved = ants.apply_transforms(fixed=template, moving=img, interpolator='linear',
-                                      transformlist=tx['fwdtransforms'])
-        np.save(os.path.join(tx_dir, base + '_tx.npy'), tx)
-        ants.image_write(moved, os.path.join(out_dir, base + '_reg.nii.gz'))
+        logger.info('Registering image {} out of {} (image name: {})'.format(i, len(img_fns), base))
+        reg_result = ants.registration(template, img, type_of_transform='SyN')
+        for j, tx_fn in enumerate(reg_result['invtransforms']):
+            # transforms are actually saved as temp files, so need to load and resave them
+            # and test that they are loadable!
+            if j == 0:
+                tx = ants.image_read(tx_fn)
+                out_tx = os.path.join(tx_dir, base + '_deformable_tx.nii.gz')
+                logger.debug('Output transform: {}'.format(out_tx))
+                ants.image_write(tx, out_tx)
+            else:
+                tx = ants.read_transform(tx_fn)
+                out_tx = os.path.join(tx_dir, base + '_affine_tx.mat')
+                logger.debug('Output transform: {}'.format(out_tx))
+                ants.write_transform(tx, out_tx)
+        moved = reg_result['warpedmovout']
+        moved_fn = os.path.join(out_dir, base + '_reg.nii.gz')
+        logger.debug('Output registered image: {}'.format(moved_fn))
+        ants.image_write(moved, moved_fn)
+        del img, reg_result, tx, moved  # trying to prevent segfault
 
 
 def unregister(reg_dir, tx_dir, template_img, out_dir=None):
@@ -87,19 +112,24 @@ def unregister(reg_dir, tx_dir, template_img, out_dir=None):
     Returns:
         None, writes de-registered images to disk
     """
-    reg_fns = glob(os.path.join(reg_dir, '*.nii*'))
-    tx_fns = glob(os.path.join(tx_dir, '*.npy'))
+    reg_fns = sorted(glob(os.path.join(reg_dir, '*.nii*')))
+    affine_fns = sorted(glob(os.path.join(tx_dir, '*.mat')))
+    deformable_fns = sorted(glob(os.path.join(tx_dir, '*.nii.gz')))
     template = ants.image_read(template_img)
     if out_dir is None:
-        tx_dir = os.path.join(os.getcwd(), 'normalized')
-        if os.path.exists(tx_dir):
-            logger.warning('normalize_unreg directory already exists,'
+        out_dir = os.path.join(os.getcwd(), 'normalized')
+        if os.path.exists(out_dir):
+            logger.warning('normalized directory already exists, '
                            'may overwrite existing registered images!')
-    for i, (fn, tx_fn) in enumerate(zip(reg_fns, tx_fns)):
+        else:
+            os.mkdir(out_dir)
+
+    for i, (fn, aff_fn, def_fn) in enumerate(zip(reg_fns, affine_fns, deformable_fns)):
         _, base, _ = split_filename(fn)
         img = ants.image_read(fn)
-        tx = np.load(tx_fn)
+        transformlist = [def_fn, aff_fn]
         logger.info('De-registering image {} out of {}'.format(i, len(reg_fns)))
-        unmoved = ants.apply_transforms(fixed=template, moving=img, interpolator='linear',
-                                        transformlist=tx['fwdtransforms'])
+        unmoved = ants.apply_transforms(fixed=template, moving=img, interpolator='bSpline',
+                                        transformlist=transformlist)
         ants.image_write(unmoved,os.path.join(out_dir, base + '_norm.nii.gz'))
+        del img
