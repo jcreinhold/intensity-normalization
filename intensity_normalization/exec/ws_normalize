@@ -14,8 +14,11 @@ from __future__ import print_function, division
 import argparse
 import logging
 import sys
+import warnings
 
-from intensity_normalization.normalize import whitestripe
+with warnings.catch_warnings():
+    warnings.filterwarnings('ignore', category=FutureWarning)
+    from intensity_normalization.normalize import whitestripe
 
 
 def parse_args():
@@ -36,7 +39,7 @@ def parse_args():
                         help='this argument is used in WhiteStripe, it uses the provided'
                              'slice range to extract a region by which to normalize the histogram'
                              'of the entire image')
-    parser.add_argument('-v', '--verbosity', action="count",
+    parser.add_argument('-v', '--verbosity', action="count", default=0,
                         help="increase output verbosity (e.g., -vv is more than -v)")
     args = parser.parse_args()
     return args

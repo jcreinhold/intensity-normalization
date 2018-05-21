@@ -15,10 +15,13 @@ import argparse
 import logging
 import os
 import sys
+import warnings
 
-from intensity_normalization.errors import NormalizationError
-from intensity_normalization.normalize import fcm
-from intensity_normalization.utilities import io
+with warnings.catch_warnings():
+    warnings.filterwarnings('ignore', category=FutureWarning)
+    from intensity_normalization.errors import NormalizationError
+    from intensity_normalization.normalize import fcm
+    from intensity_normalization.utilities import io
 
 
 def parse_args():
@@ -33,7 +36,7 @@ def parse_args():
                              'provide this if not providing the brain mask (step 2)')
     parser.add_argument('--norm-value', type=float, default=1000,
                         help='normalize the WM of the image to this value (default 1000)')
-    parser.add_argument('-v', '--verbosity', action="count",
+    parser.add_argument('-v', '--verbosity', action="count", default=0,
                         help="increase output verbosity (e.g., -vv is more than -v)")
     args = parser.parse_args()
     if not (args.brain_mask is None) ^ (args.wm_mask is None):

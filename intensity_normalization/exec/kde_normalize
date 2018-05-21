@@ -15,9 +15,12 @@ import argparse
 import logging
 import os
 import sys
+import warnings
 
-from intensity_normalization.normalize import kde
-from intensity_normalization.utilities import io
+with warnings.catch_warnings():
+    warnings.filterwarnings('ignore', category=FutureWarning)
+    from intensity_normalization.normalize import kde
+    from intensity_normalization.utilities import io
 
 
 def parse_args():
@@ -31,7 +34,7 @@ def parse_args():
                         help='contrast of the image (e.g., T1, T2, etc.)')
     parser.add_argument('--norm-value', type=float, default=1000,
                         help='value by which to normalize the WM peak, default 1000')
-    parser.add_argument('-v', '--verbosity', action="count",
+    parser.add_argument('-v', '--verbosity', action="count", default=0,
                         help="increase output verbosity (e.g., -vv is more than -v)")
     args = parser.parse_args()
     return args

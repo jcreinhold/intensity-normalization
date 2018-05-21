@@ -1,1 +1,1 @@
-from . import errors, normalize, utilities
+from . import errors, normalize, utilities, plot

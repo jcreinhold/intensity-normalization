@@ -15,12 +15,15 @@ import logging
 import os
 import shutil
 import sys
+import warnings
 
 import nibabel as nib
 
-from intensity_normalization.errors import NormalizationError
-from intensity_normalization.normalize import ravel
-from intensity_normalization.utilities import register
+with warnings.catch_warnings():
+    warnings.filterwarnings('ignore', category=FutureWarning)
+    from intensity_normalization.errors import NormalizationError
+    from intensity_normalization.normalize import ravel
+    from intensity_normalization.utilities import register
 
 
 def parse_args():
@@ -49,7 +52,7 @@ def parse_args():
     parser.add_argument('--clean-intermediate-files', action='store_true', default=False,
                         help='this algorithm creates many intermediate files (when using the registration routine) '
                              'setting this flag will remove the intermediate files after they are no longer needed')
-    parser.add_argument('-v', '--verbosity', action="count",
+    parser.add_argument('-v', '--verbosity', action="count", default=0,
                         help="increase output verbosity (e.g., -vv is more than -v)")
     args = parser.parse_args()
     return args
@@ -80,12 +83,12 @@ def main():
             logger.info('Starting registration')
             register.register_to_template(args.img_dir, template_img=template_img)
             logger.info('Creating CSF Mask')
-            csf_mask_inter = ravel.csf_mask_intersection(args.data_dir, args.mask_dir)
+            reg_dir = os.path.join(os.getcwd(), 'registered')
+            csf_mask_inter = ravel.csf_mask_intersection(reg_dir, args.mask_dir)
             csf_mask = os.path.join(os.getcwd(), 'csf_mask.nii.gz') if args.csf_mask is None else args.csf_mask
             nib.Nifti1Image(csf_mask_inter, None).to_filename(csf_mask)
-            reg_dir = os.path.join(os.getcwd(), 'registered')
-            out_dir = os.path.join(os.getcwd(), 'normalized_registered')
             logger.info('Normalizing the images according to RAVEL')
+            out_dir = os.path.join(os.getcwd(), 'normalized_registered')
             _ = ravel.ravel_normalize(reg_dir, template_mask, csf_mask, args.contrast, out_dir)
             tx_dir = os.path.join(os.getcwd(), 'reg_tforms')
             logger.info('Moving images back to original domain')

@@ -34,7 +34,10 @@ args = dict(
              'intensity_normalization/exec/hm_normalize',
              'intensity_normalization/exec/kde_normalize',
              'intensity_normalization/exec/ravel_normalize',
-             'intensity_normalization/exec/ws_normalize'],
+             'intensity_normalization/exec/ws_normalize',
+             'intensity_normalization/exec/robex',
+             'intensity_normalization/exec/preprocess',
+             'intensity_normalization/exec/plot_histograms'],
     keywords="mr intensity normalization"
 )
 
