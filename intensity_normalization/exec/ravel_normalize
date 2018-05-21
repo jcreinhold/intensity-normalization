@@ -68,8 +68,8 @@ def main():
     try:
         if args.register:
             if isinstance(args.template_img, int) and isinstance(args.template_mask, int):
-               template_img = glob(os.path.join(args.img_dir, '*.nii*'))[args.template_img]
-               template_mask = glob(os.path.join(args.mask_dir, '*.nii*'))[args.template_img]
+               template_img = sorted(glob(os.path.join(args.img_dir, '*.nii*')))[args.template_img]
+               template_mask = sorted(glob(os.path.join(args.mask_dir, '*.nii*')))[args.template_img]
             elif isinstance(args.template_img, str) and isinstance(args.template_mask, str):
                template_img = args.template_img
                template_mask = args.template_mask

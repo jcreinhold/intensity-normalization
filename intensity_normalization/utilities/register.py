@@ -9,12 +9,12 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: May 08, 2018
 """
 
+import gc
 from glob import glob
 import logging
 import os
 
 import ants
-import numpy as np
 
 from intensity_normalization.utilities.io import split_filename
 
@@ -48,7 +48,7 @@ def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0):
     if tx_dir is None:
         tx_dir = os.path.join(os.getcwd(), 'reg_tforms')
         if os.path.exists(tx_dir):
-            logger.warning('normalize_reg_tforms directory already exists, '
+            logger.warning('reg_tforms directory already exists, '
                            'may overwrite existing tforms!')
         else:
             os.mkdir(tx_dir)
@@ -56,7 +56,7 @@ def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0):
     if out_dir is None:
         out_dir = os.path.join(os.getcwd(), 'registered')
         if os.path.exists(out_dir):
-            logger.warning('normalize_reg directory already exists, '
+            logger.warning('registered directory already exists, '
                            'may overwrite existing registered images!')
         else:
             os.mkdir(out_dir)
@@ -76,8 +76,8 @@ def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0):
         logger.info('Registering image {} out of {} (image name: {})'.format(i, len(img_fns), base))
         reg_result = ants.registration(template, img, type_of_transform='SyN')
         for j, tx_fn in enumerate(reg_result['invtransforms']):
-            # transforms are actually saved as temp files, so need to load and resave them
-            # and test that they are loadable!
+            # transforms are actually saved as temp files
+            # we load and resave them, instead of moving them, to verify that they are loadable
             if j == 0:
                 tx = ants.image_read(tx_fn)
                 out_tx = os.path.join(tx_dir, base + '_deformable_tx.nii.gz')
@@ -92,7 +92,9 @@ def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0):
         moved_fn = os.path.join(out_dir, base + '_reg.nii.gz')
         logger.debug('Output registered image: {}'.format(moved_fn))
         ants.image_write(moved, moved_fn)
-        del img, reg_result, tx, moved  # trying to prevent segfault
+        # try to prevent segfault with forced garbage collection
+        del img, reg_result, tx, moved
+        gc.collect()
 
 
 def unregister(reg_dir, tx_dir, template_img, out_dir=None):
@@ -132,4 +134,6 @@ def unregister(reg_dir, tx_dir, template_img, out_dir=None):
         unmoved = ants.apply_transforms(fixed=template, moving=img, interpolator='bSpline',
                                         transformlist=transformlist)
         ants.image_write(unmoved,os.path.join(out_dir, base + '_norm.nii.gz'))
+        # try to prevent segfault with forced garbage collection
         del img
+        gc.collect()
