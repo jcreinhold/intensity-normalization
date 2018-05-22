@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 try:
     import seaborn as sns
-    sns.set(style='white', font_scale=2)
+    sns.set(style='whitegrid', font_scale=2, rc={'grid.color': '.9'})
 except ImportError:
     logger.debug("Seaborn not installed, so plots won't look as pretty :-(")
 
@@ -45,9 +45,9 @@ def all_hists(img_dir, mask_dir=None, alpha=0.4, figsize=(12,10), **kwargs):
     Returns:
         ax (matplotlib.axes.Axes): plotted on ax obj
     """
-    imgs = glob(os.path.join(img_dir, '*.nii*'))
+    imgs = sorted(glob(os.path.join(img_dir, '*.nii*')))
     if mask_dir is not None:
-        masks = glob(os.path.join(mask_dir, '*.nii*'))
+        masks = sorted(glob(os.path.join(mask_dir, '*.nii*')))
     else:
         masks = [None] * len(imgs)
     if len(imgs) != len(masks):
@@ -65,7 +65,6 @@ def all_hists(img_dir, mask_dir=None, alpha=0.4, figsize=(12,10), **kwargs):
     ax.set_xlabel('Intensity')
     ax.set_ylabel('Log Count')
     ax.set_ylim((0, None))
-    ax.set_xlim((0, None))
     return ax
 
 
@@ -89,12 +88,13 @@ def hist(img, mask=None, ax=None, n_bins=200, log=True, alpha=0.8, **kwargs):
         _, ax = plt.subplots()
     data = img.numpy() * mask.numpy() if mask is not None else img.numpy()
     hist, bin_edges = np.histogram(data.flatten(), n_bins, **kwargs)
-    bins = np.diff(bin_edges)
+    bins = np.diff(bin_edges)/2 + bin_edges[:-1]
     if log:
         # catch divide by zero warnings in call to log
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore')
             hist =  np.log(hist)
+            hist[hist == -np.inf] = 0
     ax.plot(bins, hist, alpha=alpha)
     return ax
 

@@ -29,6 +29,7 @@ import os
 import numpy as np
 from rpy2.robjects.vectors import StrVector, IntVector
 from rpy2.robjects.packages import importr
+from rpy2.robjects.numpy2ri import py2ri
 from rpy2.rinterface import NULL
 
 from intensity_normalization.errors import NormalizationError
@@ -42,7 +43,8 @@ logger = logging.getLogger(__name__)
 
 def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_disk=True, slices=(80, 120)):
     """
-    Use histogram matching method ([1,2]) to normalize the intensities of a set of MR images
+    Use WhiteStripe normalization method ([1]) to normalize the intensities of
+    a set of MR images by normalizing an area around the white matter peak of the histogram
 
     Args:
         img_dir (str): directory containing MR images to be normalized
@@ -55,7 +57,8 @@ def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_dis
             for the whitestripe procedure
 
     Returns:
-        normalized (np.ndarray): set of normalized images from img_dir
+        normalized (np.ndarray): last normalized image data from img_dir
+            I know this is an odd behavior, but yolo
 
     References:
         [1] R. T. Shinohara, E. M. Sweeney, J. Goldsmith, N. Shiee,
@@ -64,11 +67,11 @@ def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_dis
             techniques for magnetic resonance imaging,” NeuroImage Clin.,
             vol. 6, pp. 9–19, 2014.
     """
-    data = glob(os.path.join(img_dir, '*.nii*'))
+    data = sorted(glob(os.path.join(img_dir, '*.nii*')))
     if mask_dir is None:
         masks = [NULL] * len(data)
     else:
-        masks = glob(os.path.join(mask_dir, '*.nii*'))
+        masks = sorted(glob(os.path.join(mask_dir, '*.nii*')))
         if len(data) != len(masks):
             NormalizationError('Number of images and masks must be equal, Images: {}, Masks: {}'
                                .format(len(data), len(masks)))
@@ -78,9 +81,10 @@ def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_dis
         out_fns = []
         for fn in data:
             _, base, ext = io.split_filename(fn)
-            out_fns.append(os.path.join(output_dir, base, ext))
+            out_fns.append(os.path.join(output_dir, base + ext))
         output_files = StrVector(out_fns)
-    for img_fn, mask_fn, output_fn in zip(data, masks, output_files):
+    for i, (img_fn, mask_fn, output_fn) in enumerate(zip(data, masks, output_files), 1):
+        logger.info('Normalizing image: {} ({:d}/{:d})'.format(img_fn, i, len(data)))
         img = nb.check_nifti(img_fn, reorient=False, allow_array=False)
         if mask_fn is NULL:
             brain = img
@@ -91,6 +95,7 @@ def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_dis
                                  verbose=False)
         brain = ws.whitestripe_norm(brain, indices[0])
         if write_to_disk:
+            logger.info('Saving normalized image: {} ({:d}/{:d})'.format(output_fn, i, len(data)))
             nb.write_nifti(brain, output_fn)
-    normalized = np.array(brain)
+    normalized = np.array(brain.slots['.Data'])
     return normalized

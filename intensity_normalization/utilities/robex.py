@@ -18,6 +18,7 @@ Created on: May 21, 2018
 
 import warnings
 
+import ants
 from rpy2.robjects.packages import importr
 
 ROBEX = importr('robex')
@@ -26,5 +27,8 @@ ROBEX = importr('robex')
 def robex(img, out_mask):
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore')
-        robex_output = ROBEX.robex(img, outfile=out_mask)
-    return robex_output
+        _ = ROBEX.robex(img, outfile=out_mask)
+    mask = ants.image_read(out_mask)
+    mask = mask.get_mask(low_thresh=1)
+    ants.image_write(mask, out_mask)
+    return mask

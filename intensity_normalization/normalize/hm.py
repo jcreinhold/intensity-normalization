@@ -71,7 +71,7 @@ def hm_normalize(img_dir, template_mask, contrast, output_dir=None, write_to_dis
         out_fns = []
         for fn in data:
             _, base, ext = io.split_filename(fn)
-            out_fns.append(os.path.join(output_dir, base, ext))
+            out_fns.append(os.path.join(output_dir, base + ext))
         output_files = StrVector(out_fns)
     normalizedR = ravel.normalizeHM(input_files, output_files=output_files, brain_mask=template_mask,
                                     type=contrast, writeToDisk=write_to_disk, returnMatrix=True, verbose=False)

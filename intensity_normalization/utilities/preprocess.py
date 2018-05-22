@@ -69,7 +69,7 @@ def preprocess(img_dir, mask_dir, out_dir, res=(1,1,1), orientation='RAI', n4_op
         os.mkdir(out_mask_dir)
 
     # preprocess the images by n4 correction, resampling, and reorientation
-    for i, (img_fn, mask_fn) in enumerate(zip(img_fns, mask_fns)):
+    for i, (img_fn, mask_fn) in enumerate(zip(img_fns, mask_fns), 1):
         _, img_base, img_ext = split_filename(img_fn)
         _, mask_base, mask_ext = split_filename(mask_fn)
         logger.info('Reading image: {} ({:d}/{:d})'.format(img_base, i, len(img_fns)))

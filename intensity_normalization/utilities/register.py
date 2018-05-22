@@ -16,6 +16,7 @@ import os
 
 import ants
 
+from intensity_normalization.errors import NormalizationError
 from intensity_normalization.utilities.io import split_filename
 
 logger = logging.getLogger(__name__)
@@ -75,19 +76,23 @@ def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0):
         _, base, _ = split_filename(fn)
         logger.info('Registering image {} out of {} (image name: {})'.format(i, len(img_fns), base))
         reg_result = ants.registration(template, img, type_of_transform='SyN')
-        for j, tx_fn in enumerate(reg_result['invtransforms']):
+        for tx_fn in reg_result['invtransforms']:
+            if not os.path.exists(tx_fn):
+                raise NormalizationError('Temporary file storing transform ({}) does not exist!'.format(tx_fn))
             # transforms are actually saved as temp files
             # we load and resave them, instead of moving them, to verify that they are loadable
-            if j == 0:
+            if '.nii.gz' in tx_fn:
                 tx = ants.image_read(tx_fn)
                 out_tx = os.path.join(tx_dir, base + '_deformable_tx.nii.gz')
                 logger.debug('Output transform: {}'.format(out_tx))
                 ants.image_write(tx, out_tx)
-            else:
+            elif '.mat' in tx_fn:
                 tx = ants.read_transform(tx_fn)
                 out_tx = os.path.join(tx_dir, base + '_affine_tx.mat')
                 logger.debug('Output transform: {}'.format(out_tx))
                 ants.write_transform(tx, out_tx)
+            else:
+                raise NormalizationError('Transform ({}) extension does not conform to expected values!'.format(tx_fn))
         moved = reg_result['warpedmovout']
         moved_fn = os.path.join(out_dir, base + '_reg.nii.gz')
         logger.debug('Output registered image: {}'.format(moved_fn))
@@ -120,11 +125,11 @@ def unregister(reg_dir, tx_dir, template_img, out_dir=None):
     template = ants.image_read(template_img)
     if out_dir is None:
         out_dir = os.path.join(os.getcwd(), 'normalized')
-        if os.path.exists(out_dir):
-            logger.warning('normalized directory already exists, '
-                           'may overwrite existing registered images!')
-        else:
-            os.mkdir(out_dir)
+    if os.path.exists(out_dir):
+        logger.warning('normalized directory already exists, '
+                       'may overwrite existing normalized images!')
+    else:
+        os.mkdir(out_dir)
 
     for i, (fn, aff_fn, def_fn) in enumerate(zip(reg_fns, affine_fns, deformable_fns)):
         _, base, _ = split_filename(fn)
@@ -133,7 +138,7 @@ def unregister(reg_dir, tx_dir, template_img, out_dir=None):
         logger.info('De-registering image {} out of {}'.format(i, len(reg_fns)))
         unmoved = ants.apply_transforms(fixed=template, moving=img, interpolator='bSpline',
                                         transformlist=transformlist)
-        ants.image_write(unmoved,os.path.join(out_dir, base + '_norm.nii.gz'))
+        ants.image_write(unmoved, os.path.join(out_dir, base + '_norm.nii.gz'))
         # try to prevent segfault with forced garbage collection
         del img
         gc.collect()

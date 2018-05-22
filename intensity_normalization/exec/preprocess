@@ -33,7 +33,7 @@ def parse_args():
                         help='directory to output the corresponding img files')
     parser.add_argument('-o', '--out-dir', type=str, required=True,
                         help='output directory for preprocessed files')
-    parser.add_argument('-r', '--resolution', type=tuple, default=(1,1,1),
+    parser.add_argument('-r', '--resolution', nargs=3, type=int, default=(1,1,1),
                         help='resolution for resampled images')
     parser.add_argument('--orientation', type=str, default='RAI',
                         help='orientation of preprocessed images')

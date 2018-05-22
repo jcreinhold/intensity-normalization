@@ -48,7 +48,7 @@ def gmm_normalize(img, brain_mask=None, norm_value=1000, contrast='t1', bg_mask=
 
     img_data = img.get_data()
     logger.info('Normalizing Data...')
-    norm_data = img_data/wm_peak*norm_value
+    norm_data = (img_data/wm_peak)*norm_value
     norm_data[norm_data < 0.1] = 0.0
     
     if bg_mask is not None:

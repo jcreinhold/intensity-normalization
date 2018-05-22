@@ -41,8 +41,8 @@ def fcm_normalize(img, wm_mask, norm_value=1000):
 
     img_data = img.get_data()
     wm_mask_data = wm_mask.get_data()
-    wm_mean = img_data[wm_mask_data].mean()
-    normalized = nib.Nifti1Image((img.get_data() / wm_mean) * norm_value,
+    wm_mean = img_data[wm_mask_data == 1].mean()
+    normalized = nib.Nifti1Image((img_data / wm_mean) * norm_value,
                                  img.affine, img.header)
     return normalized
 

@@ -62,7 +62,7 @@ def ravel_normalize(img_dir, template_mask, csf_mask, contrast, output_dir=None,
             in magnetic resonance imaging studies,” Neuroimage, vol. 132,
             pp. 198–212, 2016.
     """
-    data = glob(os.path.join(img_dir, '*.nii*'))
+    data = sorted(glob(os.path.join(img_dir, '*.nii*')))
     input_files = StrVector(data)
     if output_dir is None:
         output_files = NULL
@@ -70,8 +70,10 @@ def ravel_normalize(img_dir, template_mask, csf_mask, contrast, output_dir=None,
         out_fns = []
         for fn in data:
             _, base, ext = io.split_filename(fn)
-            out_fns.append(os.path.join(output_dir, base, ext))
+            out_fns.append(os.path.join(output_dir, base + ext))
         output_files = StrVector(out_fns)
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
     normalizedR = ravel.normalizeRAVEL(input_files, control_mask=csf_mask, output_files=output_files, brain_mask=template_mask,
                                        WhiteStripe_Type=contrast, writeToDisk=write_to_disk, returnMatrix=True, verbose=False, **kwargs)
     normalized = np.array(normalizedR)
@@ -93,14 +95,14 @@ def csf_mask_intersection(img_dir, mask_dir=None, prob=0.9):
     """
     if not (0 <= prob <= 1):
         raise NormalizationError('prob must be between 0 and 1. {} given.'.format(prob))
-    data = glob(os.path.join(img_dir, '*.nii*'))
+    data = sorted(glob(os.path.join(img_dir, '*.nii*')))
     if mask_dir is None:
         masks = [None] * len(data)
     else:
-        masks = glob(os.path.join(mask_dir, '*.nii*'))
+        masks = sorted(glob(os.path.join(mask_dir, '*.nii*')))
     logger.info('creating csf masks for all images')
-    csf = [csf_mask(img, brain_mask=mask) for img, mask in zip(data, masks)]
-    csf_sum = reduce(add, csf)
+    csf = [csf_mask(io.open_nii(img), brain_mask=io.open_nii(mask)) for img, mask in zip(data, masks)]
+    csf_sum = reduce(add, csf)  # need to use reduce instead of sum b/c data structure
     intersection = np.zeros(csf_sum.shape)
     intersection[csf_sum > np.floor(len(data) * prob)] = 1
     return intersection

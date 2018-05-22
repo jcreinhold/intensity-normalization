@@ -12,6 +12,7 @@ Created on: May 08, 2018
 from __future__ import print_function, division
 
 import argparse
+from glob import glob
 import logging
 import os
 import sys
@@ -19,6 +20,7 @@ import warnings
 
 with warnings.catch_warnings():
     warnings.filterwarnings('ignore', category=FutureWarning)
+    from intensity_normalization.errors import NormalizationError
     from intensity_normalization.normalize import kde
     from intensity_normalization.utilities import io
 
@@ -32,12 +34,35 @@ def parse_args():
                              'if image is not skull-stripped')
     parser.add_argument('-c', '--contrast', type=str, default='T1',
                         help='contrast of the image (e.g., T1, T2, etc.)')
+    parser.add_argument('-o', '--output-dir', type=str, default=None,
+                        help='path to output normalized images '
+                             '(default: to directory containing images')
     parser.add_argument('--norm-value', type=float, default=1000,
                         help='value by which to normalize the WM peak, default 1000')
+    parser.add_argument('--dir', action='store_true', default=False,
+                        help='image and mask are directories, not individual images')
     parser.add_argument('-v', '--verbosity', action="count", default=0,
                         help="increase output verbosity (e.g., -vv is more than -v)")
     args = parser.parse_args()
     return args
+
+
+def process(image_fn, brain_mask_fn, args, logger):
+    img = io.open_nii(image_fn)
+    if args.brain_mask is not None:
+        mask = io.open_nii(brain_mask_fn)
+    else:
+        mask = None
+    dirname, base, _ = io.split_filename(image_fn)
+    if args.output_dir is not None:
+        dirname = args.output_dir
+        if not os.path.exists(dirname):
+            logger.info('Making output directory: {}'.format(dirname))
+            os.mkdir(dirname)
+    normalized = kde.kde_normalize(img, mask, args.contrast, args.norm_value)
+    outfile = os.path.join(dirname, base + '_norm.nii.gz')
+    logger.info('Normalized image saved: {}'.format(outfile))
+    io.save_nii(normalized, outfile, is_nii=True)
 
 
 def main():
@@ -51,15 +76,21 @@ def main():
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
     logger = logging.getLogger(__name__)
     try:
-        img = io.open_nii(args.image)
-        if args.brain_mask is not None:
-            mask = io.open_nii(args.brain_mask)
+        if args.dir:
+            if not os.path.isdir(args.image) or not os.path.isdir(args.brain_mask):
+                raise NormalizationError('if dir option on, then image and brain-mask must be directories')
+            img_fns = sorted(glob(os.path.join(args.image, '*.nii*')))
+            mask_fns = sorted(glob(os.path.join(args.brain_mask, '*.nii*')))
+            if len(img_fns) != len(mask_fns) and len(img_fns) > 0:
+                raise NormalizationError('input images and masks must be in correspondence and greater than zero '
+                                         '({:d} != {:d})'.format(len(img_fns), len(mask_fns)))
+            for i, (img, mask) in enumerate(zip(img_fns, mask_fns), 1):
+                logger.info('Normalizing image {} ({:d}/{:d})'.format(img, i, len(img_fns)))
+                process(img, mask, args, logger)
         else:
-            mask = None
-        dirname, base, _ = io.split_filename(args.image)
-        normalized = kde.kde_normalize(img, mask, args.norm_value)
-        outfile = os.path.join(dirname, base + '_norm.nii.gz')
-        io.save_nii(normalized, outfile, is_nii=True)
+            if not os.path.isfile(args.image) or not os.path.isfile(args.brain_mask):
+                raise NormalizationError('if dir option off, then image and brain-mask must be files')
+            process(args.image, args.brain_mask, args, logger)
         return 0
     except Exception as e:
         logger.exception(e)

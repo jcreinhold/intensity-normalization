@@ -17,10 +17,9 @@ import shutil
 import sys
 import warnings
 
-import nibabel as nib
-
 with warnings.catch_warnings():
     warnings.filterwarnings('ignore', category=FutureWarning)
+    import nibabel as nib
     from intensity_normalization.errors import NormalizationError
     from intensity_normalization.normalize import ravel
     from intensity_normalization.utilities import register
@@ -85,18 +84,22 @@ def main():
             logger.info('Creating CSF Mask')
             reg_dir = os.path.join(os.getcwd(), 'registered')
             csf_mask_inter = ravel.csf_mask_intersection(reg_dir, args.mask_dir)
-            csf_mask = os.path.join(os.getcwd(), 'csf_mask.nii.gz') if args.csf_mask is None else args.csf_mask
+            csf_dir = os.path.join(os.getcwd(), 'csf_masks')
+            csf_mask = os.path.join(csf_dir, 'csf_mask.nii.gz') if args.csf_mask is None else args.csf_mask
+            if csf_mask is not None and not os.path.exists(csf_dir):
+                os.mkdir(csf_dir)
             nib.Nifti1Image(csf_mask_inter, None).to_filename(csf_mask)
             logger.info('Normalizing the images according to RAVEL')
             out_dir = os.path.join(os.getcwd(), 'normalized_registered')
             _ = ravel.ravel_normalize(reg_dir, template_mask, csf_mask, args.contrast, out_dir)
             tx_dir = os.path.join(os.getcwd(), 'reg_tforms')
             logger.info('Moving images back to original domain')
-            register.unregister(reg_dir, tx_dir, template_img, args.output_dir)
+            register.unregister(out_dir, tx_dir, template_img, args.output_dir)
             if args.clean_intermediate_files:
                 shutil.rmtree(reg_dir)
                 shutil.rmtree(out_dir)
                 shutil.rmtree(tx_dir)
+                shutil.rmtree(csf_dir)
         else:
             if args.csf_mask is None:
                 raise NormalizationError('If registration not done, then csf mask must be provided')
