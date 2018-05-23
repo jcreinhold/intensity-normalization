@@ -25,7 +25,8 @@ with warnings.catch_warnings():
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='Do some basic preprocessing on a set of nifti MR images of the brain. '
+                                                 '(i.e., resampling, reorientation, and bias field correction)')
     parser.add_argument('-i', '--img-dir', type=str, required=True,
                         help='path to directory with images to be processed '
                              '(should all be T1w contrast)')

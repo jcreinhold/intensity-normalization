@@ -74,8 +74,16 @@ def ravel_normalize(img_dir, template_mask, csf_mask, contrast, output_dir=None,
         output_files = StrVector(out_fns)
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
-    normalizedR = ravel.normalizeRAVEL(input_files, control_mask=csf_mask, output_files=output_files, brain_mask=template_mask,
-                                       WhiteStripe_Type=contrast, writeToDisk=write_to_disk, returnMatrix=True, verbose=False, **kwargs)
+
+    if 0 < logger.getEffectiveLevel() <= logging.getLevelName('DEBUG'):
+        verbose = True
+    else:
+        verbose = False
+
+    normalizedR = ravel.normalizeRAVEL(input_files, control_mask=csf_mask,
+                                       output_files=output_files, brain_mask=template_mask,
+                                       WhiteStripe_Type=contrast, writeToDisk=write_to_disk,
+                                       returnMatrix=True, verbose=verbose, **kwargs)
     normalized = np.array(normalizedR)
     return normalized
 

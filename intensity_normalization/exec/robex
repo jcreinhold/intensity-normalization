@@ -30,7 +30,7 @@ with warnings.catch_warnings():
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='Use ROBEX to skull-strip a set of nifti MR images')
     parser.add_argument('-i', '--img-dir', type=str, required=True,
                         help='path to directory with images to be processed '
                              '(should all be T1w contrast)')
@@ -58,8 +58,8 @@ def main():
             logger.info('Making Output Mask Directory: {}'.format(args.mask_dir))
             os.mkdir(args.mask_dir)
         for i, img in enumerate(img_fns, 1):
-            logger.info('Creating Mask for Image: {}, ({:d}/{:d})'.format(args.mask_dir, i, len(img_fns)))
             _, base, _ = split_filename(img)
+            logger.info('Creating Mask for Image: {}, ({:d}/{:d})'.format(base, i, len(img_fns)))
             mask = os.path.join(args.mask_dir, base + '_mask.nii.gz')
             _ = robex(os.path.abspath(img), os.path.abspath(mask))
         return 0

@@ -63,7 +63,7 @@ def all_hists(img_dir, mask_dir=None, alpha=0.4, figsize=(12,10), **kwargs):
             mask = None
         _ = hist(img, mask, ax=ax, alpha=alpha, **kwargs)
     ax.set_xlabel('Intensity')
-    ax.set_ylabel('Log Count')
+    ax.set_ylabel(r'Log$_{10}$ Count')
     ax.set_ylim((0, None))
     return ax
 
@@ -86,14 +86,14 @@ def hist(img, mask=None, ax=None, n_bins=200, log=True, alpha=0.8, **kwargs):
     """
     if ax is None:
         _, ax = plt.subplots()
-    data = img.numpy() * mask.numpy() if mask is not None else img.numpy()
+    data = img.numpy()[mask.numpy()==1] if mask is not None else img.numpy()
     hist, bin_edges = np.histogram(data.flatten(), n_bins, **kwargs)
     bins = np.diff(bin_edges)/2 + bin_edges[:-1]
     if log:
         # catch divide by zero warnings in call to log
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore')
-            hist =  np.log(hist)
+            hist =  np.log10(hist)
             hist[hist == -np.inf] = 0
     ax.plot(bins, hist, alpha=alpha)
     return ax

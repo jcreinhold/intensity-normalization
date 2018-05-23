@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.plot_histograms
+intensity_normalization.exec.plot-hists
 
 plot the histograms over one another
 
@@ -22,7 +22,7 @@ with warnings.catch_warnings():
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='Plot all histograms for a set of nifti MR images')
     parser.add_argument('-i', '--img-dir', type=str, required=True,
                         help='path to directory with images to be processed '
                              '(should all be T1w contrast)')

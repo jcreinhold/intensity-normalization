@@ -22,7 +22,7 @@ from intensity_normalization.utilities.io import split_filename
 logger = logging.getLogger(__name__)
 
 
-def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0):
+def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0, reg_alg='SyNCC'):
     """
     register a set of images using SyN (deformable registration)
     and write their output and transformations to disk
@@ -35,6 +35,8 @@ def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0):
             a newly created directory (or existing dir) called `normalize_reg_tforms`
         template_img (int or str): number of img in img_dir, or a specified img path
             to be used as the template which all images are registered to
+        reg_alg (str): registration algorithm to use, currently SyN w/ CC as metric
+            (see ants.registration type_of_transform for more details/choices)
 
     Returns:
         None, writes registration transforms and registered images to disk
@@ -74,8 +76,8 @@ def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0):
     for i, fn in enumerate(img_fns, 1):
         img = ants.image_read(fn)
         _, base, _ = split_filename(fn)
-        logger.info('Registering image {} out of {} (image name: {})'.format(i, len(img_fns), base))
-        reg_result = ants.registration(template, img, type_of_transform='SyN')
+        logger.info('Registering image: {} ({:d}/{:d})'.format(base, i, len(img_fns)))
+        reg_result = ants.registration(template, img, type_of_transform=reg_alg)
         for tx_fn in reg_result['invtransforms']:
             if not os.path.exists(tx_fn):
                 raise NormalizationError('Temporary file storing transform ({}) does not exist!'.format(tx_fn))
@@ -119,7 +121,8 @@ def unregister(reg_dir, tx_dir, template_img, out_dir=None):
     Returns:
         None, writes de-registered images to disk
     """
-    reg_fns = sorted(glob(os.path.join(reg_dir, '*.nii*')))
+    reg_fns = glob(os.path.join(reg_dir, '*.nii*'))
+    reg_fns = sorted([fn for fn in reg_fns if template_img != fn])
     affine_fns = sorted(glob(os.path.join(tx_dir, '*.mat')))
     deformable_fns = sorted(glob(os.path.join(tx_dir, '*.nii.gz')))
     template = ants.image_read(template_img)
@@ -135,7 +138,7 @@ def unregister(reg_dir, tx_dir, template_img, out_dir=None):
         _, base, _ = split_filename(fn)
         img = ants.image_read(fn)
         transformlist = [def_fn, aff_fn]
-        logger.info('De-registering image {} out of {}'.format(i, len(reg_fns)))
+        logger.info('De-registering image: {} ({:d}/{:d})'.format(base, i, len(reg_fns)))
         unmoved = ants.apply_transforms(fixed=template, moving=img, interpolator='bSpline',
                                         transformlist=transformlist)
         ants.image_write(unmoved, os.path.join(out_dir, base + '_norm.nii.gz'))

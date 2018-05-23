@@ -26,6 +26,7 @@ Created on: May 01, 2018
 from __future__ import print_function, division
 
 from glob import glob
+import logging
 import os
 
 import numpy as np
@@ -36,6 +37,8 @@ from rpy2.rinterface import NULL
 from intensity_normalization.utilities import io
 
 ravel = importr('RAVEL')
+
+logger = logging.getLogger(__name__)
 
 
 def hm_normalize(img_dir, template_mask, contrast, output_dir=None, write_to_disk=True):
@@ -63,7 +66,7 @@ def hm_normalize(img_dir, template_mask, contrast, output_dir=None, write_to_dis
             normalization on MRIs of human brain with multiple sclerosis,”
             Med. Image Anal., vol. 15, no. 2, pp. 267–282, 2011.
     """
-    data = glob(os.path.join(img_dir, '*.nii*'))
+    data = sorted(glob(os.path.join(img_dir, '*.nii*')))
     input_files = StrVector(data)
     if output_dir is None:
         output_files = NULL
@@ -73,7 +76,16 @@ def hm_normalize(img_dir, template_mask, contrast, output_dir=None, write_to_dis
             _, base, ext = io.split_filename(fn)
             out_fns.append(os.path.join(output_dir, base + ext))
         output_files = StrVector(out_fns)
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+
+    # control verbosity of output when making whitestripe function call
+    if 0 < logger.getEffectiveLevel() <= logging.getLevelName('DEBUG'):
+        verbose = True
+    else:
+        verbose = False
+
     normalizedR = ravel.normalizeHM(input_files, output_files=output_files, brain_mask=template_mask,
-                                    type=contrast, writeToDisk=write_to_disk, returnMatrix=True, verbose=False)
+                                    type=contrast, writeToDisk=write_to_disk, returnMatrix=True, verbose=verbose)
     normalized = np.array(normalizedR)
     return normalized

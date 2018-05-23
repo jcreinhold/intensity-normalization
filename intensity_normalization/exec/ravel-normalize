@@ -1,0 +1,161 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+intensity_normalization.exec.ravel-normalize
+
+command line executable for RAVEL intensity normalization routine
+
+Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
+Created on: May 08, 2018
+"""
+
+import argparse
+from glob import glob
+import logging
+import os
+import shutil
+import sys
+import warnings
+
+with warnings.catch_warnings():
+    warnings.filterwarnings('ignore', category=FutureWarning)
+    import nibabel as nib
+    from intensity_normalization.errors import NormalizationError
+    from intensity_normalization.normalize import ravel
+    from intensity_normalization.utilities import register
+    from intensity_normalization.utilities.io import split_filename
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Use RAVEL to normalize a directory of nifti MR images of the brain.')
+
+    required = parser.add_argument_group('Required')
+    required.add_argument('-i', '--img-dir', type=str, required=True,
+                        help='path to directory with images to be processed '
+                             '(should all be of one contrast)')
+
+    options = parser.add_argument_group('Options')
+    options.add_argument('--register', action='store_true', default=False,
+                        help='if you want this script to do the deformable registration to a template, '
+                             'and create all the intermediate files (where the template image defaults '
+                             'to the first image in the set of provided images), then set this flag. '
+                             '[Default = False]')
+    options.add_argument('-v', '--verbosity', action="count", default=0,
+                         help="increase output verbosity (e.g., -vv is more than -v)")
+    options.add_argument('-o', '--output-dir', type=str, default=None,
+                           help='save the normalized images to this path [Default = None]')
+    options.add_argument('-m', '--mask-dir', type=str, default=None,
+                           help='if images are not skull-stripped, directory for '
+                                'corresponding brain masks for img-dir (not intelligently sorted, '
+                                'so ordering must be consistent in directory) [Default = None]')
+    options.add_argument('-c', '--contrast', type=str, default='T1', choices=['T1', 'T2', 'FLAIR'],
+                           help='contrast of the images in img-dir, (e.g, T1, T2, or, FLAIR.) [Default = T1]')
+
+    adv_options = parser.add_argument_group('Advanced Options')
+    adv_options.add_argument('-cm', '--csf-mask', type=str, default=None,
+                           help='if created, path to a csf mask for the registered imgs [Default = None]')
+    adv_options.add_argument('--template-img', default=0,
+                           help='path to desired template image, or number in the '
+                                '(ordered) set of provided images [Default = 0]')
+    adv_options.add_argument('--template-mask', default=0,
+                           help='path to desired template image brain mask, or number in the '
+                                '(ordered) set of provided images [Default = 0]')
+    adv_options.add_argument('--no-whitestripe', action='store_false', default=True,
+                        help='do not use whitestripe in RAVEL if this flag is on')
+    adv_options.add_argument('--type_of_registration', default='SyNCC',
+                        help='registration algorithm (w/ metric) to use (see ants.registration for more detail) '
+                             '[Default = SyNCC]')
+    adv_options.add_argument('--clean-intermediate-files', action='store_true', default=False,
+                        help='this algorithm creates many intermediate files (when using the registration routine) '
+                             'setting this flag will remove the intermediate files after they are no longer needed')
+    adv_options.add_argument('--use-old-registration', action='store_true', default=False,
+                        help='if registration results are found, use them instead of generating them again '
+                             '(use this with the registration flag. Example use case: if there was an error after the'
+                             'registration completed and you do not want to re-register the images, '
+                             'since registration is time-consuming.)')
+
+    args = parser.parse_args()
+    return args
+
+
+def main():
+    args = parse_args()
+    if args.verbosity == 1:
+        level = logging.getLevelName('INFO')
+    elif args.verbosity >= 2:
+        level = logging.getLevelName('DEBUG')
+    else:
+        level = logging.getLevelName('WARNING')
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
+    logger = logging.getLogger(__name__)
+    try:
+        if args.register:
+            # handle setting the template image and template mask
+            if isinstance(args.template_img, int) and isinstance(args.template_mask, int):
+               template_img = sorted(glob(os.path.join(args.img_dir, '*.nii*')))[args.template_img]
+               template_mask = sorted(glob(os.path.join(args.mask_dir, '*.nii*')))[args.template_img]
+            elif isinstance(args.template_img, str) and isinstance(args.template_mask, str):
+               template_img = args.template_img
+               template_mask = args.template_mask
+            else:
+                raise NormalizationError('template_img, template_mask must be an integer '
+                                         'or a string corresponding to the image number '
+                                         'or the full path of the image file')
+            _, template_img_base, _ = split_filename(template_img)
+
+            # register all images to template
+            reg_dir = os.path.join(os.getcwd(), 'registered')
+            tx_dir = os.path.join(os.getcwd(), 'reg_tforms')
+            if os.path.exists(reg_dir) and os.path.exists(tx_dir) and args.use_old_registration:
+                logger.info('Using previous registration results assuming '
+                            'they were generated from the input img/mask set!')
+            else:
+                logger.info('Registering images to template ({})'.format(template_img_base))
+                register.register_to_template(args.img_dir, template_img=template_img)
+                template_img_rd = os.path.join(reg_dir, template_img_base + '.nii.gz')
+                shutil.copy(template_img, template_img_rd)
+
+            # create csf mask from registered images for RAVEL (used as control points)
+            logger.info('Creating CSF Mask')
+            csf_mask_inter = ravel.csf_mask_intersection(reg_dir, args.mask_dir)
+            csf_dir = os.path.join(os.getcwd(), 'csf_masks')
+            csf_mask = os.path.join(csf_dir, 'csf_mask.nii.gz') if args.csf_mask is None else args.csf_mask
+            if csf_mask is not None and not os.path.exists(csf_dir):
+                os.mkdir(csf_dir)
+            nib.Nifti1Image(csf_mask_inter, None).to_filename(csf_mask)
+
+            # do the actual RAVEL normalization procedure (calls RAVEL in R)
+            logger.info('Normalizing the images according to RAVEL')
+            out_dir = os.path.join(os.getcwd(), 'normalized_registered')
+            _ = ravel.ravel_normalize(reg_dir, template_mask, csf_mask, args.contrast, out_dir,
+                                      WhiteStripe=args.no_whitestripe)
+
+            # move the images back into original coordinates (i.e., "un"-register the images)
+            logger.info('Moving images back to original domain')
+            template_img_od = os.path.join(out_dir, template_img_base + '.nii.gz')
+            register.unregister(out_dir, tx_dir, template_img_od, args.output_dir)
+            template_img_normalized = os.path.join(args.output_dir, template_img_base + '_template_norm.nii.gz')
+            shutil.copy(template_img_od, template_img_normalized)
+
+            # delete all intermediate files (i.e., all files but the normalized images)
+            if args.clean_intermediate_files:
+                logger.info('Removing intermediate files')
+                shutil.rmtree(reg_dir)
+                shutil.rmtree(out_dir)
+                shutil.rmtree(tx_dir)
+                shutil.rmtree(csf_dir)
+        else:
+            # if the images are already registered, then just do the RAVEL normalization
+            if args.csf_mask is None:
+                raise NormalizationError('If registration not done, then csf mask must be provided')
+            if not isinstance(args.template_mask, str):
+                raise NormalizationError('template mask must be provided for the registered imgs')
+            _ = ravel.ravel_normalize(args.data_dir, args.template_mask, args.csf_mask, args.contrast, args.output_dir)
+        return 0
+    except Exception as e:
+        logger.exception(e)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

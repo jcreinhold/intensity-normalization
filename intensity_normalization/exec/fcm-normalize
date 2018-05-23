@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.fcm_normalize
+intensity_normalization.exec.fcm-normalize
 
 command line executable for fcm intensity normalization routine
 
@@ -26,7 +26,8 @@ with warnings.catch_warnings():
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='Use FCM to model the tissue classes of the brain and use the '
+                                                 'found WM to normalize a set of nifti MR images')
     parser.add_argument('-i', '--image', type=str, required=True,
                         help='path to a nifti MR image of the brain')
     parser.add_argument('-m', '--brain-mask', type=str, default=None,
@@ -50,11 +51,11 @@ def parse_args():
     return args
 
 
-def process(image_fn, brain_mask_fn, wm_mask_fn, args, logger):
+def process(image_fn, brain_mask_fn, wm_mask_fn, output_dir, args, logger):
     img = io.open_nii(image_fn)
     dirname, base, _ = io.split_filename(image_fn)
-    if args.output_dir is not None:
-        dirname = args.output_dir
+    if output_dir is not None:
+        dirname = output_dir
         if not os.path.exists(dirname):
             logger.info('Making output directory: {}'.format(dirname))
             os.mkdir(dirname)
@@ -90,16 +91,23 @@ def main():
             if len(img_fns) != len(mask_fns) and len(img_fns) > 0:
                 raise NormalizationError('input images and masks must be in correspondence and greater than zero '
                                          '({:d} != {:d})'.format(len(img_fns), len(mask_fns)))
+            output_dir_base = os.path.abspath(os.path.join(args.output_dir, '..'))
+            wm_mask_dir = os.path.join(output_dir_base, 'wm_masks')
+            if os.path.exists(wm_mask_dir):
+                logger.warning('WM Mask Directory already exists, may overwrite existing WM masks!')
+            else:
+                logger.info('Creating WM Mask directory: {}'.format(wm_mask_dir))
+                os.mkdir(wm_mask_dir)
             for i, (img, mask) in enumerate(zip(img_fns, mask_fns), 1):
                 logger.info('Creating WM Mask for {} ({:d}/{:d})'.format(img, i, len(img_fns)))
-                process(img, mask, None, args, logger)
+                process(img, mask, None, wm_mask_dir, args, logger)
             for i, img in enumerate(img_fns, 1):
                 logger.info('Normalizing image {} ({:d}/{:d})'.format(img, i, len(img_fns)))
                 dirname, base, _ = io.split_filename(img)
                 if args.output_dir is not None:
                     dirname = args.output_dir
-                wm_mask = os.path.join(dirname, base + '_wmmask.nii.gz')
-                process(img, None, wm_mask, args, logger)
+                wm_mask = os.path.join(wm_mask_dir, base + '_wmmask.nii.gz')
+                process(img, None, wm_mask, dirname, args, logger)
         else:
             if not os.path.isfile(args.image) or not os.path.isfile(args.brain_mask):
                 raise NormalizationError('if dir option off, then image and brain-mask must be files')

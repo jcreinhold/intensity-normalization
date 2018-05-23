@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.hm_normalize
+intensity_normalization.exec.hm-normalize
 
 command line executable for histogram matching intensity normalization routine
 
@@ -22,18 +22,19 @@ with warnings.catch_warnings():
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='Use Nyul and Udapa method of histogram normalization to '
+                                                 'normalize the intensity of a set of nifti MR images')
     parser.add_argument('-i', '--img-dir', type=str, required=True,
                         help='path to directory with images to be processed '
                              '(should all be of one contrast)')
-    parser.add_argument('-c', '--contrast', type=str, default='T1',
+    parser.add_argument('-c', '--contrast', type=str, default='T1', choices=['T1', 'T2'],
                         help='contrast of the images in img-dir')
     parser.add_argument('-t', '--template-mask', type=str, default=None,
                         help='path to the template mask (all imgs in img-dir '
                              'must be registered to this')
     parser.add_argument('-o', '--output-dir', type=str, default=None,
-                        help='if you want the normalized images saved in a particular location,'
-                             'provide that directory here (must already exist)')
+                        help='if you want the normalized images saved in a particular location, '
+                             'provide that directory here')
     parser.add_argument('-v', '--verbosity', action="count", default=0,
                         help="increase output verbosity (e.g., -vv is more than -v)")
     args = parser.parse_args()

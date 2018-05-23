@@ -29,15 +29,16 @@ args = dict(
     url='https://gitlab.com/jcreinhold/intensity-normalization',
     license=license,
     packages=find_packages(exclude=('tests', 'docs')),
-    scripts=['intensity_normalization/exec/fcm_normalize',
-             'intensity_normalization/exec/gmm_normalize',
-             'intensity_normalization/exec/hm_normalize',
-             'intensity_normalization/exec/kde_normalize',
-             'intensity_normalization/exec/ravel_normalize',
-             'intensity_normalization/exec/ws_normalize',
+    scripts=['intensity_normalization/exec/fcm-normalize',
+             'intensity_normalization/exec/gmm-normalize',
+             'intensity_normalization/exec/hm-normalize',
+             'intensity_normalization/exec/kde-normalize',
+             'intensity_normalization/exec/ravel-normalize',
+             'intensity_normalization/exec/ws-normalize',
              'intensity_normalization/exec/robex',
              'intensity_normalization/exec/preprocess',
-             'intensity_normalization/exec/plot_histograms'],
+             'intensity_normalization/exec/plot-hists',
+             'intensity_normalization/exec/tissue-mask'],
     keywords="mr intensity normalization"
 )
 
