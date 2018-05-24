@@ -6,7 +6,7 @@ intensity_normalization.normalize.kde
 use kernel density estimation to find the peak of the histogram
 associated with the WM and move this to peak to a (standard) value
 
-Author: Blake Dewey (blake.dewey@jhu.edu)
+Author: Blake Dewey (blake.dewey@jhu.edu),
         Jacob Reinhold (jacob.reinhold@jhu.edu)
 
 Created on: Apr 24, 2018

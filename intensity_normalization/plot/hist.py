@@ -6,6 +6,7 @@ intensity_normalization.plot.hist
 plot histogram of one img or all imgs in directory
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
+
 Created on: May 21, 2018
 """
 

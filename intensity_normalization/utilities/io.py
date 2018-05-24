@@ -6,6 +6,7 @@ intensity_normalization.utilities.io
 assortment of input/output utilities for the project
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
+
 Created on: Apr 24, 2018
 """
 

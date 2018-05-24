@@ -17,6 +17,7 @@ References:
         vol. 6, pp. 9–19, 2014.
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
+
 Created on: Apr 27, 2018
 """
 

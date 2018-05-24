@@ -6,6 +6,7 @@ tests.test_utilities
 test the functions located in utilities submodule for runtime errors
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
+
 Created on: May 01, 2018
 """
 

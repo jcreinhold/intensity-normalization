@@ -10,6 +10,7 @@ intensity-normalization documentation
    :maxdepth: 1
    :caption: Contents:
 
+   exec
    normalization
    plot
    utilities

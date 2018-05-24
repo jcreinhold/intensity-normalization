@@ -6,6 +6,7 @@ tests.test_normalization
 test the intensity normalization functions for runtime errors
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
+
 Created on: May 02, 2018
 """
 

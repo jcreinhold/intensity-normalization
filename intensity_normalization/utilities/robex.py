@@ -13,6 +13,7 @@ References:
          vol. 30, no. 9, pp. 1617–1634, 2011.
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
+
 Created on: May 21, 2018
 """
 

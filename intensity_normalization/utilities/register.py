@@ -6,6 +6,7 @@ intensity_normalize.utilities.register
 handles required registration for intensity normalization routines
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
+
 Created on: May 08, 2018
 """
 

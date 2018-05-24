@@ -6,6 +6,7 @@ intensity_normalization.exec.gmm-normalize
 command line executable for gmm intensity normalization routine
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
+
 Created on: May 08, 2018
 """
 
@@ -28,7 +29,7 @@ with warnings.catch_warnings():
     from intensity_normalization.utilities.mask import gmm_class_mask, background_mask
 
 
-def parse_args():
+def arg_parser():
     parser = argparse.ArgumentParser(description='Use GMM to model the tissue classes in brain and '
                                                  'normalize the WM peak w/ this method for a set of nifti MR images')
     parser.add_argument('-i', '--image', type=str, required=True,
@@ -59,8 +60,7 @@ def parse_args():
                         help='image and mask are directories, not individual images')
     parser.add_argument('-v', '--verbosity', action="count", default=0,
                         help="increase output verbosity (e.g., -vv is more than -v)")
-    args = parser.parse_args()
-    return args
+    return parser
 
 
 def process(image, brain_mask, args, logger):
@@ -91,7 +91,7 @@ def process(image, brain_mask, args, logger):
 
 
 def main():
-    args = parse_args()
+    args = arg_parser().parse_args()
     if args.verbosity == 1:
         level = logging.getLevelName('INFO')
     elif args.verbosity >= 2:

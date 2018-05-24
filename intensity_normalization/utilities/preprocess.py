@@ -11,6 +11,7 @@ that is:
 this process requires brain masks for all images
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
+
 Created on: May 21, 2018
 """
 

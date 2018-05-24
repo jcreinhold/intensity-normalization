@@ -20,6 +20,7 @@ References:
         Med. Image Anal., vol. 15, no. 2, pp. 267–282, 2011.
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
+
 Created on: May 01, 2018
 """
 

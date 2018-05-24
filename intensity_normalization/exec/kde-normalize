@@ -6,6 +6,7 @@ intensity_normalization.exec.kde-normalize
 command line executable for kernel density intensity normalization routine
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
+
 Created on: May 08, 2018
 """
 
@@ -25,7 +26,7 @@ with warnings.catch_warnings():
     from intensity_normalization.utilities import io
 
 
-def parse_args():
+def arg_parser():
     parser = argparse.ArgumentParser(description='Use Kernel Density Estimation method to WM peak '
                                                  'normalize a set of nifti MR images.')
     parser.add_argument('-i', '--image', type=str, required=True,
@@ -44,8 +45,7 @@ def parse_args():
                         help='image and mask are directories, not individual images')
     parser.add_argument('-v', '--verbosity', action="count", default=0,
                         help="increase output verbosity (e.g., -vv is more than -v)")
-    args = parser.parse_args()
-    return args
+    return parser
 
 
 def process(image_fn, brain_mask_fn, args, logger):
@@ -67,7 +67,7 @@ def process(image_fn, brain_mask_fn, args, logger):
 
 
 def main():
-    args = parse_args()
+    args = arg_parser().parse_args()
     if args.verbosity == 1:
         level = logging.getLevelName('INFO')
     elif args.verbosity >= 2:

@@ -6,6 +6,7 @@ intensity_normalization.exec.ravel-normalize
 command line executable for RAVEL intensity normalization routine
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
+
 Created on: May 08, 2018
 """
 
@@ -26,7 +27,7 @@ with warnings.catch_warnings():
     from intensity_normalization.utilities.io import split_filename
 
 
-def parse_args():
+def arg_parser():
     parser = argparse.ArgumentParser(description='Use RAVEL to normalize a directory of nifti MR images of the brain.')
 
     required = parser.add_argument_group('Required')
@@ -76,12 +77,11 @@ def parse_args():
                                   'the registration completed and you do not want to re-register the images, '
                                   'since registration is time-consuming.)')
 
-    args = parser.parse_args()
-    return args
+    return parser
 
 
 def main():
-    args = parse_args()
+    args = arg_parser().parse_args()
     if args.verbosity == 1:
         level = logging.getLevelName('INFO')
     elif args.verbosity >= 2:

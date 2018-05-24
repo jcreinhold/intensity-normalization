@@ -10,7 +10,7 @@ WM mask as input to the func again, where the WM mask is
 used to find an approximate mean of the WM intensity in
 another target contrast, move it to some standard value.
 
-Author: Blake Dewey (blake.dewey@jhu.edu)
+Author: Blake Dewey (blake.dewey@jhu.edu),
         Jacob Reinhold (jacob.reinhold@jhu.edu)
 
 Created on: Apr 24, 2018

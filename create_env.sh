@@ -46,6 +46,7 @@ conda_forge_packages=(
     plotly
     libiconv
     itk
+    sphinx-argparse
 )
 
 conda create --name intensity_normalization ${packages[@]} --yes

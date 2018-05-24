@@ -6,6 +6,7 @@ intensity_normalization.exec.hm-normalize
 command line executable for histogram matching intensity normalization routine
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
+
 Created on: May 08, 2018
 """
 
@@ -27,7 +28,7 @@ with warnings.catch_warnings():
     from intensity_normalization.utilities import register
 
 
-def parse_args():
+def arg_parser():
     parser = argparse.ArgumentParser(description='Use Nyul and Udapa method of histogram normalization to '
                                                  'normalize the intensity of a set of nifti MR images')
     required = parser.add_argument_group('Required')
@@ -72,12 +73,11 @@ def parse_args():
                                   '(use this with the registration flag. Example use case: if there was an error after '
                                   'the registration completed and you do not want to re-register the images, '
                                   'since registration is time-consuming.)')
-    args = parser.parse_args()
-    return args
+    return parser
 
 
 def main():
-    args = parse_args()
+    args = arg_parser().parse_args()
     if args.verbosity == 1:
         level = logging.getLevelName('INFO')
     elif args.verbosity >= 2:

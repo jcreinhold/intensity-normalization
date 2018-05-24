@@ -6,6 +6,7 @@ intensity_normalization.utilities.mask
 create a tissue class mask of a target image
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
+
 Created on: May 01, 2018
 """
 

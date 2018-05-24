@@ -6,6 +6,7 @@ intensity_normalization.exec.plot-hists
 plot the histograms over one another
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
+
 Created on: May 21, 2018
 """
 
@@ -21,7 +22,7 @@ with warnings.catch_warnings():
     from intensity_normalization.plot.hist import all_hists
 
 
-def parse_args():
+def arg_parser():
     parser = argparse.ArgumentParser(description='Plot all histograms for a set of nifti MR images')
     parser.add_argument('-i', '--img-dir', type=str, required=True,
                         help='path to directory with images to be processed '
@@ -40,12 +41,11 @@ def parse_args():
                         help='linewidth parameter for line plots')
     parser.add_argument('-v', '--verbosity', action="count", default=0,
                         help="increase output verbosity (e.g., -vv is more than -v)")
-    args = parser.parse_args()
-    return args
+    return parser
 
 
 def main():
-    args = parse_args()
+    args = arg_parser().parse_args()
     if args.verbosity == 1:
         level = logging.getLevelName('INFO')
     elif args.verbosity >= 2:

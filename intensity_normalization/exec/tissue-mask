@@ -7,6 +7,7 @@ create tissue masks/memberships using FCM or GMM
 for skull-stripped brain or brain w/ mask
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
+
 Created on: May 23, 2018
 """
 
@@ -23,7 +24,7 @@ with warnings.catch_warnings():
     from intensity_normalization.utilities import io
 
 
-def parse_args():
+def arg_parser():
     parser = argparse.ArgumentParser(description='Create a tissue mask for a given brain (i.e., label CSF/GM/WM)')
     parser.add_argument('-i', '--img-dir', type=str, required=True,
                         help='path to directory with images to be processed '
@@ -38,12 +39,11 @@ def parse_args():
                         help='output individual class membership masks instead of hard segmentation')
     parser.add_argument('-v', '--verbosity', action="count", default=0,
                         help="increase output verbosity (e.g., -vv is more than -v)")
-    args = parser.parse_args()
-    return args
+    return parser
 
 
 def main():
-    args = parse_args()
+    args = arg_parser().parse_args()
     if args.verbosity == 1:
         level = logging.getLevelName('INFO')
     elif args.verbosity >= 2:

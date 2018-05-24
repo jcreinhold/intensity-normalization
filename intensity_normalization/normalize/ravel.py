@@ -15,6 +15,7 @@ References:
         pp. 198–212, 2016.
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
+
 Created on: Apr 27, 2018
 """
 
