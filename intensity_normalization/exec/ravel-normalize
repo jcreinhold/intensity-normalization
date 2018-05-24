@@ -53,26 +53,28 @@ def parse_args():
 
     adv_options = parser.add_argument_group('Advanced Options')
     adv_options.add_argument('-cm', '--csf-mask', type=str, default=None,
-                           help='if created, path to a csf mask for the registered imgs [Default = None]')
+                             help='if created, path to a csf mask for the registered imgs [Default = None]')
     adv_options.add_argument('--template-img', default=0,
-                           help='path to desired template image, or number in the '
-                                '(ordered) set of provided images [Default = 0]')
+                             help='path to desired template image, or number in the '
+                                  '(ordered) set of provided images [Default = 0]')
     adv_options.add_argument('--template-mask', default=0,
-                           help='path to desired template image brain mask, or number in the '
-                                '(ordered) set of provided images [Default = 0]')
+                             help='path to desired template image brain mask, or number in the '
+                                  '(ordered) set of provided images [Default = 0]')
     adv_options.add_argument('--no-whitestripe', action='store_false', default=True,
-                        help='do not use whitestripe in RAVEL if this flag is on')
-    adv_options.add_argument('--type_of_registration', default='SyNCC',
-                        help='registration algorithm (w/ metric) to use (see ants.registration for more detail) '
-                             '[Default = SyNCC]')
+                             help='do not use whitestripe in RAVEL if this flag is on')
+    adv_options.add_argument('--type-of-registration', default='SyNCC',
+                             help='registration algorithm (w/ metric) to use (see ants.registration for more detail) '
+                                  '[Default = SyNCC]')
+    adv_options.add_argument('--reg-metric', default='CC',
+                             help='registration metric to use (see ants.registration for more detail)')
     adv_options.add_argument('--clean-intermediate-files', action='store_true', default=False,
-                        help='this algorithm creates many intermediate files (when using the registration routine) '
-                             'setting this flag will remove the intermediate files after they are no longer needed')
+                             help='this algorithm creates many intermediate files (when using the registration routine) '
+                                  'setting this flag will remove the intermediate files after they are no longer needed')
     adv_options.add_argument('--use-old-registration', action='store_true', default=False,
-                        help='if registration results are found, use them instead of generating them again '
-                             '(use this with the registration flag. Example use case: if there was an error after the'
-                             'registration completed and you do not want to re-register the images, '
-                             'since registration is time-consuming.)')
+                             help='if registration results are found, use them instead of generating them again '
+                                  '(use this with the registration flag. Example use case: if there was an error after '
+                                  'the registration completed and you do not want to re-register the images, '
+                                  'since registration is time-consuming.)')
 
     args = parser.parse_args()
     return args
@@ -111,7 +113,7 @@ def main():
                             'they were generated from the input img/mask set!')
             else:
                 logger.info('Registering images to template ({})'.format(template_img_base))
-                register.register_to_template(args.img_dir, template_img=template_img)
+                register.register_to_template(args.img_dir, template_img=template_img, mask=template_mask)
                 template_img_rd = os.path.join(reg_dir, template_img_base + '.nii.gz')
                 shutil.copy(template_img, template_img_rd)
 

@@ -40,7 +40,7 @@ ws = importr('WhiteStripe')
 logger = logging.getLogger(__name__)
 
 
-def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_disk=True, slices=(80, 120)):
+def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_disk=True, slices=None):
     """
     Use WhiteStripe normalization method ([1]) to normalize the intensities of
     a set of MR images by normalizing an area around the white matter peak of the histogram
@@ -53,7 +53,7 @@ def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_dis
             same directory as img_dir
         write_to_disk (bool): write the normalized data to disk or nah
         slices (tuple): two ints in tuple corresponding to region from which to sample
-            for the whitestripe procedure
+            for the whitestripe procedure or None if want to use the whole image
 
     Returns:
         normalized (np.ndarray): last normalized image data from img_dir

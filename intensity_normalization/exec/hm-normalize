@@ -12,31 +12,66 @@ Created on: May 08, 2018
 from __future__ import print_function, division
 
 import argparse
+from glob import glob
 import logging
+import os
+import shutil
 import sys
 import warnings
 
 with warnings.catch_warnings():
     warnings.filterwarnings('ignore', category=FutureWarning)
+    from intensity_normalization.errors import NormalizationError
     from intensity_normalization.normalize import hm
+    from intensity_normalization.utilities.io import split_filename
+    from intensity_normalization.utilities import register
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Use Nyul and Udapa method of histogram normalization to '
                                                  'normalize the intensity of a set of nifti MR images')
-    parser.add_argument('-i', '--img-dir', type=str, required=True,
+    required = parser.add_argument_group('Required')
+    required.add_argument('-i', '--img-dir', type=str, required=True,
                         help='path to directory with images to be processed '
                              '(should all be of one contrast)')
-    parser.add_argument('-c', '--contrast', type=str, default='T1', choices=['T1', 'T2'],
-                        help='contrast of the images in img-dir')
-    parser.add_argument('-t', '--template-mask', type=str, default=None,
-                        help='path to the template mask (all imgs in img-dir '
-                             'must be registered to this')
-    parser.add_argument('-o', '--output-dir', type=str, default=None,
-                        help='if you want the normalized images saved in a particular location, '
-                             'provide that directory here')
-    parser.add_argument('-v', '--verbosity', action="count", default=0,
-                        help="increase output verbosity (e.g., -vv is more than -v)")
+
+    options = parser.add_argument_group('Options')
+    options.add_argument('--register', action='store_true', default=False,
+                        help='if you want this script to do the deformable registration to a template, '
+                             'and create all the intermediate files (where the template image defaults '
+                             'to the first image in the set of provided images), then set this flag. '
+                             '[Default = False]')
+    options.add_argument('-v', '--verbosity', action="count", default=0,
+                         help="increase output verbosity (e.g., -vv is more than -v)")
+    options.add_argument('-o', '--output-dir', type=str, default=None,
+                           help='save the normalized images to this path [Default = None]')
+    options.add_argument('-m', '--mask-dir', type=str, default=None,
+                           help='if images are not skull-stripped, directory for '
+                                'corresponding brain masks for img-dir (not intelligently sorted, '
+                                'so ordering must be consistent in directory) [Default = None]')
+    options.add_argument('-c', '--contrast', type=str, default='T1', choices=['T1', 'T2'],
+                           help='contrast of the images in img-dir, (e.g, T1 or T2) [Default = T1]')
+
+    adv_options = parser.add_argument_group('Advanced Options')
+    adv_options.add_argument('--template-img', default=0,
+                             help='path to desired template image, or number in the '
+                                  '(ordered) set of provided images [Default = 0]')
+    adv_options.add_argument('--template-mask', default=0,
+                             help='path to desired template image brain mask, or number in the '
+                                  '(ordered) set of provided images [Default = 0]')
+    adv_options.add_argument('--type-of-registration', default='SyNCC',
+                             help='registration algorithm (w/ metric) to use (see ants.registration for more detail) '
+                                  '[Default = SyNCC]')
+    adv_options.add_argument('--reg-metric', default='CC',
+                             help='registration metric to use (see ants.registration for more detail)')
+    adv_options.add_argument('--clean-intermediate-files', action='store_true', default=False,
+                             help='this algorithm creates many intermediate files (when using the registration routine) '
+                                  'setting this flag will remove the intermediate files after they are no longer needed')
+    adv_options.add_argument('--use-old-registration', action='store_true', default=False,
+                             help='if registration results are found, use them instead of generating them again '
+                                  '(use this with the registration flag. Example use case: if there was an error after '
+                                  'the registration completed and you do not want to re-register the images, '
+                                  'since registration is time-consuming.)')
     args = parser.parse_args()
     return args
 
@@ -52,7 +87,55 @@ def main():
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
     logger = logging.getLogger(__name__)
     try:
-        _ = hm.hm_normalize(args.img_dir, args.template_mask, args.contrast, args.output_dir)
+        if args.register:
+            # handle setting the template image and template mask
+            if isinstance(args.template_img, int) and isinstance(args.template_mask, int):
+               template_img = sorted(glob(os.path.join(args.img_dir, '*.nii*')))[args.template_img]
+               template_mask = sorted(glob(os.path.join(args.mask_dir, '*.nii*')))[args.template_img]
+            elif isinstance(args.template_img, str) and isinstance(args.template_mask, str):
+               template_img = args.template_img
+               template_mask = args.template_mask
+            else:
+                raise NormalizationError('template_img, template_mask must be an integer '
+                                         'or a string corresponding to the image number '
+                                         'or the full path of the image file')
+            _, template_img_base, _ = split_filename(template_img)
+
+            # register all images to template
+            reg_dir = os.path.join(os.getcwd(), 'registered')
+            tx_dir = os.path.join(os.getcwd(), 'reg_tforms')
+            if os.path.exists(reg_dir) and os.path.exists(tx_dir) and args.use_old_registration:
+                logger.info('Using previous registration results assuming '
+                            'they were generated from the input img/mask set!')
+            else:
+                logger.info('Registering images to template ({})'.format(template_img_base))
+                register.register_to_template(args.img_dir, template_img=template_img, mask=template_mask)
+                template_img_rd = os.path.join(reg_dir, template_img_base + '.nii.gz')
+                shutil.copy(template_img, template_img_rd)
+
+            # do the actual Nyul and Udapa HM normalization procedure (calls HM in R from RAVEL package)
+            logger.info('Normalizing the images according to N&U HM')
+            out_dir = os.path.join(os.getcwd(), 'normalized_registered')
+            _ = hm.hm_normalize(args.img_dir, args.template_mask, args.contrast, args.output_dir)
+
+            # move the images back into original coordinates (i.e., "un"-register the images)
+            logger.info('Moving images back to original domain')
+            template_img_od = os.path.join(out_dir, template_img_base + '.nii.gz')
+            register.unregister(out_dir, tx_dir, template_img_od, args.output_dir)
+            template_img_normalized = os.path.join(args.output_dir, template_img_base + '_template_norm.nii.gz')
+            shutil.copy(template_img_od, template_img_normalized)
+
+            # delete all intermediate files (i.e., all files but the normalized images)
+            if args.clean_intermediate_files:
+                logger.info('Removing intermediate files')
+                shutil.rmtree(reg_dir)
+                shutil.rmtree(out_dir)
+                shutil.rmtree(tx_dir)
+        else:
+            # if the images are already registered, then just do the HM normalization
+            if not isinstance(args.template_mask, str):
+                raise NormalizationError('template mask must be provided for the registered imgs')
+            _ = hm.hm_normalize(args.img_dir, args.template_mask, args.contrast, args.output_dir)
         return 0
     except Exception as e:
         logger.exception(e)

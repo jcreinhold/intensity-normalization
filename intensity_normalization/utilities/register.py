@@ -22,7 +22,8 @@ from intensity_normalization.utilities.io import split_filename
 logger = logging.getLogger(__name__)
 
 
-def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0, reg_alg='SyNCC'):
+def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0,
+                         mask=None, reg_alg='SyNCC', reg_metric='CC'):
     """
     register a set of images using SyN (deformable registration)
     and write their output and transformations to disk
@@ -35,8 +36,11 @@ def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0, reg
             a newly created directory (or existing dir) called `normalize_reg_tforms`
         template_img (int or str): number of img in img_dir, or a specified img path
             to be used as the template which all images are registered to
+        mask (str): mask for template (used for better registration)
         reg_alg (str): registration algorithm to use, currently SyN w/ CC as metric
             (see ants.registration type_of_transform for more details/choices)
+        reg_metric (str): registration metric to use, currently cross-correlation as metric
+            (see ants.registration syn_metric for more details/choices)
 
     Returns:
         None, writes registration transforms and registered images to disk
@@ -67,6 +71,11 @@ def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0, reg
     img_fns = [fn for fn in img_fns if fn != template_img]
     template = ants.image_read(template_img)
 
+    if mask is not None:
+        template_mask = ants.image_read(mask)
+    else:
+        template_mask = None
+
     _, base, _ = split_filename(template_img)
     logger.debug('Template image: {}'.format(base))
     for i, fn in enumerate(img_fns, 1):
@@ -77,7 +86,8 @@ def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0, reg
         img = ants.image_read(fn)
         _, base, _ = split_filename(fn)
         logger.info('Registering image: {} ({:d}/{:d})'.format(base, i, len(img_fns)))
-        reg_result = ants.registration(template, img, type_of_transform=reg_alg)
+        reg_result = ants.registration(template, img, type_of_transform=reg_alg, mask=template_mask,
+                                       syn_metric=reg_metric, aff_metric=reg_metric)
         for tx_fn in reg_result['invtransforms']:
             if not os.path.exists(tx_fn):
                 raise NormalizationError('Temporary file storing transform ({}) does not exist!'.format(tx_fn))

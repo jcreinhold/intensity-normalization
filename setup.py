@@ -43,13 +43,9 @@ args = dict(
 )
 
 setup(install_requires=['numpy',
-                        'scipy',
-                        'pydicom',
                         'nibabel',
-                        'dipy',
-                        'nipype>=0.12.1',
                         'matplotlib',
-                        'statsmodels',
                         'scikit-learn',
                         'scikit-fuzzy',
-                        'rpy2'], **args)
+                        'rpy2',
+                        'antspy'], **args)

@@ -7,8 +7,9 @@ fit three gaussians to the histogram of
 skull-stripped image and normalize the WM mean
 to some standard value
 
-Author: Blake Dewey
+Author: Blake Dewey (blake.dewey@jhu.edu)
         Jacob Reinhold (jacob.reinhold@jhu.edu)
+
 Created on: Apr 24, 2018
 """
 

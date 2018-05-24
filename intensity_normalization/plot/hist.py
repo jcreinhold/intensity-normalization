@@ -68,7 +68,7 @@ def all_hists(img_dir, mask_dir=None, alpha=0.4, figsize=(12,10), **kwargs):
     return ax
 
 
-def hist(img, mask=None, ax=None, n_bins=200, log=True, alpha=0.8, **kwargs):
+def hist(img, mask=None, ax=None, n_bins=200, log=True, alpha=0.8, lw=3, **kwargs):
     """
     plots the histogram of an ants object (line histogram)
 
@@ -95,6 +95,6 @@ def hist(img, mask=None, ax=None, n_bins=200, log=True, alpha=0.8, **kwargs):
             warnings.filterwarnings('ignore')
             hist =  np.log10(hist)
             hist[hist == -np.inf] = 0
-    ax.plot(bins, hist, alpha=alpha)
+    ax.plot(bins, hist, alpha=alpha, linewidth=lw)
     return ax
 
