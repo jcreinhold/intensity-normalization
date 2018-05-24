@@ -48,7 +48,7 @@ def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_dis
 
     Args:
         img_dir (str): directory containing MR images to be normalized
-        contrast (str): contrast of MR images to be normalized (T1, T2, FLAIR or PD)
+        contrast (str): contrast of MR images to be normalized (T1, T2, or FLAIR)
         mask_dir (str): if images are not skull-stripped, then provide brain mask
         output_dir (str): directory to save images if you do not want them saved in
             same directory as img_dir
@@ -99,10 +99,7 @@ def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_dis
         ws_slices = NULL
 
     # control verbosity of output when making whitestripe function call
-    if 0 < logger.getEffectiveLevel() <= logging.getLevelName('DEBUG'):
-        verbose = True
-    else:
-        verbose = False
+    verbose = True if logger.getEffectiveLevel() == logging.getLevelName('DEBUG') else False
 
     # do whitestripe normalization and save the results
     for i, (img_fn, mask_fn, output_fn) in enumerate(zip(data, masks, output_files), 1):
@@ -113,7 +110,7 @@ def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_dis
         else:
             mask = nb.check_nifti(mask_fn, reorient=False, allow_array=False)
             brain = nb.mask_img(img, mask)
-        indices = ws.whitestripe(brain, type=contrast, slices=ws_slices, verbose=verbose)
+        indices = ws.whitestripe(brain, type=contrast, slices=ws_slices, stripped=True, verbose=verbose)
         img = ws.whitestripe_norm(img, indices[0])
         if write_to_disk:
             logger.info('Saving normalized image: {} ({:d}/{:d})'.format(output_fn, i, len(data)))

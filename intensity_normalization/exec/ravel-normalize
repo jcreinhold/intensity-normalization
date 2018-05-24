@@ -36,13 +36,6 @@ def arg_parser():
                              '(should all be of one contrast)')
 
     options = parser.add_argument_group('Options')
-    options.add_argument('--register', action='store_true', default=False,
-                        help='if you want this script to do the deformable registration to a template, '
-                             'and create all the intermediate files (where the template image defaults '
-                             'to the first image in the set of provided images), then set this flag. '
-                             '[Default = False]')
-    options.add_argument('-v', '--verbosity', action="count", default=0,
-                         help="increase output verbosity (e.g., -vv is more than -v)")
     options.add_argument('-o', '--output-dir', type=str, default=None,
                            help='save the normalized images to this path [Default = None]')
     options.add_argument('-m', '--mask-dir', type=str, default=None,
@@ -51,6 +44,15 @@ def arg_parser():
                                 'so ordering must be consistent in directory) [Default = None]')
     options.add_argument('-c', '--contrast', type=str, default='T1', choices=['T1', 'T2', 'FLAIR'],
                            help='contrast of the images in img-dir, (e.g, T1, T2, or, FLAIR.) [Default = T1]')
+    options.add_argument('-v', '--verbosity', action="count", default=0,
+                         help="increase output verbosity (e.g., -vv is more than -v)")
+    options.add_argument('-p', '--plot-hist', action='store_true', default=False,
+                         help='plot the histograms of the normalized images, save it in the output directory')
+    options.add_argument('-nr', '--no-register', action='store_true', default=False,
+                         help='if you want this script to *not* do the deformable registration to a template, '
+                              'and create all the intermediate files (where the template image defaults '
+                              'to the first image in the set of provided images), then set this flag. '
+                              '[Default = False]')
 
     adv_options = parser.add_argument_group('Advanced Options')
     adv_options.add_argument('-cm', '--csf-mask', type=str, default=None,
@@ -64,18 +66,19 @@ def arg_parser():
     adv_options.add_argument('--no-whitestripe', action='store_false', default=True,
                              help='do not use whitestripe in RAVEL if this flag is on')
     adv_options.add_argument('--type-of-registration', default='SyNCC',
-                             help='registration algorithm (w/ metric) to use (see ants.registration for more detail) '
-                                  '[Default = SyNCC]')
-    adv_options.add_argument('--reg-metric', default='CC',
-                             help='registration metric to use (see ants.registration for more detail)')
+                             help='registration algorithm (w/ metric) to use (e.g., SyN, SyNCC, ElasticSyN). '
+                                  'Note that the algorithm of choice must consist of two transforms '
+                                  '(one rigid/similarity/affine and one deformable) [Default = SyNCC]')
+    adv_options.add_argument('--reg-kwargs', default=None, type=str,
+                             help='add arguments to json file or corrected formatted string for use in registration '
+                                  '(see ants.registration for more detail and all available options) [Default = None]')
     adv_options.add_argument('--clean-intermediate-files', action='store_true', default=False,
                              help='this algorithm creates many intermediate files (when using the registration routine) '
                                   'setting this flag will remove the intermediate files after they are no longer needed')
     adv_options.add_argument('--use-old-registration', action='store_true', default=False,
                              help='if registration results are found, use them instead of generating them again '
-                                  '(use this with the registration flag. Example use case: if there was an error after '
-                                  'the registration completed and you do not want to re-register the images, '
-                                  'since registration is time-consuming.)')
+                                  '(Example use case: if there was an error after the registration completed and '
+                                  'you do not want to re-register the images, since registration is time-consuming.)')
 
     return parser
 
@@ -91,7 +94,7 @@ def main():
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
     logger = logging.getLogger(__name__)
     try:
-        if args.register:
+        if not args.no_register:
             # handle setting the template image and template mask
             if isinstance(args.template_img, int) and isinstance(args.template_mask, int):
                template_img = sorted(glob(os.path.join(args.img_dir, '*.nii*')))[args.template_img]
@@ -113,7 +116,12 @@ def main():
                             'they were generated from the input img/mask set!')
             else:
                 logger.info('Registering images to template ({})'.format(template_img_base))
-                register.register_to_template(args.img_dir, template_img=template_img, mask=template_mask)
+                if args.reg_kwargs is not None:
+                    import json
+                    reg_kwargs = json.loads(args.reg_kwargs)
+                else:
+                    reg_kwargs = {}
+                register.register_to_template(args.img_dir, template_img=template_img, mask=template_mask, **reg_kwargs)
                 template_img_rd = os.path.join(reg_dir, template_img_base + '.nii.gz')
                 shutil.copy(template_img, template_img_rd)
 
@@ -153,6 +161,16 @@ def main():
             if not isinstance(args.template_mask, str):
                 raise NormalizationError('template mask must be provided for the registered imgs')
             _ = ravel.ravel_normalize(args.data_dir, args.template_mask, args.csf_mask, args.contrast, args.output_dir)
+
+        if args.plot_hist:
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore', category=FutureWarning)
+                from intensity_normalization.plot.hist import all_hists
+                import matplotlib.pyplot as plt
+            ax = all_hists(args.output_dir, args.mask_dir)
+            ax.set_title('RAVEL')
+            plt.savefig(os.path.join(args.output_dir, 'hist.png'))
+
         return 0
     except Exception as e:
         logger.exception(e)

@@ -32,8 +32,8 @@ def arg_parser():
     parser.add_argument('-t', '--plot-title', type=str, default=None,
                         help='title for output histogram plot')
     parser.add_argument('-o', '--out-name', type=str, default='hist.png',
-                        help='name for output histogram (default: hist.png')
-    parser.add_argument('-a', '--alpha', type=float, default=0.4,
+                        help='name for output histogram (default: hist.png)')
+    parser.add_argument('-a', '--alpha', type=float, default=0.8,
                         help='alpha parameter for line plots')
     parser.add_argument('-f', '--figsize', type=tuple, default=(12,10),
                         help='alpha parameter for line plots')

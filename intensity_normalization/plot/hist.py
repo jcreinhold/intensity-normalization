@@ -30,8 +30,7 @@ except ImportError:
     logger.debug("Seaborn not installed, so plots won't look as pretty :-(")
 
 
-
-def all_hists(img_dir, mask_dir=None, alpha=0.4, figsize=(12,10), **kwargs):
+def all_hists(img_dir, mask_dir=None, alpha=0.8, figsize=(12,10), **kwargs):
     """
     plot all histograms over one another to get an idea of the
     spread for a sample/population
@@ -39,7 +38,7 @@ def all_hists(img_dir, mask_dir=None, alpha=0.4, figsize=(12,10), **kwargs):
     Args:
         img_dir (str): path to images
         mask_dir (str): path to corresponding masks of imgs
-        alpha (float): controls alpha parameter of individual line plots (default: 0.4)
+        alpha (float): controls alpha parameter of individual line plots (default: 0.8)
         figsize (tuple): size of figure (default: (12,10))
         **kwargs: for numpy histogram routine
 

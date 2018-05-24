@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0,
-                         mask=None, reg_alg='SyNCC', reg_metric='CC'):
+                         mask=None, reg_alg='SyNCC', **kwargs):
     """
     register a set of images using SyN (deformable registration)
     and write their output and transformations to disk
@@ -40,8 +40,7 @@ def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0,
         mask (str): mask for template (used for better registration)
         reg_alg (str): registration algorithm to use, currently SyN w/ CC as metric
             (see ants.registration type_of_transform for more details/choices)
-        reg_metric (str): registration metric to use, currently cross-correlation as metric
-            (see ants.registration syn_metric for more details/choices)
+        kwargs: extra arguments for registration (see ants.registration for all available)
 
     Returns:
         None, writes registration transforms and registered images to disk
@@ -83,12 +82,15 @@ def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0,
         _, base, _ = split_filename(fn)
         logger.debug('Image to register ({}): {}'.format(i, base))
 
+    # control verbosity of output when making registration function call
+    verbose = True if logger.getEffectiveLevel() == logging.getLevelName('DEBUG') else False
+
     for i, fn in enumerate(img_fns, 1):
         img = ants.image_read(fn)
         _, base, _ = split_filename(fn)
         logger.info('Registering image: {} ({:d}/{:d})'.format(base, i, len(img_fns)))
-        reg_result = ants.registration(template, img, type_of_transform=reg_alg, mask=template_mask,
-                                       syn_metric=reg_metric, aff_metric=reg_metric)
+        reg_result = ants.registration(template, img, type_of_transform=reg_alg,
+                                       mask=template_mask, verbose=verbose, **kwargs)
         for tx_fn in reg_result['invtransforms']:
             if not os.path.exists(tx_fn):
                 raise NormalizationError('Temporary file storing transform ({}) does not exist!'.format(tx_fn))

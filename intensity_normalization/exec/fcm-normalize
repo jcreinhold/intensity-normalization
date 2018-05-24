@@ -30,20 +30,24 @@ def arg_parser():
     parser = argparse.ArgumentParser(description='Use FCM to model the tissue classes of the brain and use the '
                                                  'found WM to normalize a set of nifti MR images')
     parser.add_argument('-i', '--image', type=str, required=True,
-                        help='path to a nifti MR image of the brain')
+                        help='path to a directory of/single nifti MR image of the brain')
     parser.add_argument('-m', '--brain-mask', type=str, default=None,
-                        help='path to a nifti brain mask for the image, '
+                        help='path to a directory of/single nifti brain mask for the image, '
                              'provide this if not providing WM mask, (step 1)')
     parser.add_argument('-w', '--wm-mask', type=str, default=None,
                         help='path to a nifti mask of the WM (found through FCM), '
                              'provide this if not providing the brain mask (step 2)')
+    parser.add_argument('-c', '--contrast', type=str, default='T1',
+                        help='contrast of images being normalized (must be T1w when calculating the WM masks!)')
     parser.add_argument('-o', '--output-dir', type=str, default=None,
                         help='path to output normalized images '
                              '(default: to directory containing images)')
     parser.add_argument('--norm-value', type=float, default=1000,
                         help='normalize the WM of the image to this value (default 1000)')
-    parser.add_argument('--dir', action='store_true', default=False,
-                        help='image and mask are directories, not individual images')
+    parser.add_argument('--single-img', action='store_true', default=False,
+                        help='image and mask are individual images, not directories')
+    parser.add_argument('-p', '--plot-hist', action='store_true', default=False,
+                         help='plot the histograms of the normalized images, save it in the output directory')
     parser.add_argument('-v', '--verbosity', action="count", default=0,
                         help="increase output verbosity (e.g., -vv is more than -v)")
     return parser
@@ -83,9 +87,9 @@ def main():
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
     logger = logging.getLogger(__name__)
     try:
-        if args.dir:
+        if not args.single_img:
             if not os.path.isdir(args.image) or not os.path.isdir(args.brain_mask):
-                raise NormalizationError('if dir option on, then image and brain-mask must be directories')
+                raise NormalizationError('if single-img option off, then image and brain-mask must be directories')
             img_fns = sorted(glob(os.path.join(args.image, '*.nii*')))
             mask_fns = sorted(glob(os.path.join(args.brain_mask, '*.nii*')))
             if len(img_fns) != len(mask_fns) and len(img_fns) > 0:
@@ -93,14 +97,20 @@ def main():
                                          '({:d} != {:d})'.format(len(img_fns), len(mask_fns)))
             output_dir_base = os.path.abspath(os.path.join(args.output_dir, '..'))
             wm_mask_dir = os.path.join(output_dir_base, 'wm_masks')
-            if os.path.exists(wm_mask_dir):
-                logger.warning('WM Mask Directory already exists, may overwrite existing WM masks!')
-            else:
-                logger.info('Creating WM Mask directory: {}'.format(wm_mask_dir))
-                os.mkdir(wm_mask_dir)
-            for i, (img, mask) in enumerate(zip(img_fns, mask_fns), 1):
-                logger.info('Creating WM Mask for {} ({:d}/{:d})'.format(img, i, len(img_fns)))
-                process(img, mask, None, wm_mask_dir, args, logger)
+
+            if args.contrast == 'T1':
+                if os.path.exists(wm_mask_dir):
+                    logger.warning('WM Mask Directory already exists, may overwrite existing WM masks!')
+                else:
+                    logger.info('Creating WM Mask directory: {}'.format(wm_mask_dir))
+                    os.mkdir(wm_mask_dir)
+                for i, (img, mask) in enumerate(zip(img_fns, mask_fns), 1):
+                    logger.info('Creating WM Mask for {} ({:d}/{:d})'.format(img, i, len(img_fns)))
+                    process(img, mask, None, wm_mask_dir, args, logger)
+            elif not os.path.exists(wm_mask_dir):
+                NormalizationError('If contrast is not T1, then WM mask directory ({}) '
+                                   'must already be created!'.format(wm_mask_dir))
+
             for i, img in enumerate(img_fns, 1):
                 logger.info('Normalizing image {} ({:d}/{:d})'.format(img, i, len(img_fns)))
                 dirname, base, _ = io.split_filename(img)
@@ -108,12 +118,15 @@ def main():
                     dirname = args.output_dir
                 wm_mask = os.path.join(wm_mask_dir, base + '_wmmask.nii.gz')
                 process(img, None, wm_mask, dirname, args, logger)
+
         else:
             if not os.path.isfile(args.image) or not os.path.isfile(args.brain_mask):
-                raise NormalizationError('if dir option off, then image and brain-mask must be files')
-            if args.wm_mask is None:
+                raise NormalizationError('if single-img option on, then image and brain-mask must be files')
+            if args.wm_mask is None and args.contrast == 'T1':
                 logger.info('Creating WM Mask for {}'.format(args.image))
                 process(args.image, args.brain_mask, None, args, logger)
+            else:
+                raise NormalizationError('If contrast is not T1, then WM mask must be provided!')
             logger.info('Normalizing image {}'.format(args.image))
             dirname, base, _ = io.split_filename(args.image)
             if args.wm_mask is None:
@@ -122,7 +135,17 @@ def main():
                 wm_mask = os.path.join(dirname, base + '_wmmask.nii.gz')
             else:
                 wm_mask = args.wm_mask
-            process(args.image, args.brain_mask, wm_mask, args, logger)
+            process(args.image, args.brain_mask, wm_mask, dirname, args, logger)
+
+        if args.plot_hist:
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore', category=FutureWarning)
+                from intensity_normalization.plot.hist import all_hists
+                import matplotlib.pyplot as plt
+            ax = all_hists(args.output_dir, args.brain_mask)
+            ax.set_title('Fuzzy C-Means')
+            plt.savefig(os.path.join(args.output_dir, 'hist.png'))
+
         return 0
     except Exception as e:
         logger.exception(e)

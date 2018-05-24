@@ -50,7 +50,7 @@ def hm_normalize(img_dir, template_mask, contrast, output_dir=None, write_to_dis
         img_dir (str): directory containing MR images registered to a template
         template_mask (str): since images are registered, provide brain mask
             for the template (fixed) image
-        contrast (str): contrast of MR images to be normalized (T1, T2, FLAIR or PD)
+        contrast (str): contrast of MR images to be normalized (T1 or T2)
         output_dir (str): directory to save images if you do not want them saved in
             same directory as data_dir
         write_to_disk (bool): write the normalized data to disk or nah
@@ -80,11 +80,8 @@ def hm_normalize(img_dir, template_mask, contrast, output_dir=None, write_to_dis
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
 
-    # control verbosity of output when making whitestripe function call
-    if 0 < logger.getEffectiveLevel() <= logging.getLevelName('DEBUG'):
-        verbose = True
-    else:
-        verbose = False
+    # control verbosity of output when making hm function call
+    verbose = True if logger.getEffectiveLevel() == logging.getLevelName('DEBUG') else False
 
     normalizedR = ravel.normalizeHM(input_files, output_files=output_files, brain_mask=template_mask,
                                     type=contrast, writeToDisk=write_to_disk, returnMatrix=True, verbose=verbose)

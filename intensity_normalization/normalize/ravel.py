@@ -46,9 +46,9 @@ def ravel_normalize(img_dir, template_mask, csf_mask, contrast, output_dir=None,
 
     Args:
         img_dir (str): directory containing MR images to be normalized
-        template_mask (str): if images are not skull-stripped, then provide brain mask
+        template_mask (str): brain mask for template image
         csf_mask (str): path to csf mask for data in data_dir
-        contrast (str): contrast of MR images to be normalized (T1, T2, FLAIR or PD)
+        contrast (str): contrast of MR images to be normalized (T1, T2, or FLAIR)
         output_dir (str): directory to save images if you do not want them saved in
             same directory as data_dir
         write_to_disk (bool): write the normalized data to disk or nah
@@ -76,10 +76,7 @@ def ravel_normalize(img_dir, template_mask, csf_mask, contrast, output_dir=None,
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
 
-    if 0 < logger.getEffectiveLevel() <= logging.getLevelName('DEBUG'):
-        verbose = True
-    else:
-        verbose = False
+    verbose = True if logger.getEffectiveLevel() == logging.getLevelName('DEBUG') else False
 
     normalizedR = ravel.normalizeRAVEL(input_files, control_mask=csf_mask,
                                        output_files=output_files, brain_mask=template_mask,

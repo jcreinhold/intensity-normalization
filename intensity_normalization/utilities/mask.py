@@ -31,7 +31,7 @@ def fcm_class_mask(img, brain_mask=None, hard_seg=False):
     creates a mask of tissue classes for a target brain with fuzzy c-means
 
     Args:
-        img (nibabel.nifti1.Nifti1Image): target image
+        img (nibabel.nifti1.Nifti1Image): target image (must be T1w)
         brain_mask (nibabel.nifti1.Nifti1Image): mask covering the brain of img
             (none if already skull-stripped)
         hard_seg (bool): pick the maximum membership as the true class in output
@@ -93,7 +93,7 @@ def gmm_class_mask(img, brain_mask=None, contrast='t1', return_wm_peak=True, har
     weights = gmm.weights_
     if return_wm_peak:
         means = gmm.means_.T.squeeze()
-        wm_peak = max(means) if contrast == 't1' else \
+        wm_peak = max(means) if contrast.lower() == 't1' else \
             max(zip(means, weights), key=lambda x: x[1])[0]
         return wm_peak
     else:
