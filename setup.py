@@ -7,6 +7,7 @@ Module installs intensity-normalization package
 Can be run via command: python setup.py install (or develop)
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
+
 Created on: Apr 24, 2018
 """
 
@@ -30,6 +31,7 @@ args = dict(
     license=license,
     packages=find_packages(exclude=('tests', 'docs')),
     scripts=['intensity_normalization/exec/fcm-normalize',
+             'intensity_normalization/exec/zscore-normalize',
              'intensity_normalization/exec/gmm-normalize',
              'intensity_normalization/exec/hm-normalize',
              'intensity_normalization/exec/kde-normalize',

@@ -44,7 +44,11 @@ or (if you actively want to make changes to the package)
 and use the several provided command line scripts to interface with the package,
 e.g., 
 
-    ravel-normalize -i t1/ -m masks/ -o test_ravel --register -vv 
+    ravel-normalize -i t1/ -m masks/ -o test_ravel -v
+
+the command line interface is standard across all normalization routines (i.e., you should be able to 
+run all normalization routines with the same call as in the above example), however each has unique options.
+Call any executable script with the `-h` flag to see more detailed instructions about the proper call.
 
 Project Structure
 -----------------
@@ -55,6 +59,7 @@ intensity_normalization
 │   │   errors.py (project specific exceptions)
 │   │   
 │   └───exec (holds executables)
+│   │   │   zscore-normalize (call Z-score normalization on an directory)
 │   │   │   fcm-normalize (call fuzzy c-means WM normalization on an directory)
 │   │   │   gmm-normalize (call GMM WM normalization on an directory)
 │   │   │   kde-normalize (call KDE WM normalization on an directory)
@@ -67,6 +72,7 @@ intensity_normalization
 │   │   │   tissue-mask (CLI to create tissue masks (i.e., CSF/GM/WM for a directory)
 │   │   
 │   └───normalize (modules for doing the actual intensity normalization)
+│   │   │   zscore (use Z-score method for intensity normalization)
 │   │   │   fcm (use fuzzy c-means method for WM normalization)
 │   │   │   gmm (use gaussian mixture model method for WM normalization)
 │   │   │   kde (use kernel density estimate method for WM normalization)

@@ -1,6 +1,14 @@
 Executables
 ===================================
 
+Z-Score Normalization
+~~~~~~~~~~~~~~~~~
+
+.. argparse:: 
+   :filename: ../intensity_normalization/exec/zscore-normalize
+   :func: arg_parser
+   :prog: zscore-normalize
+
 FCM Normalization
 ~~~~~~~~~~~~~~~~~
 

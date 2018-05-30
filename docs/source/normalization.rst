@@ -4,6 +4,11 @@ Normalization
 This module holds all the submodules associated with intensity/white-matter-peak 
 normalization
 
+Z-Score
+~~~~~~~
+.. automodule:: intensity_normalization.normalize.zscore
+   :members:
+
 Fuzzy C-Means
 ~~~~~~~~~~~~~
 

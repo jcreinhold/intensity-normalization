@@ -15,7 +15,7 @@ import unittest
 
 import numpy as np
 
-from intensity_normalization.normalize import fcm, gmm, kde, hm, whitestripe, ravel
+from intensity_normalization.normalize import zscore, fcm, gmm, kde, hm, whitestripe, ravel
 from intensity_normalization.utilities import io
 
 
@@ -32,6 +32,10 @@ class TestNormalization(unittest.TestCase):
         self.img_r = io.open_nii(os.path.join(self.data_dir_r, 'test.nii.gz'))
         self.template_mask = os.path.join(self.mask_dir, 'mask.nii.gz')
         self.norm_val = 1000
+
+    def test_zscore_normalization(self):
+        normalized = zscore.zscore_normalize(self.img, self.brain_mask)
+        self.assertAlmostEqual(np.mean(normalized.get_data()[self.brain_mask.get_data() == 1]), 0, places=4)
 
     def test_fcm_normalization(self):
         wm_mask = fcm.find_wm_mask(self.img, self.brain_mask)

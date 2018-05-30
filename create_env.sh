@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # use the following command to run this script: . ./create_intensity_normalization_env.sh
 # since we download a git directory and build it from source
 # make sure you are in a directory where you are ok with downloading a folder 
