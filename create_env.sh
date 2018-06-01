@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
+#
 # use the following command to run this script: . ./create_intensity_normalization_env.sh
-# since we download a git directory and build it from source
-# make sure you are in a directory where you are ok with downloading a folder 
-# that you *cannot* remove if you want the packages to work (on a Mac)
+#
 # Created on: Apr 27, 2018
 # Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 
@@ -18,16 +17,14 @@ command -v flirt >/dev/null 2>&1 || { echo >&2 "I require FSL but it's not insta
 command -v cmake >/dev/null 2>&1 || { echo >&2 "I require cmake but it's not installed.  Aborting."; return 1; }
 
 # first make sure conda is up-to-date
-conda update -n base conda --yes
+conda update -n base conda --yes || return
 
 packages=(
     numpy 
     matplotlib 
-    scipy 
-    seaborn 
+    seaborn
     scikit-learn 
     nose 
-    mock 
     sphinx
     coverage
     vtk
@@ -49,19 +46,14 @@ conda_forge_packages=(
     sphinx-argparse
 )
 
-conda create --name intensity_normalization ${packages[@]} --yes
-source activate intensity_normalization 
-pip install -U scikit-fuzzy
+conda create --channel conda-forge --name intensity_normalization ${packages[@]} ${conda_forge_packages[@]} --yes || return
+source activate intensity_normalization || return
+pip install -U scikit-fuzzy || return
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
-    pip install antspy
-else 
-    git clone https://github.com/ANTsX/ANTsPy.git
-    cd ANTsPy
-    python setup.py develop
-    cd ..
+    pip install https://github.com/ANTsX/ANTsPy/releases/download/v0.1.4/antspy-0.1.4-cp36-cp36m-linux_x86_64.whl
+else
+    pip install https://github.com/ANTsX/ANTsPy/releases/download/Weekly/antspy-0.1.4-cp36-cp36m-macosx_10_7_x86_64.whl
 fi
-conda install -c conda-forge ${conda_forge_packages[@]} --yes
-conda env export > intensity_normalization_env.yml
 
 # handle installing appropriate r packages (assumes FSL is installed)
 # add default server to Rprofile so that install package scripts run w/o error
@@ -81,5 +73,8 @@ R -e 'source("https://neuroconductor.org/neurocLite.R"); neuroc_install(c("ITKR"
 R -e 'source("https://neuroconductor.org/neurocLite.R"); neuro_install(c("fslr", "neurobase"));'
 R -e 'packages = installed.packages(); packages = packages[, "Package"]; if (!"limma" %in% packages) { source("https://bioconductor.org/biocLite.R"); biocLite("limma") };'
 R -e 'source("https://neuroconductor.org/neurocLite.R"); neuro_install(c("WhiteStripe", "RAVEL", "robex"))'
+
+# now finally install the intensity-normalization package
+python setup.py install || return
 
 echo "intensity_normalization conda env script finished (verify yourself if everything installed correctly)"

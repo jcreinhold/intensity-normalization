@@ -24,7 +24,7 @@ with warnings.catch_warnings():
     from intensity_normalization.errors import NormalizationError
     from intensity_normalization.normalize import ravel
     from intensity_normalization.utilities import register
-    from intensity_normalization.utilities.io import split_filename
+    from intensity_normalization.utilities import io
 
 
 def arg_parser():
@@ -57,6 +57,9 @@ def arg_parser():
     adv_options = parser.add_argument_group('Advanced Options')
     adv_options.add_argument('-cm', '--csf-mask', type=str, default=None,
                              help='if created, path to a csf mask for the registered imgs [Default = None]')
+    adv_options.add_argument('-cmt', '--csf-mask-threshold', type=float, default=1,
+                             help='"probability" of CSF intersection (e.g., 0.9 => 90% of CSF masks intersect) '
+                                  '[Default = 1]')
     adv_options.add_argument('--template-img', default=0,
                              help='path to desired template image, or number in the '
                                   '(ordered) set of provided images [Default = 0]')
@@ -65,10 +68,8 @@ def arg_parser():
                                   '(ordered) set of provided images [Default = 0]')
     adv_options.add_argument('--no-whitestripe', action='store_false', default=True,
                              help='do not use whitestripe in RAVEL if this flag is on')
-    adv_options.add_argument('--type-of-registration', default='SyNCC',
-                             help='registration algorithm (w/ metric) to use (e.g., SyN, SyNCC, ElasticSyN). '
-                                  'Note that the algorithm of choice must consist of two transforms '
-                                  '(one rigid/similarity/affine and one deformable) [Default = SyNCC]')
+    adv_options.add_argument('-tr', '--type-of-registration', default='SyNCC', type=str,
+                             help='registration algorithm to use (e.g., SyN, SyNCC, ElasticSyN) [Default = SyNCC]')
     adv_options.add_argument('--reg-kwargs', default=None, type=str,
                              help='add arguments to json file or corrected formatted string for use in registration '
                                   '(see ants.registration for more detail and all available options) [Default = None]')
@@ -106,7 +107,7 @@ def main():
                 raise NormalizationError('template_img, template_mask must be an integer '
                                          'or a string corresponding to the image number '
                                          'or the full path of the image file')
-            _, template_img_base, _ = split_filename(template_img)
+            _, template_img_base, _ = io.split_filename(template_img)
 
             # register all images to template
             reg_dir = os.path.join(os.getcwd(), 'registered')
@@ -121,18 +122,20 @@ def main():
                     reg_kwargs = json.loads(args.reg_kwargs)
                 else:
                     reg_kwargs = {}
-                register.register_to_template(args.img_dir, template_img=template_img, mask=template_mask, **reg_kwargs)
+                register.register_to_template(args.img_dir, mask_dir=args.mask_dir,
+                                              template_img=args.template_img, template_mask=args.template_mask,
+                                              reg_alg=args.type_of_registration, **reg_kwargs)
                 template_img_rd = os.path.join(reg_dir, template_img_base + '.nii.gz')
                 shutil.copy(template_img, template_img_rd)
 
             # create csf mask from registered images for RAVEL (used as control points)
             logger.info('Creating CSF Mask')
-            csf_mask_inter = ravel.csf_mask_intersection(reg_dir, args.mask_dir)
+            csf_mask_inter = ravel.csf_mask_intersection(reg_dir, args.mask_dir, prob=args.csf_mask_threshold)
             csf_dir = os.path.join(os.getcwd(), 'csf_masks')
             csf_mask = os.path.join(csf_dir, 'csf_mask.nii.gz') if args.csf_mask is None else args.csf_mask
             if csf_mask is not None and not os.path.exists(csf_dir):
                 os.mkdir(csf_dir)
-            nib.Nifti1Image(csf_mask_inter, None).to_filename(csf_mask)
+            io.save_nii(nib.load(template_img), csf_mask, data=csf_mask_inter)
 
             # do the actual RAVEL normalization procedure (calls RAVEL in R)
             logger.info('Normalizing the images according to RAVEL')

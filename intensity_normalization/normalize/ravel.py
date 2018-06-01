@@ -78,15 +78,27 @@ def ravel_normalize(img_dir, template_mask, csf_mask, contrast, output_dir=None,
 
     verbose = True if logger.getEffectiveLevel() == logging.getLevelName('DEBUG') else False
 
-    normalizedR = ravel.normalizeRAVEL(input_files, control_mask=csf_mask,
-                                       output_files=output_files, brain_mask=template_mask,
-                                       WhiteStripe_Type=contrast, writeToDisk=write_to_disk,
+    normalizedR = ravel.normalizeRAVEL(input_files, control_mask=csf_mask, brain_mask=template_mask,
+                                       WhiteStripe_Type=contrast, writeToDisk=False,
                                        returnMatrix=True, verbose=verbose, **kwargs)
-    normalized = np.array(normalizedR)
-    return normalized
+    normalized_brains = np.array(normalizedR).T
+
+    if write_to_disk:
+        mask = io.open_nii(template_mask)
+        mask_data = mask.get_data()
+        # TODO: make this more robust, currently hard-coded and will probably fail on different orientations
+        transpose_perm = (2, 1, 0)  # need to jump through hoops to get the output in the correct order
+        for out_fn, brain in zip(output_files, normalized_brains):
+            out_img = np.transpose(np.zeros(mask_data.shape, dtype=np.float64), transpose_perm)
+            out_img[np.transpose(mask_data, transpose_perm) == 1] = brain
+            out_img[np.transpose(mask_data, transpose_perm) == 0] = np.min(brain) - 1
+            out_img = np.transpose(out_img, np.argsort(transpose_perm))
+            io.save_nii(mask, out_fn, data=out_img)
+
+    return normalized_brains
 
 
-def csf_mask_intersection(img_dir, mask_dir=None, prob=0.9):
+def csf_mask_intersection(img_dir, mask_dir=None, prob=1):
     """
     use all nifti T1w images in data_dir to create csf mask in common areas
 
@@ -110,5 +122,5 @@ def csf_mask_intersection(img_dir, mask_dir=None, prob=0.9):
     csf = [csf_mask(io.open_nii(img), brain_mask=io.open_nii(mask)) for img, mask in zip(data, masks)]
     csf_sum = reduce(add, csf)  # need to use reduce instead of sum b/c data structure
     intersection = np.zeros(csf_sum.shape)
-    intersection[csf_sum > np.floor(len(data) * prob)] = 1
+    intersection[csf_sum >= np.floor(len(data) * prob)] = 1
     return intersection

@@ -37,6 +37,8 @@ def arg_parser():
                              '(should all be T1w contrast)')
     parser.add_argument('-m', '--mask-dir', type=str, required=True,
                         help='directory to output the corresponding img files')
+    parser.add_argument('-s', '--return-skull-stripped', action='store_true', default=False,
+                        help='return skull-stripped images instead of masks')
     parser.add_argument('-v', '--verbosity', action="count", default=0,
                         help="increase output verbosity (e.g., -vv is more than -v)")
     return parser
@@ -61,7 +63,7 @@ def main():
             _, base, _ = split_filename(img)
             logger.info('Creating Mask for Image: {}, ({:d}/{:d})'.format(base, i, len(img_fns)))
             mask = os.path.join(args.mask_dir, base + '_mask.nii.gz')
-            _ = robex(os.path.abspath(img), os.path.abspath(mask))
+            _ = robex(os.path.abspath(img), os.path.abspath(mask), args.return_skull_stripped)
         return 0
     except Exception as e:
         logger.exception(e)

@@ -23,21 +23,22 @@ from intensity_normalization.utilities.io import split_filename
 logger = logging.getLogger(__name__)
 
 
-def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0,
-                         mask=None, reg_alg='SyNCC', **kwargs):
+def register_to_template(img_dir, mask_dir=None, out_dir=None, tx_dir=None, template_img=0,
+                         template_mask=0, reg_alg='SyNCC', **kwargs):
     """
     register a set of images using SyN (deformable registration)
     and write their output and transformations to disk
 
     Args:
-        img_dir (str): directory containing MR images registered to a template
+        img_dir (str): directory containing MR images to be registered to a template
+        mask_dir (str): directory containing MR images brain masks (optional)
         out_dir (str): directory to save images if you do not want them saved in
             a newly created directory (or existing dir) called `normalize_reg`
         tx_dir (str): directory to save registration tforms if you do not want them saved in
             a newly created directory (or existing dir) called `normalize_reg_tforms`
         template_img (int or str): number of img in img_dir, or a specified img path
             to be used as the template which all images are registered to
-        mask (str): mask for template (used for better registration)
+        template_mask (int or str): mask for template (used for better registration)
         reg_alg (str): registration algorithm to use, currently SyN w/ CC as metric
             (see ants.registration type_of_transform for more details/choices)
         kwargs: extra arguments for registration (see ants.registration for all available)
@@ -47,10 +48,19 @@ def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0,
     """
 
     img_fns = sorted(glob(os.path.join(img_dir, '*.nii*')))
+    if mask_dir is not None:
+        mask_fns = sorted(glob(os.path.join(mask_dir, '*.nii*')))
     logger.debug('Input images: {}'.format(img_fns))
 
     if isinstance(template_img, int):
         template_img = img_fns[template_img]
+
+    if (isinstance(template_mask, int) or isinstance(template_mask, str)) and mask_dir is not None:
+        template_mask = mask_fns[template_mask]
+        mask_fns = [fn for fn in mask_fns if fn != template_mask]
+    elif not os.path.exists(template_mask):
+        raise NormalizationError('Need to provide valid template mask name '
+                                 '({}) if not providing brain masks'.format(template_mask))
 
     if tx_dir is None:
         tx_dir = os.path.join(os.getcwd(), 'reg_tforms')
@@ -71,9 +81,13 @@ def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0,
     img_fns = [fn for fn in img_fns if fn != template_img]
     template = ants.image_read(template_img)
 
-    if mask is not None:
-        template_mask = ants.image_read(mask)
+    if template_mask is not None:
+        template_mask = ants.image_read(template_mask)
     else:
+        template_mask = None
+
+    if mask_dir is not None:
+        template = template * template_mask
         template_mask = None
 
     _, base, _ = split_filename(template_img)
@@ -87,33 +101,22 @@ def register_to_template(img_dir, out_dir=None, tx_dir=None, template_img=0,
 
     for i, fn in enumerate(img_fns, 1):
         img = ants.image_read(fn)
+        if mask_dir is not None:
+            mask = ants.image_read(mask_fns[i-1])
+            img = img * mask
         _, base, _ = split_filename(fn)
         logger.info('Registering image: {} ({:d}/{:d})'.format(base, i, len(img_fns)))
         reg_result = ants.registration(template, img, type_of_transform=reg_alg,
-                                       mask=template_mask, verbose=verbose, **kwargs)
-        for j, tx_fn in enumerate(reg_result['invtransforms'], 1):
-            if not os.path.exists(tx_fn):
-                raise NormalizationError('Temporary file storing transform ({}) does not exist!'.format(tx_fn))
-            # transforms are actually saved as temp files
-            # we load and resave them, instead of moving them, to verify that they are loadable
-            if '.nii.gz' in tx_fn:
-                tx = ants.image_read(tx_fn)
-                out_tx = os.path.join(tx_dir, base + '_{:d}_deformable_tx.nii.gz'.format(j))
-                logger.debug('Output transform: {}'.format(out_tx))
-                ants.image_write(tx, out_tx)
-            elif '.mat' in tx_fn:
-                tx = ants.read_transform(tx_fn)
-                out_tx = os.path.join(tx_dir, base + '_{:d}_affine_tx.mat'.format(j))
-                logger.debug('Output transform: {}'.format(out_tx))
-                ants.write_transform(tx, out_tx)
-            else:
-                raise NormalizationError('Transform ({}) extension does not conform to expected values!'.format(tx_fn))
-        moved = reg_result['warpedmovout'].clone()
+                                       mask=template_mask, verbose=verbose,
+                                       outprefix=os.path.join(tx_dir, base + '_'),
+                                       **kwargs)
+        moved = ants.apply_transforms(fixed=template, moving=img, interpolator='bSpline',
+                                      transformlist=reg_result['fwdtransforms'])
         moved_fn = os.path.join(out_dir, base + '_reg.nii.gz')
         logger.debug('Output registered image: {}'.format(moved_fn))
         ants.image_write(moved, moved_fn)
-        # try to prevent segfault with forced garbage collection
-        del img, reg_result, tx, moved
+        # try to keep memory usage low w/ manual garbage collection
+        del img, reg_result, moved
         gc.collect()
 
 
@@ -137,7 +140,7 @@ def unregister(reg_dir, tx_dir, template_img, out_dir=None):
     reg_fns = glob(os.path.join(reg_dir, '*.nii*'))
     reg_fns = sorted([fn for fn in reg_fns if template_img != fn])
     affine_fns = glob(os.path.join(tx_dir, '*.mat'))
-    deformable_fns = glob(os.path.join(tx_dir, '*.nii.gz'))
+    deformable_fns = glob(os.path.join(tx_dir, '*InverseWarp.nii.gz'))
     reg_func_fns = sorted(affine_fns + deformable_fns)
     template = ants.image_read(template_img)
     if out_dir is None:
@@ -152,10 +155,11 @@ def unregister(reg_dir, tx_dir, template_img, out_dir=None):
         _, base, _ = split_filename(fn)
         img = ants.image_read(fn)
         transformlist = sorted([reg_fn for reg_fn in reg_func_fns if base in reg_fn])
+        whichtoinvert = [True if '.mat' in fn else False for fn in transformlist]
         logger.info('De-registering image: {} ({:d}/{:d})'.format(base, i, len(reg_fns)))
         unmoved = ants.apply_transforms(fixed=template, moving=img, interpolator='bSpline',
-                                        transformlist=transformlist)
+                                        transformlist=transformlist, whichtoinvert=whichtoinvert)
         ants.image_write(unmoved, os.path.join(out_dir, base + '_norm.nii.gz'))
-        # try to prevent segfault with forced garbage collection
+        # try to keep memory usage low w/ manual garbage collection
         del img
         gc.collect()
