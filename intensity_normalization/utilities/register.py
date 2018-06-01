@@ -16,6 +16,7 @@ import logging
 import os
 
 import ants
+import numpy as np
 
 from intensity_normalization.errors import NormalizationError
 from intensity_normalization.utilities.io import split_filename
@@ -106,12 +107,14 @@ def register_to_template(img_dir, mask_dir=None, out_dir=None, tx_dir=None, temp
             img = img * mask
         _, base, _ = split_filename(fn)
         logger.info('Registering image: {} ({:d}/{:d})'.format(base, i, len(img_fns)))
-        reg_result = ants.registration(template, img, type_of_transform=reg_alg,
+        reg_result = ants.registration(fixed=template, moving=img, type_of_transform=reg_alg,
                                        mask=template_mask, verbose=verbose,
                                        outprefix=os.path.join(tx_dir, base + '_'),
                                        **kwargs)
-        moved = ants.apply_transforms(fixed=template, moving=img, interpolator='bSpline',
-                                      transformlist=reg_result['fwdtransforms'])
+        # TODO: apply_transforms does not currently work as expected, need to investigate why
+        #moved = ants.apply_transforms(fixed=template, moving=img, interpolator='bSpline',
+        #                              transformlist=reg_result['fwdtransforms'])
+        moved = reg_result['warpedmovout']
         moved_fn = os.path.join(out_dir, base + '_reg.nii.gz')
         logger.debug('Output registered image: {}'.format(moved_fn))
         ants.image_write(moved, moved_fn)
@@ -120,7 +123,7 @@ def register_to_template(img_dir, mask_dir=None, out_dir=None, tx_dir=None, temp
         gc.collect()
 
 
-def unregister(reg_dir, tx_dir, template_img, out_dir=None):
+def unregister(reg_dir, tx_dir, template_img, out_dir=None, mask_dir=None):
     """
     undo the template registration process, this should be used with HM and RAVEL
     intensity normalization methods since they require the images to initially be
@@ -131,7 +134,7 @@ def unregister(reg_dir, tx_dir, template_img, out_dir=None):
         tx_dir (str): directory to from which to load registration tforms
         out_dir (str): directory to save de-registered images if you do not want them saved in
             a newly created directory (or existing dir) called `normalized`
-        template_img (int or str): a specified img path used as the template which all
+        template_img (str): a specified img path used as the template which all
             images were registered to
 
     Returns:
@@ -139,6 +142,10 @@ def unregister(reg_dir, tx_dir, template_img, out_dir=None):
     """
     reg_fns = glob(os.path.join(reg_dir, '*.nii*'))
     reg_fns = sorted([fn for fn in reg_fns if template_img != fn])
+    if mask_dir is not None:
+        _, template_base, _ = split_filename(template_img)
+        mask_fns = glob(os.path.join(mask_dir, '*.nii*'))
+        mask_fns = sorted([fn for fn in mask_fns if template_base not in fn])
     affine_fns = glob(os.path.join(tx_dir, '*.mat'))
     deformable_fns = glob(os.path.join(tx_dir, '*InverseWarp.nii.gz'))
     reg_func_fns = sorted(affine_fns + deformable_fns)
@@ -151,14 +158,27 @@ def unregister(reg_dir, tx_dir, template_img, out_dir=None):
     else:
         os.mkdir(out_dir)
 
+    # control verbosity of output when making registration function call
+    verbose = True if logger.getEffectiveLevel() == logging.getLevelName('DEBUG') else False
+
     for i, fn in enumerate(reg_fns):
         _, base, _ = split_filename(fn)
         img = ants.image_read(fn)
-        transformlist = sorted([reg_fn for reg_fn in reg_func_fns if base in reg_fn])
+        transformlist = sorted([reg_fn for reg_fn in reg_func_fns if base.replace('_reg', '') in reg_fn])
         whichtoinvert = [True if '.mat' in fn else False for fn in transformlist]
-        logger.info('De-registering image: {} ({:d}/{:d})'.format(base, i, len(reg_fns)))
-        unmoved = ants.apply_transforms(fixed=template, moving=img, interpolator='bSpline',
-                                        transformlist=transformlist, whichtoinvert=whichtoinvert)
+        logger.info('De-registering image: {} ({:d}/{:d})'.format(base, i+1, len(reg_fns)))
+        unmoved = ants.apply_transforms(fixed=template, moving=img, interpolator='linear',
+                                        transformlist=transformlist, whichtoinvert=whichtoinvert,
+                                        verbose=verbose)
+        if mask_dir is not None:
+            # if desired, include masks so that the zeros at the borders of the images are gone
+            # the zeros come from the affine transformation
+            mask = ants.image_read(mask_fns[i])
+            unmoved_data = unmoved.numpy()
+            minval = np.min(unmoved_data)
+            unmoved_data[mask.numpy() == 0] = minval
+            unmoved = unmoved.new_image_like(unmoved_data)
+
         ants.image_write(unmoved, os.path.join(out_dir, base + '_norm.nii.gz'))
         # try to keep memory usage low w/ manual garbage collection
         del img

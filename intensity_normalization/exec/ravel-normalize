@@ -125,8 +125,13 @@ def main():
                 register.register_to_template(args.img_dir, mask_dir=args.mask_dir,
                                               template_img=args.template_img, template_mask=args.template_mask,
                                               reg_alg=args.type_of_registration, **reg_kwargs)
-                template_img_rd = os.path.join(reg_dir, template_img_base + '.nii.gz')
-                shutil.copy(template_img, template_img_rd)
+                if isinstance(args.template_img, int) and isinstance(args.template_mask, int):
+                    import ants
+                    template_img_rd = os.path.join(reg_dir, template_img_base + '.nii.gz')
+                    template_mask_ = ants.image_read(template_mask)
+                    template_img_ = ants.image_read(template_img)
+                    ants.image_write(template_img_ * template_mask_, template_img_rd)
+                    del template_mask_, template_img_
 
             # create csf mask from registered images for RAVEL (used as control points)
             logger.info('Creating CSF Mask')
@@ -139,22 +144,23 @@ def main():
 
             # do the actual RAVEL normalization procedure (calls RAVEL in R)
             logger.info('Normalizing the images according to RAVEL')
-            out_dir = os.path.join(os.getcwd(), 'normalized_registered')
-            _ = ravel.ravel_normalize(reg_dir, template_mask, csf_mask, args.contrast, out_dir,
+            norm_dir = os.path.join(os.getcwd(), 'normalized_registered')
+            _ = ravel.ravel_normalize(reg_dir, template_mask, csf_mask, args.contrast, norm_dir,
                                       WhiteStripe=args.no_whitestripe)
 
             # move the images back into original coordinates (i.e., "un"-register the images)
             logger.info('Moving images back to original domain')
-            template_img_od = os.path.join(out_dir, template_img_base + '.nii.gz')
-            register.unregister(out_dir, tx_dir, template_img_od, args.output_dir)
-            template_img_normalized = os.path.join(args.output_dir, template_img_base + '_template_norm.nii.gz')
-            shutil.copy(template_img_od, template_img_normalized)
+            template_img_norm = os.path.join(norm_dir, template_img_base + '.nii.gz')
+            register.unregister(norm_dir, tx_dir, template_img_norm, args.output_dir, mask_dir=args.mask_dir)
+            if isinstance(args.template_img, int) and isinstance(args.template_mask, int):
+                template_img_final = os.path.join(args.output_dir, template_img_base + '_template_norm.nii.gz')
+                shutil.copy(template_img_norm, template_img_final)
 
             # delete all intermediate files (i.e., all files but the normalized images)
             if args.clean_intermediate_files:
                 logger.info('Removing intermediate files')
                 shutil.rmtree(reg_dir)
-                shutil.rmtree(out_dir)
+                shutil.rmtree(norm_dir)
                 shutil.rmtree(tx_dir)
                 shutil.rmtree(csf_dir)
         else:
