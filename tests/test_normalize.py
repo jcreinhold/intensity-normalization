@@ -56,8 +56,8 @@ class TestNormalization(unittest.TestCase):
         self.assertEqual(np.sum(normalized.shape), np.sum((9261, 1)))
 
     def test_ws_normalization(self):
-        normalized = whitestripe.ws_normalize(self.data_dir_r, 'T1', mask_dir=None, write_to_disk=False, slices=(4,7))
-        self.assertEqual(np.sum(normalized.shape), np.sum(self.img_r.get_data().shape))
+        normalized = whitestripe.ws_normalize(self.data_dir, 'T1', mask_dir=None, write_to_disk=False)
+        self.assertEqual(np.sum(normalized.shape), np.sum(self.img.get_data().shape))
 
     def test_ravel_normalization(self):
         normalized = ravel.ravel_normalize(self.data_dir, self.template_mask, self.template_mask, 'T1',
