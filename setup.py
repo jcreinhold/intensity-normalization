@@ -50,4 +50,5 @@ setup(install_requires=['numpy',
                         'scikit-learn',
                         'scikit-fuzzy',
                         'rpy2',
-                        'antspy'], **args)
+                        'antspy',
+                        'pygam'], **args)

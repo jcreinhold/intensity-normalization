@@ -36,10 +36,6 @@ def arg_parser():
                              'provide that directory here (must already exist)')
     parser.add_argument('-c', '--contrast', type=str, default='T1', choices=['T1', 'T2', 'FLAIR'],
                         help='contrast of the images in img-dir')
-    parser.add_argument('--slices', default=None, nargs=2, type=int,
-                        help='this argument is used in WhiteStripe, it uses the provided'
-                             'slice range to extract a region by which to normalize the histogram'
-                             'of the entire image (e.g., "--slices 50 61" uses slices 50-60')
     parser.add_argument('-p', '--plot-hist', action='store_true', default=False,
                          help='plot the histograms of the normalized images, save it in the output directory')
     parser.add_argument('-v', '--verbosity', action="count", default=0,
@@ -58,7 +54,7 @@ def main():
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
     logger = logging.getLogger(__name__)
     try:
-        _ = whitestripe.ws_normalize(args.img_dir, args.contrast, args.mask_dir, args.output_dir, slices=args.slices)
+        _ = whitestripe.ws_normalize(args.img_dir, args.contrast, args.mask_dir, args.output_dir)
 
         if args.plot_hist:
             with warnings.catch_warnings():
