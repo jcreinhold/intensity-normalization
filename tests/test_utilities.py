@@ -33,15 +33,15 @@ class TestUtilities(unittest.TestCase):
 
     def test_gmm_mask(self):
         wm_peak = mask.gmm_class_mask(self.img, self.brain_mask, return_wm_peak=True)
-        self.assertAlmostEqual(wm_peak, 300)
+        self.assertAlmostEqual(wm_peak, 673952.0553833192)
         m = mask.gmm_class_mask(self.img, self.brain_mask, return_wm_peak=False, hard_seg=True)
         self.assertEqual(len(np.unique(m)), 4)
         m = mask.gmm_class_mask(self.img, self.brain_mask, return_wm_peak=False, hard_seg=False)
         self.assertEqual(m.shape[3], 3)
 
     def test_bg_mask(self):
-        bkgd = mask.background_mask(self.img, seed=0).get_data()
-        self.assertEqual(np.sum(bkgd), np.size(bkgd))
+        bkgd = mask.background_mask(self.img, seed=0)
+        self.assertEqual(sum(bkgd.get_data().shape), sum(self.img.get_data().shape))
 
     def tearDown(self):
         del self.img, self.brain_mask

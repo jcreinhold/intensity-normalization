@@ -90,9 +90,9 @@ def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_dis
     for i, (img_fn, mask_fn, output_fn) in enumerate(zip(data, masks, output_files), 1):
         logger.info('Normalizing image: {} ({:d}/{:d})'.format(img_fn, i, len(data)))
         img = io.open_nii(img_fn)
-        mask = io.open_nii(img_fn) if mask_fn is not None else None
+        mask = io.open_nii(mask_fn) if mask_fn is not None else None
         indices = whitestripe(img, contrast, mask=mask, verbose=verbose)
-        normalized = whitestripe_norm(img, indices[0])
+        normalized = whitestripe_norm(img, indices)
         if write_to_disk:
             logger.info('Saving normalized image: {} ({:d}/{:d})'.format(output_fn, i, len(data)))
             io.save_nii(normalized, output_fn)
@@ -101,7 +101,7 @@ def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_dis
     return normalized
 
 
-def whitestripe(img, contrast, mask=None, nbins=2000, width=5, width_l=None, width_u=None, verbose=False):
+def whitestripe(img, contrast, mask=None, nbins=2000, width=0.05, width_l=None, width_u=None, verbose=False):
     """
     find the "(normal appearing) white (matter) stripe" of the input MR image
     and return the indices
@@ -111,13 +111,13 @@ def whitestripe(img, contrast, mask=None, nbins=2000, width=5, width_l=None, wid
         contrast (str): contrast of img (e.g., T1)
         mask (nibabel.nifti1.Nifti1Image): brainmask for img (None is default, for skull-stripped img)
         nbins (int): number of bins in the histogram
-        width (float): width in percentage for the "white (matter) stripe"
+        width (float): width quantile for the "white (matter) stripe"
         width_l (float): lower bound for width (default None, derives from width)
         width_u (float): upper bound for width (default None, derives from width)
         verbose (bool): show progress and warnings or nah
 
     Returns:
-        ws_ind (np.ndarray): the white stripe indices
+        ws_ind (np.ndarray): the white stripe indices (boolean mask)
     """
     if width_l is None and width_u is None:
         width_l = width
@@ -141,8 +141,8 @@ def whitestripe(img, contrast, mask=None, nbins=2000, width=5, width_l=None, wid
     else:
         raise NormalizationError('Contrast {} not valid, needs to be T1, T2, FA, or MD')
     img_mode_q = np.mean(voi < mode)
-    ws = np.percentile(voi, (max(img_mode_q - width_l, 0), min(img_mode_q + width_u, 1)))
-    ws_ind = np.where(np.logical_and(masked > ws[0], masked < ws[1]))
+    ws = np.percentile(voi, (max(img_mode_q - width_l, 0) * 100, min(img_mode_q + width_u, 1) * 100))
+    ws_ind = np.logical_and(masked > ws[0], masked < ws[1])
     if len(ws_ind) == 0:
         raise NormalizationError('WhiteStripe failed to find any valid indices!')
     return ws_ind
