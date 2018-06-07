@@ -60,10 +60,10 @@ def arg_parser():
     adv_options.add_argument('-cmt', '--csf-mask-threshold', type=float, default=1,
                              help='"probability" of CSF intersection (e.g., 0.9 => 90% of CSF masks intersect) '
                                   '[Default = 1]')
-    adv_options.add_argument('--template-img', default=0,
+    adv_options.add_argument('--template-img', default=None,
                              help='path to desired template image, or number in the '
                                   '(ordered) set of provided images [Default = 0]')
-    adv_options.add_argument('--template-mask', default=0,
+    adv_options.add_argument('--template-mask', default=None,
                              help='path to desired template image brain mask, or number in the '
                                   '(ordered) set of provided images [Default = 0]')
     adv_options.add_argument('--no-whitestripe', action='store_false', default=True,
@@ -95,11 +95,17 @@ def main():
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
     logger = logging.getLogger(__name__)
     try:
+        img_fns = sorted(glob(os.path.join(args.img_dir, '*.nii*')))
+        mask_fns = sorted(glob(os.path.join(args.mask_dir, '*.nii*')))
         if not args.no_register:
             # handle setting the template image and template mask
-            if isinstance(args.template_img, int) and isinstance(args.template_mask, int):
-               template_img = sorted(glob(os.path.join(args.img_dir, '*.nii*')))[args.template_img]
-               template_mask = sorted(glob(os.path.join(args.mask_dir, '*.nii*')))[args.template_img]
+            if args.template_img is None and args.template_mask is None:
+                logger.debug('Template image and mask not defined so will use MNI template')
+                template_img = None
+                template_mask = None
+            elif isinstance(args.template_img, int) and isinstance(args.template_mask, int):
+               template_img = img_fns[args.template_img]
+               template_mask = mask_fns[args.template_img]
             elif isinstance(args.template_img, str) and isinstance(args.template_mask, str):
                template_img = args.template_img
                template_mask = args.template_mask
@@ -144,23 +150,12 @@ def main():
 
             # do the actual RAVEL normalization procedure (calls RAVEL in R)
             logger.info('Normalizing the images according to RAVEL')
-            norm_dir = os.path.join(os.getcwd(), 'normalized_registered')
-            _ = ravel.ravel_normalize(reg_dir, template_mask, csf_mask, args.contrast, norm_dir,
-                                      WhiteStripe=args.no_whitestripe)
-
-            # move the images back into original coordinates (i.e., "un"-register the images)
-            logger.info('Moving images back to original domain')
-            template_img_norm = os.path.join(norm_dir, template_img_base + '.nii.gz')
-            register.unregister(norm_dir, tx_dir, template_img_norm, args.output_dir, mask_dir=args.mask_dir)
-            if isinstance(args.template_img, int) and isinstance(args.template_mask, int):
-                template_img_final = os.path.join(args.output_dir, template_img_base + '_template_norm.nii.gz')
-                shutil.copy(template_img_norm, template_img_final)
+            Z, _ = ravel.ravel_normalize(reg_dir, template_mask, csf_mask, args.contrast)
 
             # delete all intermediate files (i.e., all files but the normalized images)
             if args.clean_intermediate_files:
                 logger.info('Removing intermediate files')
                 shutil.rmtree(reg_dir)
-                shutil.rmtree(norm_dir)
                 shutil.rmtree(tx_dir)
                 shutil.rmtree(csf_dir)
         else:
@@ -169,16 +164,31 @@ def main():
                 raise NormalizationError('If registration not done, then csf mask must be provided')
             if not isinstance(args.template_mask, str):
                 raise NormalizationError('template mask must be provided for the registered imgs')
-            _ = ravel.ravel_normalize(args.data_dir, args.template_mask, args.csf_mask, args.contrast, args.output_dir)
+            Z, _ = ravel.ravel_normalize(args.data_dir, args.template_mask, args.csf_mask, args.contrast)
+
+        V = ravel.image_matrix(img_fns, args.contrast, masks=mask_fns,
+                               verbose=True if level == 2 else False)
+        normalized = ravel.image_matrix_to_images(V, img_fns)
+
+        # save the normalized images to disk
+        output_dir = os.getcwd() if args.output_dir is None else args.output_dir
+        out_fns = []
+        for fn in img_fns:
+            _, base, ext = io.split_filename(fn)
+            out_fns.append(os.path.join(output_dir, base + ext))
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+        for norm, out_fn in zip(normalized, out_fns):
+            norm.to_filename(out_fn)
 
         if args.plot_hist:
             with warnings.catch_warnings():
                 warnings.filterwarnings('ignore', category=FutureWarning)
                 from intensity_normalization.plot.hist import all_hists
                 import matplotlib.pyplot as plt
-            ax = all_hists(args.output_dir, args.mask_dir)
+            ax = all_hists(output_dir, args.mask_dir)
             ax.set_title('RAVEL')
-            plt.savefig(os.path.join(args.output_dir, 'hist.png'))
+            plt.savefig(os.path.join(output_dir, 'hist.png'))
 
         return 0
     except Exception as e:

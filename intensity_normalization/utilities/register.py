@@ -49,20 +49,45 @@ def register_to_template(img_dir, mask_dir=None, out_dir=None, tx_dir=None, temp
     """
 
     img_fns = sorted(glob(os.path.join(img_dir, '*.nii*')))
+    logger.debug('Input images: {}'.format(img_fns))
     if mask_dir is not None:
         mask_fns = sorted(glob(os.path.join(mask_dir, '*.nii*')))
-    logger.debug('Input images: {}'.format(img_fns))
+        logger.debug('Input masks: {}'.format(mask_fns))
+    else:
+        mask_fns = [None] * len(img_fns)
 
-    if isinstance(template_img, int):
-        template_img = img_fns[template_img]
+    # (awfully) handle loading in template img and mask depending on different input
+    # if template_img and template_mask not provided, then use MNI
+    if template_img is None and template_mask is None:
+        template_img = template_mask = ants.get_ants_data('mni')
+    else:
+        # can provide template img as an int and template mask as an int
+        if isinstance(template_img, int) and isinstance(template_mask, int) and mask_dir is not None:
+            template_img = img_fns[template_img]
+            template_mask = mask_fns[template_mask]
+        # can provide template img as a path and template mask as a path
+        elif isinstance(template_img, str) and isinstance(template_mask, str):
+            if not os.path.exists(template_img) or not os.path.exists(template_mask):
+                raise NormalizationError('Need to provide valid template img/mask name')
+        else:
+            raise NormalizationError('Input Template image ({}) and mask ({}) invalid types'
+                                     .format(template_img, template_mask))
 
-    if (isinstance(template_mask, int) or isinstance(template_mask, str)) and mask_dir is not None:
-        template_mask = mask_fns[template_mask]
-        mask_fns = [fn for fn in mask_fns if fn != template_mask]
-    elif not os.path.exists(template_mask):
-        raise NormalizationError('Need to provide valid template mask name '
-                                 '({}) if not providing brain masks'.format(template_mask))
+    # make sure template image/mask not in set of images to register
+    img_fns = [fn for fn in img_fns if fn != template_img]
+    mask_fns = [fn for fn in mask_fns if fn != template_mask]
+    template = ants.image_read(template_img)
+    tmask = ants.image_read(template_mask)
+    template = template * tmask
 
+    # verify that the template image is correct and the images to register are good
+    _, base, _ = split_filename(template_img)
+    logger.debug('Template image: {}'.format(base))
+    for i, fn in enumerate(img_fns, 1):
+        _, base, _ = split_filename(fn)
+        logger.debug('Image to register ({}): {}'.format(i, base))
+
+    # format and create necessary directories
     if tx_dir is None:
         tx_dir = os.path.join(os.getcwd(), 'reg_tforms')
         if os.path.exists(tx_dir):
@@ -79,36 +104,19 @@ def register_to_template(img_dir, mask_dir=None, out_dir=None, tx_dir=None, temp
         else:
             os.mkdir(out_dir)
 
-    img_fns = [fn for fn in img_fns if fn != template_img]
-    template = ants.image_read(template_img)
-
-    if template_mask is not None:
-        template_mask = ants.image_read(template_mask)
-    else:
-        template_mask = None
-
-    if mask_dir is not None:
-        template = template * template_mask
-        template_mask = None
-
-    _, base, _ = split_filename(template_img)
-    logger.debug('Template image: {}'.format(base))
-    for i, fn in enumerate(img_fns, 1):
-        _, base, _ = split_filename(fn)
-        logger.debug('Image to register ({}): {}'.format(i, base))
-
     # control verbosity of output when making registration function call
     verbose = True if logger.getEffectiveLevel() == logging.getLevelName('DEBUG') else False
 
-    for i, fn in enumerate(img_fns, 1):
+    # actually do the registration here
+    for i, fn in enumerate(img_fns):
         img = ants.image_read(fn)
         if mask_dir is not None:
-            mask = ants.image_read(mask_fns[i-1])
+            mask = ants.image_read(mask_fns[i])
             img = img * mask
         _, base, _ = split_filename(fn)
-        logger.info('Registering image: {} ({:d}/{:d})'.format(base, i, len(img_fns)))
+        logger.info('Registering image: {} ({:d}/{:d})'.format(base, i+1, len(img_fns)))
         reg_result = ants.registration(fixed=template, moving=img, type_of_transform=reg_alg,
-                                       mask=template_mask, verbose=verbose,
+                                       mask=tmask, verbose=verbose,
                                        outprefix=os.path.join(tx_dir, base + '_'),
                                        **kwargs)
         # TODO: apply_transforms does not currently work as expected, need to investigate why

@@ -25,21 +25,20 @@ import logging
 from operator import add
 import os
 
+import nibabel as nib
 import numpy as np
-from rpy2.robjects.vectors import StrVector
-from rpy2.robjects.packages import importr
-from rpy2.rinterface import NULL
 
 from intensity_normalization.errors import NormalizationError
+from intensity_normalization.normalize.whitestripe import whitestripe, whitestripe_norm
 from intensity_normalization.utilities import io
 from intensity_normalization.utilities.mask import csf_mask
 
-ravel = importr('RAVEL')
 
 logger = logging.getLogger(__name__)
 
 
-def ravel_normalize(img_dir, template_mask, csf_mask, contrast, output_dir=None, write_to_disk=True, **kwargs):
+def ravel_normalize(img_dir, template_mask, control_mask, contrast,
+                    output_dir=None, write_to_disk=False, do_whitestripe=True, k=1):
     """
     Use RAVEL [1] to normalize the intensities of a set of MR images to eliminate
     unwanted technical variation in images (but, hopefully, preserve biological variation)
@@ -47,7 +46,7 @@ def ravel_normalize(img_dir, template_mask, csf_mask, contrast, output_dir=None,
     Args:
         img_dir (str): directory containing MR images to be normalized
         template_mask (str): brain mask for template image
-        csf_mask (str): path to csf mask for data in data_dir
+        control_mask (str): path to mask of control region (e.g., CSF) for data in data_dir
         contrast (str): contrast of MR images to be normalized (T1, T2, or FLAIR)
         output_dir (str): directory to save images if you do not want them saved in
             same directory as data_dir
@@ -55,6 +54,7 @@ def ravel_normalize(img_dir, template_mask, csf_mask, contrast, output_dir=None,
         kwargs: ravel keyword arguments not included here
 
     Returns:
+        Z (np.ndarray): unwanted factors (used in ravel correction)
         normalized (np.ndarray): set of normalized images from data_dir
 
     References:
@@ -64,38 +64,129 @@ def ravel_normalize(img_dir, template_mask, csf_mask, contrast, output_dir=None,
             pp. 198–212, 2016.
     """
     data = sorted(glob(os.path.join(img_dir, '*.nii*')))
-    input_files = StrVector(data)
-    if output_dir is None:
-        output_files = NULL
+
+    if output_dir is None or not write_to_disk:
+        out_fns = None
     else:
         out_fns = []
         for fn in data:
             _, base, ext = io.split_filename(fn)
             out_fns.append(os.path.join(output_dir, base + ext))
-        output_files = StrVector(out_fns)
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
 
     verbose = True if logger.getEffectiveLevel() == logging.getLevelName('DEBUG') else False
 
-    normalizedR = ravel.normalizeRAVEL(input_files, control_mask=csf_mask, brain_mask=template_mask,
-                                       WhiteStripe_Type=contrast, writeToDisk=False,
-                                       returnMatrix=True, verbose=verbose, **kwargs)
-    normalized_brains = np.array(normalizedR).T
+    # get parameters necessary and setup the V array
+    V, Vc = image_matrix(data, contrast, masks=template_mask,
+                         control_mask=control_mask, do_whitestripe=do_whitestripe,
+                         verbose=verbose)
 
+    # estimate the unwanted factors Z
+    _, _, vh = np.linalg.svd(Vc)
+    Z = vh[:, 1:k]
+
+    # perform the ravel correction
+    V_norm = ravel_correction(V, Z)
+
+    # save the results to disk if desired
     if write_to_disk:
-        mask = io.open_nii(template_mask)
-        mask_data = mask.get_data()
-        # TODO: make this more robust, currently hard-coded and will probably fail on different orientations
-        transpose_perm = (2, 1, 0)  # need to jump through hoops to get the output in the correct order
-        for out_fn, brain in zip(output_files, normalized_brains):
-            out_img = np.transpose(np.zeros(mask_data.shape, dtype=np.float64), transpose_perm)
-            out_img[np.transpose(mask_data, transpose_perm) == 1] = brain
-            out_img[np.transpose(mask_data, transpose_perm) == 0] = np.min(brain) - 1
-            out_img = np.transpose(out_img, np.argsort(transpose_perm))
-            io.save_nii(mask, out_fn, data=out_img)
+        for i, (img_fn, out_fn) in enumerate(zip(data, out_fns)):
+            img = io.open_nii(img_fn)
+            norm = V_norm[:, i].reshape(img.get_data().shape)
+            io.save_nii(img, out_fn, data=norm)
 
-    return normalized_brains
+    return Z, V_norm
+
+
+def ravel_correction(V, Z):
+    """
+    correct the images (in the image matrix V) by removing the trend
+    found in Z
+
+    Args:
+        V (np.ndarray):
+        Z (np.ndarray):
+
+    Returns:
+        res (np.ndarray):
+    """
+    means = np.mean(V, axis=1)  # row means
+    beta = np.matmul(np.matmul(np.linalg.inv(np.matmul(Z.T, Z)), Z.T), V.T)
+    fitted = np.matmul(Z, beta).T
+    res = V - fitted
+    res = res + means
+    return res
+
+
+def image_matrix(imgs, contrast, masks=None, control_mask=None,
+                 do_whitestripe=True, verbose=False):
+    """
+    creates an matrix of images where the rows correspond the the voxels of
+    each image and the columns are the images
+
+    if a control mask is supplied, then a similarly shaped matrix is also output
+    where the rows correspond to voxels defined in the control mask
+
+    Args:
+        imgs (list):
+        contrast (str):
+        masks (list or str):
+        control_mask (str):
+        do_whitestripe (bool):
+        verbose (bool):
+
+    Returns:
+        V (np.ndarray):
+        Vc (np.ndarray):
+    """
+    img_shape = io.open_nii(imgs[0]).get_data().shape
+    V = np.zeros(sum(img_shape), len(imgs))
+    if control_mask is not None and masks is not None and isinstance(masks, str):
+        cmask = io.open_nii(control_mask)
+        mask_ = io.open_nii(masks)
+        cmask_data = cmask.get_data() * mask_.get_data()  # make sure that the template and control overlap
+        num_c_pts = np.sum(cmask_data.flatten())
+        Vc = np.zeros(num_c_pts, len(imgs))
+    elif control_mask is not None and (masks is None or not isinstance(masks, str)):
+        raise NormalizationError('If control mask provided, then *one* template brain mask must be provided')
+
+    if masks is None:
+        masks = [None] * len(imgs)
+
+    # do whitestripe on the image before applying RAVEL (if desired)
+    for i, (img_fn, mask_fn) in enumerate(zip(imgs, masks)):
+        img = io.open_nii(img_fn)
+        mask = io.open_nii(mask_fn)
+        if do_whitestripe:
+            logger.info('Applying WhiteStripe to image {} ({:d}/{:d})'.format(img_fn, i + 1, len(imgs)))
+            inds = whitestripe(img, contrast, mask, verbose=verbose)
+            img = whitestripe_norm(img, inds)
+        img_data = img.get_data()
+        V[:,i] = img_data.flatten()
+        if control_mask is not None:
+            Vc[:,i] = img_data[cmask_data == 1].flatten()
+
+    return V if control_mask is None else (V, Vc)
+
+
+def image_matrix_to_images(V, imgs):
+    """
+    convert an image matrix to a list of the correctly formated nifti images
+
+    Args:
+        V (np.ndarray):
+        imgs (list):
+
+    Returns:
+        img_list (list):
+    """
+    img_list = []
+    for i, img_fn in enumerate(imgs):
+        img = io.open_nii(img_fn)
+        nimg = nib.Nifti1Image(V[:, i].reshape(img.get_data().shape), img.affine, img.header)
+        img_list.append(nimg)
+    return img_list
 
 
 def csf_mask_intersection(img_dir, mask_dir=None, prob=1):
