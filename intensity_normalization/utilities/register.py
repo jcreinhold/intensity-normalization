@@ -24,8 +24,8 @@ from intensity_normalization.utilities.io import split_filename
 logger = logging.getLogger(__name__)
 
 
-def register_to_template(img_dir, mask_dir=None, out_dir=None, tx_dir=None, template_img=0,
-                         template_mask=0, reg_alg='SyNCC', **kwargs):
+def register_to_template(img_dir, mask_dir=None, out_dir=None, tx_dir=None, template_img=None,
+                         template_mask=None, template_dir=None, reg_alg='SyN', **kwargs):
     """
     register a set of images using SyN (deformable registration)
     and write their output and transformations to disk
@@ -40,6 +40,8 @@ def register_to_template(img_dir, mask_dir=None, out_dir=None, tx_dir=None, temp
         template_img (int or str): number of img in img_dir, or a specified img path
             to be used as the template which all images are registered to
         template_mask (int or str): mask for template (used for better registration)
+        template_dir (str): directory to save modified template images if you do not want
+            them saved in a newly created directory (or existing dir) called `templates`
         reg_alg (str): registration algorithm to use, currently SyN w/ CC as metric
             (see ants.registration type_of_transform for more details/choices)
         kwargs: extra arguments for registration (see ants.registration for all available)
@@ -59,29 +61,34 @@ def register_to_template(img_dir, mask_dir=None, out_dir=None, tx_dir=None, temp
     # (awfully) handle loading in template img and mask depending on different input
     # if template_img and template_mask not provided, then use MNI
     if template_img is None and template_mask is None:
-        template_img = template_mask = ants.get_ants_data('mni')
+        template_img_fn = template_mask_fn = ants.get_ants_data('mni')
     else:
         # can provide template img as an int and template mask as an int
         if isinstance(template_img, int) and isinstance(template_mask, int) and mask_dir is not None:
-            template_img = img_fns[template_img]
-            template_mask = mask_fns[template_mask]
+            template_img_fn = img_fns[template_img]
+            template_mask_fn = mask_fns[template_mask]
         # can provide template img as a path and template mask as a path
         elif isinstance(template_img, str) and isinstance(template_mask, str):
             if not os.path.exists(template_img) or not os.path.exists(template_mask):
                 raise NormalizationError('Need to provide valid template img/mask name')
+            template_img_fn = template_img
+            template_mask_fn = template_mask
         else:
             raise NormalizationError('Input Template image ({}) and mask ({}) invalid types'
                                      .format(template_img, template_mask))
 
     # make sure template image/mask not in set of images to register
-    img_fns = [fn for fn in img_fns if fn != template_img]
-    mask_fns = [fn for fn in mask_fns if fn != template_mask]
-    template = ants.image_read(template_img)
-    tmask = ants.image_read(template_mask)
+    img_fns = [fn for fn in img_fns if fn != template_img_fn]
+    mask_fns = [fn for fn in mask_fns if fn != template_mask_fn]
+    template = ants.image_read(template_img_fn)
+    tmask = ants.image_read(template_mask_fn)
+    if template_mask is None:
+        # if using the MNI template, make a mask from the brain image
+        tmask = ants.iMath_fill_holes(tmask.threshold_image(0.1))
     template = template * tmask
 
     # verify that the template image is correct and the images to register are good
-    _, base, _ = split_filename(template_img)
+    _, base, _ = split_filename(template_img_fn)
     logger.debug('Template image: {}'.format(base))
     for i, fn in enumerate(img_fns, 1):
         _, base, _ = split_filename(fn)
@@ -104,13 +111,28 @@ def register_to_template(img_dir, mask_dir=None, out_dir=None, tx_dir=None, temp
         else:
             os.mkdir(out_dir)
 
+    if template_dir is None:
+        template_dir = os.path.join(os.getcwd(), 'templates')
+        if os.path.exists(template_dir):
+            logger.warning('templates directory already exists, '
+                           'may overwrite existing tforms!')
+        else:
+            os.mkdir(template_dir)
+
     # control verbosity of output when making registration function call
     verbose = True if logger.getEffectiveLevel() == logging.getLevelName('DEBUG') else False
 
     # actually do the registration here
     for i, fn in enumerate(img_fns):
         img = ants.image_read(fn)
+        if i == 0:
+            template, tmask, orientation = __preprocess_template(img, template, tmask, template_dir)
+        else:
+            if img.orientation != orientation:
+                raise NormalizationError('All input images must be oriented the same way ({} != {})'
+                                         .format(orientation, img.orientation))
         if mask_dir is not None:
+            # if masks are available, then use them to skull-strip img for better registration
             mask = ants.image_read(mask_fns[i])
             img = img * mask
         _, base, _ = split_filename(fn)
@@ -129,6 +151,8 @@ def register_to_template(img_dir, mask_dir=None, out_dir=None, tx_dir=None, temp
         # try to keep memory usage low w/ manual garbage collection
         del img, reg_result, moved
         gc.collect()
+
+    return template, tmask
 
 
 def unregister(reg_dir, tx_dir, template_img, out_dir=None, mask_dir=None):
@@ -191,3 +215,26 @@ def unregister(reg_dir, tx_dir, template_img, out_dir=None, mask_dir=None):
         # try to keep memory usage low w/ manual garbage collection
         del img
         gc.collect()
+
+
+def __preprocess_template(img, template, tmask, template_dir):
+    """
+    helper function to preprocess the template image into the same of the images
+    """
+    orientation = img.orientation
+    origin = img.origin
+    tmask_data = tmask.numpy()
+    template_ = template.reorient_image2(orientation)
+    template_.set_origin(origin)
+    template_ = template_.resample_image_to_target(img)
+    tmask_ = tmask.reorient_image2(orientation)
+    tmask_.set_origin(origin)
+    tmask_ = tmask_.resample_image_to_target(img)
+    new_template_fn = os.path.join(template_dir, 'template_img.nii.gz')
+    new_mask_fn = os.path.join(template_dir, 'template_mask.nii.gz')
+    ants.image_write(template_, new_template_fn)
+    ants.image_write(tmask_, new_mask_fn)
+    if np.abs(np.sum(tmask_.numpy()) - np.sum(tmask_data)) < 10:
+        logger.warning('Registration to template may be sub-optimal, inspect the saved '
+                       'template images ({},{}) to verify that they are acceptable.'.format(new_template_fn, new_mask_fn))
+    return template_, tmask_, orientation

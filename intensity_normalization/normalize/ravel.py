@@ -19,10 +19,8 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: Apr 27, 2018
 """
 
-from functools import reduce
 from glob import glob
 import logging
-from operator import add
 import os
 
 import nibabel as nib
@@ -31,7 +29,6 @@ import numpy as np
 from intensity_normalization.errors import NormalizationError
 from intensity_normalization.normalize.whitestripe import whitestripe, whitestripe_norm
 from intensity_normalization.utilities import io
-from intensity_normalization.utilities.mask import csf_mask
 
 
 logger = logging.getLogger(__name__)
@@ -63,13 +60,13 @@ def ravel_normalize(img_dir, template_mask, control_mask, contrast,
             in magnetic resonance imaging studies,” Neuroimage, vol. 132,
             pp. 198–212, 2016.
     """
-    data = sorted(glob(os.path.join(img_dir, '*.nii*')))
+    img_fns = sorted(glob(os.path.join(img_dir, '*.nii*')))
 
     if output_dir is None or not write_to_disk:
         out_fns = None
     else:
         out_fns = []
-        for fn in data:
+        for fn in img_fns:
             _, base, ext = io.split_filename(fn)
             out_fns.append(os.path.join(output_dir, base + ext))
         if not os.path.exists(output_dir):
@@ -78,7 +75,7 @@ def ravel_normalize(img_dir, template_mask, control_mask, contrast,
     verbose = True if logger.getEffectiveLevel() == logging.getLevelName('DEBUG') else False
 
     # get parameters necessary and setup the V array
-    V, Vc = image_matrix(data, contrast, masks=template_mask,
+    V, Vc = image_matrix(img_fns, contrast, masks=template_mask,
                          control_mask=control_mask, do_whitestripe=do_whitestripe,
                          verbose=verbose)
 
@@ -91,7 +88,7 @@ def ravel_normalize(img_dir, template_mask, control_mask, contrast,
 
     # save the results to disk if desired
     if write_to_disk:
-        for i, (img_fn, out_fn) in enumerate(zip(data, out_fns)):
+        for i, (img_fn, out_fn) in enumerate(zip(img_fns, out_fns)):
             img = io.open_nii(img_fn)
             norm = V_norm[:, i].reshape(img.get_data().shape)
             io.save_nii(img, out_fn, data=norm)
@@ -105,17 +102,17 @@ def ravel_correction(V, Z):
     found in Z
 
     Args:
-        V (np.ndarray):
-        Z (np.ndarray):
+        V (np.ndarray): image matrix (rows are voxels, columns are images)
+        Z (np.ndarray): unwanted factors (see ravel_normalize and the orig paper)
 
     Returns:
-        res (np.ndarray):
+        res (np.ndarray): normalized images
     """
     means = np.mean(V, axis=1)  # row means
     beta = np.matmul(np.matmul(np.linalg.inv(np.matmul(Z.T, Z)), Z.T), V.T)
     fitted = np.matmul(Z, beta).T
     res = V - fitted
-    res = res + means
+    res = res + means[:,np.newaxis]
     return res
 
 
@@ -141,13 +138,14 @@ def image_matrix(imgs, contrast, masks=None, control_mask=None,
         Vc (np.ndarray):
     """
     img_shape = io.open_nii(imgs[0]).get_data().shape
-    V = np.zeros(sum(img_shape), len(imgs))
+    V = np.zeros((int(np.prod(img_shape)), len(imgs)))
     if control_mask is not None and masks is not None and isinstance(masks, str):
         cmask = io.open_nii(control_mask)
         mask_ = io.open_nii(masks)
         cmask_data = cmask.get_data() * mask_.get_data()  # make sure that the template and control overlap
-        num_c_pts = np.sum(cmask_data.flatten())
-        Vc = np.zeros(num_c_pts, len(imgs))
+        num_c_pts = int(np.sum(cmask_data.flatten()))
+        Vc = np.zeros((num_c_pts, len(imgs)))
+        masks = [masks] * len(imgs)
     elif control_mask is not None and (masks is None or not isinstance(masks, str)):
         raise NormalizationError('If control mask provided, then *one* template brain mask must be provided')
 
@@ -189,29 +187,4 @@ def image_matrix_to_images(V, imgs):
     return img_list
 
 
-def csf_mask_intersection(img_dir, mask_dir=None, prob=1):
-    """
-    use all nifti T1w images in data_dir to create csf mask in common areas
 
-    Args:
-        img_dir (str): directory containing MR images to be normalized
-        mask_dir (str): if images are not skull-stripped, then provide brain mask
-        prob (float): given all data, proportion of data labeled as csf to be
-            used for intersection
-
-    Returns:
-        intersection (np.ndarray): binary mask of common csf areas for all provided imgs
-    """
-    if not (0 <= prob <= 1):
-        raise NormalizationError('prob must be between 0 and 1. {} given.'.format(prob))
-    data = sorted(glob(os.path.join(img_dir, '*.nii*')))
-    if mask_dir is None:
-        masks = [None] * len(data)
-    else:
-        masks = sorted(glob(os.path.join(mask_dir, '*.nii*')))
-    logger.info('creating csf masks for all images')
-    csf = [csf_mask(io.open_nii(img), brain_mask=io.open_nii(mask)) for img, mask in zip(data, masks)]
-    csf_sum = reduce(add, csf)  # need to use reduce instead of sum b/c data structure
-    intersection = np.zeros(csf_sum.shape)
-    intersection[csf_sum >= np.floor(len(data) * prob)] = 1
-    return intersection
