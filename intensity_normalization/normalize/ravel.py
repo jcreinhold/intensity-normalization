@@ -126,16 +126,17 @@ def image_matrix(imgs, contrast, masks=None, control_mask=None,
     where the rows correspond to voxels defined in the control mask
 
     Args:
-        imgs (list):
-        contrast (str):
-        masks (list or str):
-        control_mask (str):
-        do_whitestripe (bool):
-        verbose (bool):
+        imgs (list): list of paths to MR images of interest
+        contrast (str): contrast of the set of imgs (e.g., T1)
+        masks (list or str): list of corresponding brain masks or just one (template) mask
+        control_mask (str): image of control voxels (usually CSF mask)
+        do_whitestripe (bool): do whitestripe on the images before storing in matrix or nah
+        verbose (bool): pass verbosity option to whitestripe if desired
 
     Returns:
-        V (np.ndarray):
-        Vc (np.ndarray):
+        V (np.ndarray): image matrix (rows are voxels, columns are images)
+        Vc (np.ndarray): image matrix of control voxels (rows are voxels, columns are images)
+            Vc only returned if a control mask and one template mask is provided
     """
     img_shape = io.open_nii(imgs[0]).get_data().shape
     V = np.zeros((int(np.prod(img_shape)), len(imgs)))
@@ -173,11 +174,11 @@ def image_matrix_to_images(V, imgs):
     convert an image matrix to a list of the correctly formated nifti images
 
     Args:
-        V (np.ndarray):
-        imgs (list):
+        V (np.ndarray): image matrix (rows are voxels, columns are images)
+        imgs (list): list of paths to corresponding MR images in V
 
     Returns:
-        img_list (list):
+        img_list (list): list of nifti images extracted from V
     """
     img_list = []
     for i, img_fn in enumerate(imgs):
@@ -185,6 +186,3 @@ def image_matrix_to_images(V, imgs):
         nimg = nib.Nifti1Image(V[:, i].reshape(img.get_data().shape), img.affine, img.header)
         img_list.append(nimg)
     return img_list
-
-
-
