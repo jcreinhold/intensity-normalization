@@ -20,11 +20,13 @@ import warnings
 
 with warnings.catch_warnings():
     warnings.filterwarnings('ignore', category=FutureWarning)
+    import ants
     import nibabel as nib
     from intensity_normalization.errors import NormalizationError
     from intensity_normalization.normalize import ravel
-    from intensity_normalization.utilities import register
+    from intensity_normalization.utilities.csf import csf_mask_intersection
     from intensity_normalization.utilities import io
+    from intensity_normalization.utilities import register
 
 
 def arg_parser():
@@ -57,18 +59,18 @@ def arg_parser():
     adv_options = parser.add_argument_group('Advanced Options')
     adv_options.add_argument('-cm', '--csf-mask', type=str, default=None,
                              help='if created, path to a csf mask for the registered imgs [Default = None]')
-    adv_options.add_argument('-cmt', '--csf-mask-threshold', type=float, default=1,
-                             help='"probability" of CSF intersection (e.g., 0.9 => 90% of CSF masks intersect) '
+    adv_options.add_argument('-cmt', '--csf-mask-threshold', type=float, default=1.0,
+                             help='probability of CSF intersection (e.g., 0.9 => 90 percent of CSF masks intersect) '
                                   '[Default = 1]')
-    adv_options.add_argument('--template-img', default=0,
-                             help='path to desired template image, or number in the '
-                                  '(ordered) set of provided images [Default = 0]')
-    adv_options.add_argument('--template-mask', default=0,
+    adv_options.add_argument('--template-img', default=None,
+                             help='path to desired template image, or number in the (ordered) set of '
+                                  'provided images OR None, which defaults to use MNI as template [Default = None]')
+    adv_options.add_argument('--template-mask', default=None,
                              help='path to desired template image brain mask, or number in the '
-                                  '(ordered) set of provided images [Default = 0]')
+                                  '(ordered) set of provided image OR None, which defaults to use MNI as template [Default = None]')
     adv_options.add_argument('--no-whitestripe', action='store_false', default=True,
                              help='do not use whitestripe in RAVEL if this flag is on')
-    adv_options.add_argument('-tr', '--type-of-registration', default='SyNCC', type=str,
+    adv_options.add_argument('-tr', '--type-of-registration', default='SyN', type=str,
                              help='registration algorithm to use (e.g., SyN, SyNCC, ElasticSyN) [Default = SyNCC]')
     adv_options.add_argument('--reg-kwargs', default=None, type=str,
                              help='add arguments to json file or corrected formatted string for use in registration '
@@ -95,26 +97,36 @@ def main():
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
     logger = logging.getLogger(__name__)
     try:
+        img_fns = sorted(glob(os.path.join(args.img_dir, '*.nii*')))
+        mask_fns = sorted(glob(os.path.join(args.mask_dir, '*.nii*')))
         if not args.no_register:
             # handle setting the template image and template mask
-            if isinstance(args.template_img, int) and isinstance(args.template_mask, int):
-               template_img = sorted(glob(os.path.join(args.img_dir, '*.nii*')))[args.template_img]
-               template_mask = sorted(glob(os.path.join(args.mask_dir, '*.nii*')))[args.template_img]
+            if args.template_img is None and args.template_mask is None:
+                logger.debug('Template image and mask not defined so will use MNI template')
+                template_img = None
+                template_mask = None
+            elif isinstance(args.template_img, int) and isinstance(args.template_mask, int):
+               template_img = img_fns[args.template_img]
+               template_mask = mask_fns[args.template_img]
             elif isinstance(args.template_img, str) and isinstance(args.template_mask, str):
                template_img = args.template_img
                template_mask = args.template_mask
             else:
-                raise NormalizationError('template_img, template_mask must be an integer '
-                                         'or a string corresponding to the image number '
-                                         'or the full path of the image file')
-            _, template_img_base, _ = io.split_filename(template_img)
+                raise NormalizationError('template_img, template_mask must both be an integer '
+                                         'or both be a string corresponding to the image number '
+                                         'or the full path of the image file, or both be None')
+            _, template_img_base, _ = io.split_filename(template_img) if template_img is not None else None, 'MNI', None
 
             # register all images to template
             reg_dir = os.path.join(os.getcwd(), 'registered')
             tx_dir = os.path.join(os.getcwd(), 'reg_tforms')
-            if os.path.exists(reg_dir) and os.path.exists(tx_dir) and args.use_old_registration:
+            template_dir = os.path.join(os.getcwd(), 'templates')
+            tmask_fn = os.path.join(template_dir, 'template_mask.nii.gz')
+            if os.path.exists(reg_dir) and os.path.exists(tx_dir) and os.path.exists(template_dir) and args.use_old_registration:
                 logger.info('Using previous registration results assuming '
                             'they were generated from the input img/mask set!')
+                # TODO: fix need to use ants to import template data, there appears to be a bug in the nibabel conversion func
+                tmask = ants.image_read(tmask_fn)
             else:
                 logger.info('Registering images to template ({})'.format(template_img_base))
                 if args.reg_kwargs is not None:
@@ -122,11 +134,10 @@ def main():
                     reg_kwargs = json.loads(args.reg_kwargs)
                 else:
                     reg_kwargs = {}
-                register.register_to_template(args.img_dir, mask_dir=args.mask_dir,
-                                              template_img=args.template_img, template_mask=args.template_mask,
-                                              reg_alg=args.type_of_registration, **reg_kwargs)
+                _, tmask = register.register_to_template(args.img_dir, mask_dir=args.mask_dir,
+                                                         template_img=args.template_img, template_mask=args.template_mask,
+                                                         reg_alg=args.type_of_registration, **reg_kwargs)
                 if isinstance(args.template_img, int) and isinstance(args.template_mask, int):
-                    import ants
                     template_img_rd = os.path.join(reg_dir, template_img_base + '.nii.gz')
                     template_mask_ = ants.image_read(template_mask)
                     template_img_ = ants.image_read(template_img)
@@ -135,50 +146,59 @@ def main():
 
             # create csf mask from registered images for RAVEL (used as control points)
             logger.info('Creating CSF Mask')
-            csf_mask_inter = ravel.csf_mask_intersection(reg_dir, args.mask_dir, prob=args.csf_mask_threshold)
+            csf_mask_inter = csf_mask_intersection(reg_dir, tmask, prob=args.csf_mask_threshold)
             csf_dir = os.path.join(os.getcwd(), 'csf_masks')
             csf_mask = os.path.join(csf_dir, 'csf_mask.nii.gz') if args.csf_mask is None else args.csf_mask
             if csf_mask is not None and not os.path.exists(csf_dir):
                 os.mkdir(csf_dir)
-            io.save_nii(nib.load(template_img), csf_mask, data=csf_mask_inter)
+            if template_img is None:
+                ants.image_write(tmask.new_image_like(csf_mask_inter), csf_mask)
+            else:
+                io.save_nii(nib.load(template_img), csf_mask, data=csf_mask_inter)
 
-            # do the actual RAVEL normalization procedure (calls RAVEL in R)
+            # do the actual RAVEL normalization procedure
             logger.info('Normalizing the images according to RAVEL')
-            norm_dir = os.path.join(os.getcwd(), 'normalized_registered')
-            _ = ravel.ravel_normalize(reg_dir, template_mask, csf_mask, args.contrast, norm_dir,
-                                      WhiteStripe=args.no_whitestripe)
-
-            # move the images back into original coordinates (i.e., "un"-register the images)
-            logger.info('Moving images back to original domain')
-            template_img_norm = os.path.join(norm_dir, template_img_base + '.nii.gz')
-            register.unregister(norm_dir, tx_dir, template_img_norm, args.output_dir, mask_dir=args.mask_dir)
-            if isinstance(args.template_img, int) and isinstance(args.template_mask, int):
-                template_img_final = os.path.join(args.output_dir, template_img_base + '_template_norm.nii.gz')
-                shutil.copy(template_img_norm, template_img_final)
+            Z, _ = ravel.ravel_normalize(reg_dir, tmask_fn, csf_mask, args.contrast)
 
             # delete all intermediate files (i.e., all files but the normalized images)
             if args.clean_intermediate_files:
                 logger.info('Removing intermediate files')
                 shutil.rmtree(reg_dir)
-                shutil.rmtree(norm_dir)
                 shutil.rmtree(tx_dir)
                 shutil.rmtree(csf_dir)
+                shutil.rmtree(template_dir)
         else:
             # if the images are already registered, then just do the RAVEL normalization
             if args.csf_mask is None:
                 raise NormalizationError('If registration not done, then csf mask must be provided')
             if not isinstance(args.template_mask, str):
                 raise NormalizationError('template mask must be provided for the registered imgs')
-            _ = ravel.ravel_normalize(args.data_dir, args.template_mask, args.csf_mask, args.contrast, args.output_dir)
+            Z, _ = ravel.ravel_normalize(args.data_dir, args.template_mask, args.csf_mask, args.contrast)
+
+        V = ravel.image_matrix(img_fns, args.contrast, masks=mask_fns,
+                               verbose=True if args.verbosity >= 2 else False)
+        V_norm = ravel.ravel_correction(V, Z)
+        normalized = ravel.image_matrix_to_images(V_norm, img_fns)
+
+        # save the normalized images to disk
+        output_dir = os.getcwd() if args.output_dir is None else args.output_dir
+        out_fns = []
+        for fn in img_fns:
+            _, base, ext = io.split_filename(fn)
+            out_fns.append(os.path.join(output_dir, base + ext))
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+        for norm, out_fn in zip(normalized, out_fns):
+            norm.to_filename(out_fn)
 
         if args.plot_hist:
             with warnings.catch_warnings():
                 warnings.filterwarnings('ignore', category=FutureWarning)
                 from intensity_normalization.plot.hist import all_hists
                 import matplotlib.pyplot as plt
-            ax = all_hists(args.output_dir, args.mask_dir)
+            ax = all_hists(output_dir, args.mask_dir)
             ax.set_title('RAVEL')
-            plt.savefig(os.path.join(args.output_dir, 'hist.png'))
+            plt.savefig(os.path.join(output_dir, 'hist.png'))
 
         return 0
     except Exception as e:
