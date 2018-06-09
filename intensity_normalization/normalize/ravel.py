@@ -81,7 +81,7 @@ def ravel_normalize(img_dir, template_mask, control_mask, contrast,
 
     # estimate the unwanted factors Z
     _, _, vh = np.linalg.svd(Vc)
-    Z = vh[:, 1:k]
+    Z = vh.T[:, 0:k]
 
     # perform the ravel correction
     V_norm = ravel_correction(V, Z)
@@ -110,7 +110,7 @@ def ravel_correction(V, Z):
     """
     means = np.mean(V, axis=1)  # row means
     beta = np.matmul(np.matmul(np.linalg.inv(np.matmul(Z.T, Z)), Z.T), V.T)
-    fitted = np.matmul(Z, beta).T
+    fitted = np.matmul(Z, beta).T  # this line (alone) gives slightly diff answer than R ver, otherwise exactly same
     res = V - fitted
     res = res + means[:,np.newaxis]
     return res

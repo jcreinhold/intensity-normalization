@@ -176,7 +176,7 @@ def main():
             Z, _ = ravel.ravel_normalize(args.data_dir, args.template_mask, args.csf_mask, args.contrast)
 
         V = ravel.image_matrix(img_fns, args.contrast, masks=mask_fns,
-                               verbose=True if level == 2 else False)
+                               verbose=True if args.verbosity >= 2 else False)
         V_norm = ravel.ravel_correction(V, Z)
         normalized = ravel.image_matrix_to_images(V_norm, img_fns)
 

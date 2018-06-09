@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-csf
+intensity_normalization.utilities.csf
 
+functions to create the CSF control mask
+separated from other routines since it relies on ANTsPy
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 
