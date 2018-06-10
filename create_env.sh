@@ -13,8 +13,6 @@ else
 fi
 
 command -v conda >/dev/null 2>&1 || { echo >&2 "I require anaconda but it's not installed.  Aborting."; return 1; }
-command -v flirt >/dev/null 2>&1 || { echo >&2 "I require FSL but it's not installed.  Aborting."; return 1; }
-command -v cmake >/dev/null 2>&1 || { echo >&2 "I require cmake but it's not installed.  Aborting."; return 1; }
 
 # first make sure conda is up-to-date
 conda update -n base conda --yes || return
@@ -32,13 +30,6 @@ packages=(
 
 conda_forge_packages=(
     nibabel 
-    rpy2 
-    r-essentials
-    r-mgcv 
-    r-mnormt 
-    r-nlme 
-    r-psych
-    r-git2r
     webcolors
     plotly
     libiconv
@@ -48,31 +39,12 @@ conda_forge_packages=(
 
 conda create --channel conda-forge --name intensity_normalization ${packages[@]} ${conda_forge_packages[@]} --yes || return
 source activate intensity_normalization || return
-pip install -U scikit-fuzzy || return
+pip install -U scikit-fuzzy pygam || return
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
     pip install https://github.com/ANTsX/ANTsPy/releases/download/v0.1.4/antspy-0.1.4-cp36-cp36m-linux_x86_64.whl
 else
     pip install https://github.com/ANTsX/ANTsPy/releases/download/Weekly/antspy-0.1.4-cp36-cp36m-macosx_10_7_x86_64.whl
 fi
-
-# handle installing appropriate r packages (assumes FSL is installed)
-# add default server to Rprofile so that install package scripts run w/o error
-chooseserver='options(repos=structure(c(CRAN="http://cran.us.r-project.org")))'
-if [ -f "~/.Rprofile" ]; then
-    if grep -q $chooseserver "~/.Rprofile"; then
-        :
-    else
-        echo $chooseserver >> ~/.Rprofile
-    fi
-else
-    echo $chooseserver > ~/.Rprofile
-fi
-
-R -e 'packages = installed.packages(); packages = packages[, "Package"]; if (!"devtools" %in% packages) { install.packages("devtools") };'
-R -e 'source("https://neuroconductor.org/neurocLite.R"); neuroc_install(c("ITKR", "ANTsR"));'
-R -e 'source("https://neuroconductor.org/neurocLite.R"); neuro_install(c("fslr", "neurobase"));'
-R -e 'packages = installed.packages(); packages = packages[, "Package"]; if (!"limma" %in% packages) { source("https://bioconductor.org/biocLite.R"); biocLite("limma") };'
-R -e 'source("https://neuroconductor.org/neurocLite.R"); neuro_install(c("WhiteStripe", "RAVEL", "robex"))'
 
 # now finally install the intensity-normalization package
 python setup.py install || return

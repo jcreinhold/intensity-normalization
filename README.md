@@ -6,29 +6,19 @@ This package contains code to normalize the intensity of various contrasts of MR
 Requirements
 ------------
 
-The number of dependencies in this project is, unfortunately, large. However, we have provided a script to
-create a conda environment with the necessary packages (see create_env.sh, 
-note that this takes some time to run since some packages need to be built from source).
-
-The python requirements 
-
-- Numpy
-- Matplotlib
-- nibabel
-- scikit-learn
-- scikit-fuzzy
-- rpy2
 - antspy
+- matplotlib
+- numpy
+- nibabel
+- pygam
+- scikit-fuzzy
+- scikit-learn
 
-Furthermore, R needs to be installed with the following packages (and their dependencies):
+We have provided a script `create_env.sh` to create a conda environment with the necessary packages 
+(run like: `. ./create_env.sh`, this package will be installed in the created environment)
 
-- RAVEL
-- WhiteStripe
-- neurobase
-
-For additional functionality, in R, also install 
-
-- robex
+To use ROBEX, R and the rpy2 python package need to be installed along with robex in R (this is not handled in 
+the environment script).
 
 Basic Usage
 -----------
