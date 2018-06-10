@@ -50,7 +50,7 @@ class TestNormalization(unittest.TestCase):
         self.assertAlmostEqual(normalized.get_data()[self.wm_mask.get_data()].mean(), self.norm_val, delta=20)
 
     def test_hm_normalization(self):
-        normalized = hm.hm_normalize(self.data_dir, self.template_mask, 'T1', write_to_disk=False)
+        normalized = hm.hm_normalize(self.data_dir, write_to_disk=False)
 
     def test_ws_normalization(self):
         normalized = whitestripe.ws_normalize(self.data_dir, 'T1', mask_dir=self.mask_dir, write_to_disk=False)

@@ -5,9 +5,6 @@ intensity_normalization.normalize.ravel
 
 Use RAVEL [1] to intensity normalize a population of MR images
 
-Note that this package requires RAVEL (and its dependencies)
-to be installed in R
-
 References:
    ﻿[1] J. P. Fortin, E. M. Sweeney, J. Muschelli, C. M. Crainiceanu,
         and R. T. Shinohara, “Removing inter-subject technical variability
