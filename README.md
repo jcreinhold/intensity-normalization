@@ -10,7 +10,6 @@ Requirements
 - matplotlib
 - numpy
 - nibabel
-- pygam
 - scikit-fuzzy
 - scikit-learn
 

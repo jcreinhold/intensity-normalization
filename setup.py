@@ -44,10 +44,10 @@ args = dict(
     keywords="mr intensity normalization"
 )
 
-setup(install_requires=['numpy',
-                        'nibabel',
+setup(install_requires=['antspy',
                         'matplotlib',
+                        'nibabel',
+                        'numpy',
                         'scikit-learn',
                         'scikit-fuzzy',
-                        'antspy',
-                        'pygam'], **args)
+                        'scipy'], **args)
