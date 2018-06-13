@@ -1,7 +1,13 @@
 intensity-normalization
 =====
 
+<a href='http://intensity-normalization.readthedocs.io/en/latest/?badge=latest'>
+    <img src='https://readthedocs.org/projects/intensity-normalization/badge/?version=latest' alt='Documentation Status' />
+</a>
+
 This package contains code to normalize the intensity of various contrasts of MR neuro images
+
+[Link to main Gitlab Repository](https://gitlab.com/jcreinhold/intensity-normalization)
 
 Requirements
 ------------
