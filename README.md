@@ -1,6 +1,8 @@
 intensity-normalization
 =====
 
+[![Build Status](https://travis-ci.org/jcreinhold/intensity-normalization.svg?branch=master)](https://travis-ci.org/jcreinhold/intensity-normalization)
+
 This package contains code to normalize the intensity of various contrasts of MR neuro images
 
 Requirements
@@ -12,6 +14,8 @@ Requirements
 - nibabel
 - scikit-fuzzy
 - scikit-learn
+- scipy
+- statsmodels
 
 We have provided a script `create_env.sh` to create a conda environment with the necessary packages 
 (run like: `. ./create_env.sh`, this package will be installed in the created environment)

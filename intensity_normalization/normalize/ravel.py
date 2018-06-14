@@ -119,7 +119,7 @@ def ravel_correction(V, Z):
 
 
 def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_matrix=False,
-                 membership_thresh=0.99, smoothness=0.25, verbose=False):
+                 membership_thresh=0.99, smoothness=0.25, max_ctrl_vox=10000, verbose=False):
     """
     creates an matrix of images where the rows correspond the the voxels of
     each image and the columns are the images
@@ -132,6 +132,8 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
         return_ctrl_matrix (bool): return control matrix for imgs (i.e., a subset of V's rows)
         membership_thresh (float): threshold of membership for control voxels (want this very high)
         smoothness (float): smoothness parameter for segmentation for control voxels
+        max_ctrl_vox (int): maximum number of control voxels (if too high, everything
+            crashes depending on available memory)
         verbose (bool): pass verbosity option to whitestripe if desired
 
     Returns:
@@ -169,11 +171,11 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
                                          .format(base, membership_thresh))
             elif np.sum(ctrl_mask) < 100:
                 logger.warning('Few control voxels found ({:d}) (potentially a problematic image ({}) or '
-                               'threshold ({}) too high)'.format(np.sum(ctrl_mask), base, membership_thresh))
+                               'threshold ({}) too high)'.format(int(np.sum(ctrl_mask)), base, membership_thresh))
             ctrl_vox.append(img_data[ctrl_mask == 1].flatten())
 
     if return_ctrl_matrix:
-        min_len = min(map(len, ctrl_vox))
+        min_len = min(min(map(len, ctrl_vox)), max_ctrl_vox)
         logger.info('Using {:d} control voxels'.format(min_len))
         Vc = np.zeros((min_len, len(imgs)))
         for i in range(len(imgs)):
