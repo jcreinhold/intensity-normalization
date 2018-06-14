@@ -26,11 +26,9 @@ import os
 
 import nibabel as nib
 import numpy as np
-from pygam import PoissonGAM
-from scipy.signal import argrelmax
 
 from intensity_normalization.errors import NormalizationError
-from intensity_normalization.utilities import io
+from intensity_normalization.utilities import io, hist
 
 logger = logging.getLogger(__name__)
 
@@ -130,14 +128,12 @@ def whitestripe(img, contrast, mask=None, nbins=2000, width=0.05, width_l=None, 
     else:
         masked = img_data
         voi = img_data[img_data > 0]
-    counts, bin_edges = np.histogram(voi, bins=nbins)
-    bins = np.diff(bin_edges)/2 + bin_edges[:-1]
     if contrast in ['T1', 'FA', 'last']:
-        mode = get_last_mode(bins, counts, verbose=verbose)
+        mode = hist.get_last_mode(voi)
     elif contrast in ['T2', 'largest']:
-        mode = get_largest_mode(bins, counts, verbose=verbose)
+        mode = hist.get_largest_mode(voi)
     elif contrast in ['MD', 'first']:
-        mode = get_first_mode(bins, counts, verbose=verbose)
+        mode = hist.get_first_mode(voi)
     else:
         raise NormalizationError('Contrast {} not valid, needs to be T1, T2, FA, or MD')
     img_mode_q = np.mean(voi < mode)
@@ -166,87 +162,3 @@ def whitestripe_norm(img, indices):
     norm_img_data = (img_data - mu)/sig
     norm_img = nib.Nifti1Image(norm_img_data, img.affine, img.header)
     return norm_img
-
-
-def get_largest_mode(bins, counts, verbose=False):
-    """
-    gets the last (reliable) peak in the histogram
-
-    Args:
-        bins (np.ndarray): bins of histogram (see np.histogram)
-        counts (np.ndarray): counts of histogram (see np.histogram)
-        verbose (bool): if true, show progress bar
-
-    Returns:
-        largest_peak (int): index of the largest peak
-    """
-    sh = smooth_hist(bins, counts, verbose=verbose)
-    largest_peak = bins[np.argmax(sh)]
-    return largest_peak
-
-
-def get_last_mode(bins, counts, rare_prop=1/5, remove_tail=True, verbose=False):
-    """
-    gets the last (reliable) peak in the histogram
-
-    Args:
-        bins (np.ndarray): bins of histogram (see np.histogram)
-        counts (np.ndarray): counts of histogram (see np.histogram)
-        rare_prop (float): if remove_tail, use this proportion
-        remove_tail (bool): remove rare portions of histogram
-            (included to replicate the default behavior in the R version)
-        verbose (bool): if true, show progress bar
-
-    Returns:
-        last_peak (int): index of the last peak
-    """
-    if remove_tail:
-        which_rare = counts < rare_prop * max(counts)
-        counts = counts[which_rare != 1]
-        bins = bins[which_rare != 1]
-    sh = smooth_hist(bins, counts, verbose=verbose)
-    maxima = argrelmax(sh)[0]  # for some reason argrelmax returns a tuple, so [0] extracts value
-    last_peak = bins[maxima[-1]]
-    return last_peak
-
-
-def get_first_mode(bins, counts, rare_prop=1/5, remove_tail=True, verbose=False):
-    """
-    gets the first (reliable) peak in the histogram
-
-    Args:
-        bins (np.ndarray): bins of histogram (see np.histogram)
-        counts (np.ndarray): counts of histogram (see np.histogram)
-        rare_prop (float): if remove_tail, use this proportion
-        remove_tail (bool): remove rare portions of histogram
-            (included to replicate the default behavior in the R version)
-        verbose (bool): if true, show progress bar
-
-    Returns:
-        first_peak (int): index of the first peak
-    """
-    if remove_tail:
-        which_rare = counts < rare_prop * max(counts)
-        counts = counts[which_rare != 1]
-        bins = bins[which_rare != 1]
-    sh = smooth_hist(bins, counts, verbose=verbose)
-    maxima = argrelmax(sh)[0]  # for some reason argrelmax returns a tuple, so [0] extracts value
-    first_peak = bins[maxima[0]]
-    return first_peak
-
-
-def smooth_hist(bins, counts, verbose=False):
-    """
-    use a generalized additive model to smooth a histogram
-
-    Args:
-        bins (np.ndarray): bins of histogram (see np.histogram)
-        counts (np.ndarray): counts of histogram (see np.histogram)
-        verbose (bool): if true, show progress bar
-
-    Returns:
-        smoothed (np.ndarray): smoothed version of counts
-    """
-    gam = PoissonGAM().gridsearch(bins, counts, progress=verbose)
-    smoothed = gam.predict(bins)
-    return smoothed

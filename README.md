@@ -1,6 +1,7 @@
 intensity-normalization
 =====
 
+[![Build Status](https://travis-ci.org/jcreinhold/intensity-normalization.svg?branch=master)](https://travis-ci.org/jcreinhold/intensity-normalization)
 <a href='http://intensity-normalization.readthedocs.io/en/latest/?badge=latest'>
     <img src='https://readthedocs.org/projects/intensity-normalization/badge/?version=latest' alt='Documentation Status' />
 </a>
@@ -16,9 +17,10 @@ Requirements
 - matplotlib
 - numpy
 - nibabel
-- pygam
 - scikit-fuzzy
 - scikit-learn
+- scipy
+- statsmodels
 
 We have provided a script `create_env.sh` to create a conda environment with the necessary packages 
 (run like: `. ./create_env.sh`, this package will be installed in the created environment)

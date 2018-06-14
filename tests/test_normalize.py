@@ -25,12 +25,10 @@ class TestNormalization(unittest.TestCase):
         wd = os.path.dirname(os.path.abspath(__file__))
         self.data_dir = os.path.join(wd, 'test_data', 'images')
         self.mask_dir = os.path.join(wd, 'test_data', 'masks')
-        self.control_dir = os.path.join(wd, 'test_data', 'control')
         self.img = io.open_nii(os.path.join(self.data_dir, 'test.nii.gz'))
         self.brain_mask = io.open_nii(os.path.join(self.mask_dir, 'mask.nii.gz'))
         self.template_mask = os.path.join(self.mask_dir, 'mask.nii.gz')
         self.wm_mask = fcm.find_wm_mask(self.img, self.brain_mask)
-        self.csf_mask = os.path.join(self.control_dir, 'csf_mask.nii.gz')
         self.norm_val = 1000
 
     def test_zscore_normalization(self):
@@ -57,7 +55,7 @@ class TestNormalization(unittest.TestCase):
         self.assertEqual(np.sum(normalized.get_data().shape), np.sum(self.img.get_data().shape))
 
     def test_ravel_normalization(self):
-        normalized = ravel.ravel_normalize(self.data_dir, self.template_mask, self.csf_mask, 'T1', write_to_disk=False)
+        normalized = ravel.ravel_normalize(self.data_dir, self.mask_dir, 'T1', write_to_disk=False)
 
     def tearDown(self):
         del self.img, self.brain_mask

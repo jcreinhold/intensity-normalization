@@ -26,23 +26,33 @@ from intensity_normalization.utilities import io
 logger = logging.getLogger(__name__)
 
 
-def csf_mask(img, brain_mask, csf_thresh=0.9):
+def csf_mask(img, brain_mask, csf_thresh=0.9, return_prob=False, mrf=0.25):
     """
     create a binary mask of csf using atropos (FMM) segmentation
     of a T1-w image
 
     Args:
-        img (ants.core.ants_image.ANTsImage): target img
-        brain_mask (ants.core.ants_image.ANTsImage): brain mask for img
+        img (ants.core.ants_image.ANTsImage or nibabel.nifti1.Nifti1Image): target img
+        brain_mask (ants.core.ants_image.ANTsImage or nibabel.nifti1.Nifti1Image): brain mask for img
         csf_thresh (float): membership threshold to count as CSF
+        return_prob (bool): if true, then return membership values
+            instead of binary (i.e., thresholded membership) mask
+        mrf (float): markov random field parameter
+            (i.e., smoothness parameter, higher is a smoother segmentation)
 
     Returns:
         csf (np.ndarray): binary CSF mask for img
     """
-    res = img.kmeans_segmentation(3, kmask=brain_mask, mrf=0.3)
-    avg_intensity = [np.mean(img.numpy()[prob_img.numpy() > csf_thresh]) for prob_img in res['probabilityimages']]
+    # convert nibabel to antspy format images (to do atropos segmentation)
+    if hasattr(img, 'get_data') and hasattr(brain_mask, 'get_data'):
+        img = ants.from_nibabel(img)
+        brain_mask = ants.from_nibabel(brain_mask)
+    res = img.kmeans_segmentation(3, kmask=brain_mask, mrf=mrf)
+    avg_intensity = [np.mean(img.numpy()[prob_img.numpy() > 0.5]) for prob_img in res['probabilityimages']]
     csf_arg = np.argmin(avg_intensity)
-    csf = (res['probabilityimages'][csf_arg].numpy() > csf_thresh).astype(np.float32)
+    csf = res['probabilityimages'][csf_arg].numpy()
+    if not return_prob:
+        csf = (csf > csf_thresh).astype(np.float32)
     return csf
 
 
