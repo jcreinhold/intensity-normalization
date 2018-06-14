@@ -12,6 +12,7 @@ Created on: Apr 24, 2018
 """
 
 from setuptools import setup, find_packages
+from sys import platform
 
 
 with open('README.md') as f:
@@ -19,6 +20,13 @@ with open('README.md') as f:
 
 with open('LICENSE') as f:
     license = f.read()
+
+if platform == "linux" or platform == "linux32":
+    antspy = "https://github.com/ANTsX/ANTsPy/releases/download/v0.1.4/antspy-0.1.4-cp36-cp36m-linux_x86_64.whl"
+elif platform == "darwin":
+    antspy = "https://github.com/ANTsX/ANTsPy/releases/download/Weekly/antspy-0.1.4-cp36-cp36m-macosx_10_7_x86_64.whl"
+else:
+    raise Exception('intensity-normalization package only supports linux and OS X')
 
 args = dict(
     name='intensity-normalization',
@@ -41,13 +49,15 @@ args = dict(
              'intensity_normalization/exec/preprocess',
              'intensity_normalization/exec/plot-hists',
              'intensity_normalization/exec/tissue-mask'],
-    keywords="mr intensity normalization"
+    keywords="mr intensity normalization",
+    dependency_links=[antspy]
 )
 
-setup(install_requires=['numpy',
-                        'nibabel',
+setup(install_requires=['antspy',
                         'matplotlib',
+                        'nibabel',
+                        'numpy',
                         'scikit-learn',
                         'scikit-fuzzy',
-                        'antspy',
-                        'pygam'], **args)
+                        'scipy',
+                        'statsmodels'], **args)

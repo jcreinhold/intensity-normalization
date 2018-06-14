@@ -18,28 +18,30 @@ command -v conda >/dev/null 2>&1 || { echo >&2 "I require anaconda but it's not 
 conda update -n base conda --yes || return
 
 packages=(
-    numpy 
-    matplotlib 
-    seaborn
-    scikit-learn 
-    nose 
-    sphinx
     coverage
+    matplotlib
+    nose
+    numpy
+    scikit-learn
+    scipy
+    seaborn
+    sphinx
     vtk
 )
 
 conda_forge_packages=(
-    nibabel 
-    webcolors
-    plotly
-    libiconv
     itk
+    libiconv
+    nibabel
+    plotly
     sphinx-argparse
+    statsmodels
+    webcolors
 )
 
 conda create --channel conda-forge --name intensity_normalization ${packages[@]} ${conda_forge_packages[@]} --yes || return
 source activate intensity_normalization || return
-pip install -U scikit-fuzzy pygam || return
+pip install -U scikit-fuzzy || return
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
     pip install https://github.com/ANTsX/ANTsPy/releases/download/v0.1.4/antspy-0.1.4-cp36-cp36m-linux_x86_64.whl
 else
