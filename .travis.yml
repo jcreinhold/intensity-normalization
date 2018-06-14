@@ -16,9 +16,10 @@ before_install:
   - export PATH="$HOME/miniconda/bin:$PATH"
   - conda update --yes conda
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy scipy matplotlib
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy scipy matplotlib cython
   - pip install pytest-pep8 pytest-cov python-coveralls
-  - python setup.py install
+  - pip install -U scikit-fuzzy
+  - python setup.py install --force
   - pip install coverage
 script:
   - nosetests -v --with-coverage --cover-tests --cover-package=intensity-normalization tests

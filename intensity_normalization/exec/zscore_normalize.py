@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.zscore-normalize
+intensity_normalization.exec.zscore_normalize.py
 
 command line executable for Z-score intensity normalization routine
 

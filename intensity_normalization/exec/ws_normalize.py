@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.ws-normalize
+intensity_normalization.exec.ws_normalize.py
 
 command line executable for whitestripe intensity normalization routine
 

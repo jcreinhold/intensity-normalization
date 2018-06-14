@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.kde-normalize
+intensity_normalization.exec.gmm_normalize.py
 
-command line executable for kernel density intensity normalization routine
+command line executable for gmm intensity normalization routine
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 
@@ -19,28 +19,43 @@ import os
 import sys
 import warnings
 
+import numpy as np
+
 with warnings.catch_warnings():
     warnings.filterwarnings('ignore', category=FutureWarning)
     from intensity_normalization.errors import NormalizationError
-    from intensity_normalization.normalize import kde
+    from intensity_normalization.normalize import gmm
     from intensity_normalization.utilities import io
+    from intensity_normalization.utilities.mask import gmm_class_mask, background_mask
 
 
 def arg_parser():
-    parser = argparse.ArgumentParser(description='Use Kernel Density Estimation method to WM peak '
-                                                 'normalize a set of nifti MR images.')
+    parser = argparse.ArgumentParser(description='Use GMM to model the tissue classes in brain and '
+                                                 'normalize the WM peak w/ this method for a set of nifti MR images')
     parser.add_argument('-i', '--image', type=str, required=True,
                         help='path to a nifti MR image of the brain')
-    parser.add_argument('-m', '--brain-mask', type=str, default=None,
-                        help='path to a nifti brain mask for the image,'
-                             'if image is not skull-stripped')
-    parser.add_argument('-c', '--contrast', type=str, default='T1',
-                        help='contrast of the image (e.g., T1, T2, etc.)')
+    parser.add_argument('-m', '--brain-mask', type=str,
+                        help='path to a nifti brain mask for the image, '
+                             'provide this if image is not skull-stripped')
     parser.add_argument('-o', '--output-dir', type=str, default=None,
                         help='path to output normalized images '
-                             '(default: to directory containing images')
+                             '(default: to directory containing images)')
+    parser.add_argument('--contrast', type=str, choices=['T1', 'T2'], default='T1',
+                        help='pick the contrast of the input MR image (T1 or T2)')
+    parser.add_argument('-b', '--background-mask', type=str,
+                        help='path to a mask of the background')
+    parser.add_argument('-w', '--wm-peak', type=str, default=None,
+                        help='saved WM peak value, found by first input T1 image,'
+                             'can be used consecutively for other contrasts for the same patient')
+    parser.add_argument('--save-wm-peak', action='store_true', default=False,
+                        help='store the found WM peak or nah, use wm-peak as the name if true')
+    parser.add_argument('--find-background-mask', action='store_true', default=False,
+                        help='calculate a mask for the background (to zero it out)')
     parser.add_argument('--norm-value', type=float, default=1000,
-                        help='value by which to normalize the WM peak, default 1000')
+                        help='value by which to normalize the WM peak')
+    parser.add_argument('--keep-bg', action='store_true', default=False,
+                        help='if this flag is activated, then no background mask '
+                             'is calculated or used')
     parser.add_argument('--single-img', action='store_true', default=False,
                         help='image and mask are individual images, not directories')
     parser.add_argument('-p', '--plot-hist', action='store_true', default=False,
@@ -50,20 +65,29 @@ def arg_parser():
     return parser
 
 
-def process(image_fn, brain_mask_fn, args, logger):
-    img = io.open_nii(image_fn)
-    if args.brain_mask is not None:
-        mask = io.open_nii(brain_mask_fn)
-    else:
-        mask = None
-    dirname, base, _ = io.split_filename(image_fn)
+def process(image, brain_mask, args, logger):
+    img = io.open_nii(image)
+    mask = io.open_nii(brain_mask)
+    dirname, base, ext = io.split_filename(image)
     if args.output_dir is not None:
         dirname = args.output_dir
         if not os.path.exists(dirname):
             logger.info('Making output directory: {}'.format(dirname))
             os.mkdir(dirname)
-    normalized = kde.kde_normalize(img, mask, args.contrast, args.norm_value)
-    outfile = os.path.join(dirname, base + '_norm.nii.gz')
+    if args.find_background_mask:
+        bg_mask = background_mask(img)
+        bgfile = os.path.join(dirname, base + '_bgmask' + ext)
+        io.save_nii(bg_mask, bgfile, is_nii=True)
+    if args.wm_peak is not None:
+        logger.info('Loading WM peak: ', args.wm_peak)
+        peak = float(np.load(args.wm_peak))
+    else:
+        peak = gmm_class_mask(img, brain_mask=mask, contrast=args.contrast)
+        if args.save_wm_peak:
+            np.save(os.path.join(dirname, base + '_wmpeak.npy'), peak)
+    normalized = gmm.gmm_normalize(img, mask, args.norm_value, args.contrast,
+                                   args.background_mask, peak)
+    outfile = os.path.join(dirname, base + '_norm' + ext)
     logger.info('Normalized image saved: {}'.format(outfile))
     io.save_nii(normalized, outfile, is_nii=True)
 
@@ -88,6 +112,7 @@ def main():
                 raise NormalizationError('input images and masks must be in correspondence and greater than zero '
                                          '({:d} != {:d})'.format(len(img_fns), len(mask_fns)))
             for i, (img, mask) in enumerate(zip(img_fns, mask_fns), 1):
+                _, base, _ = io.split_filename(img)
                 logger.info('Normalizing image {} ({:d}/{:d})'.format(img, i, len(img_fns)))
                 process(img, mask, args, logger)
         else:
@@ -101,7 +126,7 @@ def main():
                 from intensity_normalization.plot.hist import all_hists
                 import matplotlib.pyplot as plt
             ax = all_hists(args.output_dir, args.brain_mask)
-            ax.set_title('KDE')
+            ax.set_title('GMM')
             plt.savefig(os.path.join(args.output_dir, 'hist.png'))
 
         return 0

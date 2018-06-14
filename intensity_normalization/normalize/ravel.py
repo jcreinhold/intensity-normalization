@@ -105,7 +105,7 @@ def ravel_correction(V, Z):
 
     Args:
         V (np.ndarray): image matrix (rows are voxels, columns are images)
-        Z (np.ndarray): unwanted factors (see ravel_normalize and the orig paper)
+        Z (np.ndarray): unwanted factors (see ravel_normalize.py and the orig paper)
 
     Returns:
         res (np.ndarray): normalized images

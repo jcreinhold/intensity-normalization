@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.utilities.robex
+intensity_normalization.utilities.robex.py
 
 a python wrapper for an R wrapper of ROBEX
 used for rough, but always reasonably good, skull-stripping

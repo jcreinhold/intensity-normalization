@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.tissue-mask
+intensity_normalization.exec.tissue_mask.py
 
 create tissue masks/memberships using FCM or GMM
 for skull-stripped brain or brain w/ mask

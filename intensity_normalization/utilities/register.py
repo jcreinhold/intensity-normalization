@@ -219,7 +219,7 @@ def unregister(reg_dir, tx_dir, template_img, out_dir=None, mask_dir=None):
 
 def __preprocess_template(img, template, tmask, template_dir):
     """
-    helper function to preprocess the template image into the same of the images
+    helper function to preprocess.py the template image into the same of the images
     """
     orientation = img.orientation
     origin = img.origin

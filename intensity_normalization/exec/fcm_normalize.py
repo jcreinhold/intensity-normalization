@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.fcm-normalize
+intensity_normalization.exec.fcm_normalize.py
 
 command line executable for fcm intensity normalization routine
 

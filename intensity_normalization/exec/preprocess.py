@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.preprocess
+intensity_normalization.exec.preprocess.py
 
-preprocess a set of MR images according to a simple scheme,
+preprocess.py a set of MR images according to a simple scheme,
 that is:
     1) N4 bias field correction
     2) resample to 1mm x 1mm x 1mm

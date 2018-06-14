@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.utilities.preprocess
+intensity_normalization.utilities.preprocess.py
 
-preprocess MR images according to a simple scheme,
+preprocess.py MR images according to a simple scheme,
 that is:
     1) N4 bias field correction
     2) resample to 1mm x 1mm x 1mm
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 def preprocess(img_dir, mask_dir, out_dir, res=(1,1,1), orientation='RAI', n4_opts=None):
     """
-    preprocess MR images according to a simple scheme,
+    preprocess.py MR images according to a simple scheme,
     that is:
         1) N4 bias field correction
         2) resample to 1mm x 1mm x 1mm
@@ -69,7 +69,7 @@ def preprocess(img_dir, mask_dir, out_dir, res=(1,1,1), orientation='RAI', n4_op
         logger.info('Making mask output directory: {}'.format(out_mask_dir))
         os.mkdir(out_mask_dir)
 
-    # preprocess the images by n4 correction, resampling, and reorientation
+    # preprocess.py the images by n4 correction, resampling, and reorientation
     for i, (img_fn, mask_fn) in enumerate(zip(img_fns, mask_fns), 1):
         _, img_base, img_ext = split_filename(img_fn)
         _, mask_base, mask_ext = split_filename(mask_fn)

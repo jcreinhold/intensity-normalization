@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.ravel-normalize
+intensity_normalization.exec.ravel_normalize.py
 
 command line executable for (modified) RAVEL intensity normalization routine
 

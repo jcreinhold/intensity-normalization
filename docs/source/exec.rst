@@ -2,66 +2,66 @@ Executables
 ===================================
 
 Z-Score Normalization
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 .. argparse:: 
-   :filename: ../intensity_normalization/exec/zscore-normalize
+   :module: intensity_normalization.exec.zscore_normalize
    :func: arg_parser
-   :prog: zscore-normalize
+   :prog: zscore_normalize
 
 FCM Normalization
 ~~~~~~~~~~~~~~~~~
 
 .. argparse:: 
-   :filename: ../intensity_normalization/exec/fcm-normalize
+   :module: intensity_normalization.exec.fcm_normalize
    :func: arg_parser
-   :prog: fcm-normalize
+   :prog: fcm_normalize
 
 GMM Normalization
 ~~~~~~~~~~~~~~~~~
 
 .. argparse:: 
-   :filename: ../intensity_normalization/exec/gmm-normalize
+   :module: intensity_normalization.exec.gmm_normalize
    :func: arg_parser
-   :prog: gmm-normalize
+   :prog: gmm_normalize
 
 KDE Normalization
 ~~~~~~~~~~~~~~~~~
 
 .. argparse:: 
-   :filename: ../intensity_normalization/exec/kde-normalize
+   :module: intensity_normalization.exec.kde_normalize
    :func: arg_parser
-   :prog: kde-normalize
+   :prog: kde_normalize
 
 Histogram Matching Normalization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. argparse:: 
-   :filename: ../intensity_normalization/exec/hm-normalize
+   :module: intensity_normalization.exec.hm_normalize
    :func: arg_parser
-   :prog: hm-normalize
+   :prog: hm_normalize
 
 WhiteStripe Normalization
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. argparse:: 
-   :filename: ../intensity_normalization/exec/ws-normalize
+   :module: intensity_normalization.exec.ws_normalize
    :func: arg_parser
-   :prog: ws-normalize
+   :prog: ws_normalize
 
 RAVEL Normalization
 ~~~~~~~~~~~~~~~~~~~
 
 .. argparse:: 
-   :filename: ../intensity_normalization/exec/ravel-normalize
+   :module: intensity_normalization.exec.ravel_normalize
    :func: arg_parser
-   :prog: ravel-normalize
+   :prog: ravel_normalize
 
 Skull-stripping
 ~~~~~~~~~~~~~~~
 
 .. argparse:: 
-   :filename: ../intensity_normalization/exec/robex
+   :module: intensity_normalization.exec.robex
    :func: arg_parser
    :prog: robex
 
@@ -69,7 +69,7 @@ Preprocessing
 ~~~~~~~~~~~~~
 
 .. argparse:: 
-   :filename: ../intensity_normalization/exec/preprocess
+   :module: intensity_normalization.exec.preprocess
    :func: arg_parser
    :prog: preprocess
 
@@ -77,15 +77,15 @@ Tissue Mask
 ~~~~~~~~~~~
 
 .. argparse:: 
-   :filename: ../intensity_normalization/exec/tissue-mask
+   :module: intensity_normalization.exec.tissue_mask
    :func: arg_parser
-   :prog: tissue-mask
+   :prog: tissue_mask
 
 Plotting
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. argparse:: 
-   :filename: ../intensity_normalization/exec/plot-hists
+   :module: intensity_normalization.exec.plot_hists
    :func: arg_parser
-   :prog: plot-hists
+   :prog: plot_hists
 

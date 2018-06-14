@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.robex
+intensity_normalization.exec.robex.py
 
 a python wrapper for an R wrapper of ROBEX
 for robust skull-stripping (of T1w MR images)
