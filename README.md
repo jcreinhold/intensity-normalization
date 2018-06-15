@@ -2,9 +2,9 @@ intensity-normalization
 =====
 
 [![Build Status](https://travis-ci.org/jcreinhold/intensity-normalization.svg?branch=master)](https://travis-ci.org/jcreinhold/intensity-normalization)
-<a href='http://intensity-normalization.readthedocs.io/en/latest/?badge=latest'>
-    <img src='https://readthedocs.org/projects/intensity-normalization/badge/?version=latest' alt='Documentation Status' />
-</a>
+[![Coverage Status](https://coveralls.io/repos/github/jcreinhold/intensity-normalization/badge.svg?branch=master)](https://coveralls.io/github/jcreinhold/intensity-normalization?branch=master)
+[![Documentation Status](https://readthedocs.org/projects/intensity-normalization/badge/?version=latest)](http://intensity-normalization.readthedocs.io/en/latest/?badge=latest)
+[![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/)
 
 This package contains code to normalize the intensity of various contrasts of MR neuro images
 

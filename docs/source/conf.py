@@ -12,9 +12,27 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+
+import mock
+import os
+import sys
+
+MOCK_MODULES = ['ants','matplotlib','nibabel','numpy','sklearn.mixture','skfuzzy','sklearn'
+                'scipy','statsmodels','matplotlib.pyplot','scipy.ndimage','scipy.ndimage.morphology',
+                'scipy.linalg','skfuzzy.fuzzymath','rpy2','rpy2.robjects.packages','sklearn.cluster',
+                'statsmodels.api','scipy.signal','seaborn']
+for mod_name in MOCK_MODULES:
+    sys.modules[mod_name] = mock.Mock()
+
+# this should not be needed with the above, but meh
+autodoc_mock_imports = ['ants','matplotlib','nibabel','numpy','skfuzzy','sklearn','scipy','statsmodels','rpy2','seaborn']
+
+on_rtd = os.environ.get('READTHEDOCS') == 'True'
+
+# add package to local path
+local_path = os.path.abspath('../../')
+print('path defined as: {}'.format(local_path))
+sys.path.insert(0, local_path)
 
 
 # -- Project information -----------------------------------------------------

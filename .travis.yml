@@ -15,14 +15,16 @@ before_install:
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   - conda update --yes conda
+  - chmod 755 create_env.sh
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy scipy matplotlib cython
-  - pip install pytest-pep8 pytest-cov python-coveralls
-  - pip install -U scikit-fuzzy
-  - python setup.py install --force
-  - pip install coverage
+  - travis_retry . ./create_env.sh
+  - python --version
+  - which python
+  - pip --version
+  - travis_retry pip install coverage==4.0.3 nose pytest-pep8 pytest-cov python-coveralls
+  - travis_retry python setup.py install
 script:
-  - nosetests -v --with-coverage --cover-tests --cover-package=intensity-normalization tests
+  - nosetests -v --with-coverage --cover-tests --cover-package=intensity_normalization --ignore-files=intensity_normalization/utilities/robex.py tests
 after_success:
   - coveralls
 

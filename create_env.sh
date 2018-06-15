@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# use the following command to run this script: . ./create_intensity_normalization_env.sh
+# use the following command to run this script: . ./create_env.sh
 #
 # Created on: Apr 27, 2018
 # Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
@@ -22,7 +22,9 @@ packages=(
     matplotlib
     nose
     numpy
+    pillow
     scikit-learn
+    scikit-image
     scipy
     seaborn
     sphinx
