@@ -80,15 +80,12 @@ def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_dis
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
 
-    # control verbosity of output when making whitestripe function call
-    verbose = True if logger.getEffectiveLevel() == logging.getLevelName('DEBUG') else False
-
     # do whitestripe normalization and save the results
     for i, (img_fn, mask_fn, output_fn) in enumerate(zip(data, masks, output_files), 1):
         logger.info('Normalizing image: {} ({:d}/{:d})'.format(img_fn, i, len(data)))
         img = io.open_nii(img_fn)
         mask = io.open_nii(mask_fn) if mask_fn is not None else None
-        indices = whitestripe(img, contrast, mask=mask, verbose=verbose)
+        indices = whitestripe(img, contrast, mask=mask)
         normalized = whitestripe_norm(img, indices)
         if write_to_disk:
             logger.info('Saving normalized image: {} ({:d}/{:d})'.format(output_fn, i, len(data)))
@@ -98,7 +95,7 @@ def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_dis
     return normalized
 
 
-def whitestripe(img, contrast, mask=None, nbins=2000, width=0.05, width_l=None, width_u=None, verbose=False):
+def whitestripe(img, contrast, mask=None, width=0.05, width_l=None, width_u=None):
     """
     find the "(normal appearing) white (matter) stripe" of the input MR image
     and return the indices
@@ -107,11 +104,9 @@ def whitestripe(img, contrast, mask=None, nbins=2000, width=0.05, width_l=None, 
         img (nibabel.nifti1.Nifti1Image): target MR image
         contrast (str): contrast of img (e.g., T1)
         mask (nibabel.nifti1.Nifti1Image): brainmask for img (None is default, for skull-stripped img)
-        nbins (int): number of bins in the histogram
         width (float): width quantile for the "white (matter) stripe"
         width_l (float): lower bound for width (default None, derives from width)
         width_u (float): upper bound for width (default None, derives from width)
-        verbose (bool): show progress and warnings or nah
 
     Returns:
         ws_ind (np.ndarray): the white stripe indices (boolean mask)
@@ -127,11 +122,11 @@ def whitestripe(img, contrast, mask=None, nbins=2000, width=0.05, width_l=None, 
     else:
         masked = img_data
         voi = img_data[img_data > 0]
-    if contrast in ['T1', 'FA', 'last']:
+    if contrast.lower() in ['t1', 'flair', 'last']:
         mode = hist.get_last_mode(voi)
-    elif contrast in ['T2', 'largest']:
+    elif contrast.lower() in ['t2', 'largest']:
         mode = hist.get_largest_mode(voi)
-    elif contrast in ['MD', 'first']:
+    elif contrast.lower() in ['md', 'first']:
         mode = hist.get_first_mode(voi)
     else:
         raise NormalizationError('Contrast {} not valid, needs to be T1, T2, FA, or MD')

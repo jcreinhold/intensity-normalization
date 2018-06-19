@@ -74,11 +74,9 @@ def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
 
-    verbose = True if logger.getEffectiveLevel() == logging.getLevelName('DEBUG') else False
-
     # get parameters necessary and setup the V array
     V, Vc = image_matrix(img_fns, contrast, masks=mask_fns, do_whitestripe=do_whitestripe,
-                         verbose=verbose, return_ctrl_matrix=True, membership_thresh=membership_thresh)
+                         return_ctrl_matrix=True, membership_thresh=membership_thresh)
 
     # estimate the unwanted factors Z
     _, _, vh = np.linalg.svd(Vc)
@@ -118,7 +116,7 @@ def ravel_correction(V, Z):
 
 
 def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_matrix=False,
-                 membership_thresh=0.99, smoothness=0.25, max_ctrl_vox=10000, verbose=False):
+                 membership_thresh=0.99, smoothness=0.25, max_ctrl_vox=10000):
     """
     creates an matrix of images where the rows correspond the the voxels of
     each image and the columns are the images
@@ -133,7 +131,6 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
         smoothness (float): smoothness parameter for segmentation for control voxels
         max_ctrl_vox (int): maximum number of control voxels (if too high, everything
             crashes depending on available memory)
-        verbose (bool): pass verbosity option to whitestripe if desired
 
     Returns:
         V (np.ndarray): image matrix (rows are voxels, columns are images)
@@ -158,13 +155,13 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
         mask = io.open_nii(mask_fn) if mask_fn is not None else None
         if do_whitestripe:
             logger.info('Applying WhiteStripe to image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
-            inds = whitestripe(img, contrast, mask, verbose=verbose)
+            inds = whitestripe(img, contrast, mask)
             img = whitestripe_norm(img, inds)
         img_data = img.get_data()
         V[:,i] = img_data.flatten()
         if return_ctrl_matrix:
             logger.info('Finding control voxels for image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
-            ctrl_mask = csf.csf_mask(img, mask, csf_thresh=membership_thresh, mrf=smoothness)
+            ctrl_mask = csf.csf_mask(img, mask, contrast=contrast, csf_thresh=membership_thresh, mrf=smoothness)
             if np.sum(ctrl_mask) == 0:
                 raise NormalizationError('No control voxels found for image ({}) at threshold ({})'
                                          .format(base, membership_thresh))

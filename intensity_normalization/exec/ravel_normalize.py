@@ -38,8 +38,8 @@ def arg_parser():
                            help='if images are not skull-stripped, directory for '
                                 'corresponding brain masks for img-dir (not intelligently sorted, '
                                 'so ordering must be consistent in directory) [Default = None]')
-    options.add_argument('-c', '--contrast', type=str, default='T1', choices=['T1', 'T2', 'FLAIR'],
-                           help='contrast of the images in img-dir, (e.g, T1, T2, or, FLAIR.) [Default = T1]')
+    options.add_argument('-c', '--contrast', type=str, default='t1', choices=['t1', 't2', 'flair'],
+                           help='contrast of the images in img-dir, (e.g, t1, t2, or, flair.) [Default = t1]')
     options.add_argument('-v', '--verbosity', action="count", default=0,
                          help="increase output verbosity (e.g., -vv is more than -v)")
     options.add_argument('-p', '--plot-hist', action='store_true', default=False,
@@ -78,8 +78,7 @@ def main():
         Z, _ = ravel.ravel_normalize(args.img_dir, args.mask_dir, args.contrast, do_whitestripe=args.no_whitestripe,
                                      b=args.num_unwanted_factors, membership_thresh=args.control_membership_threshold)
 
-        V = ravel.image_matrix(img_fns, args.contrast, masks=mask_fns,
-                               verbose=True if args.verbosity >= 2 else False)
+        V = ravel.image_matrix(img_fns, args.contrast, masks=mask_fns)
         V_norm = ravel.ravel_correction(V, Z)
         normalized = ravel.image_matrix_to_images(V_norm, img_fns)
 

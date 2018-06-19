@@ -42,15 +42,15 @@ def kde_normalize(img, mask=None, contrast='T1', norm_value=1000):
     if mask is not None:
         voi = img.get_data()[mask.get_data() == 1].flatten()
     else:
-        voi = img.get_data().flatten()
-    if contrast in ['T1', 'FA', 'last']:
+        voi = img.get_data()[img.get_data() > 0].flatten()
+    if contrast.lower() in ['t1', 'flair', 'last']:
         wm_peak = hist.get_last_mode(voi)
-    elif contrast in ['T2', 'largest']:
+    elif contrast.lower() in ['t2', 'largest']:
         wm_peak = hist.get_largest_mode(voi)
-    elif contrast in ['MD', 'first']:
+    elif contrast.lower() in ['md', 'first']:
         wm_peak = hist.get_first_mode(voi)
     else:
-        raise NormalizationError('Contrast {} not valid, needs to be T1, T2, FA, or MD')
+        raise NormalizationError('Contrast {} not valid, needs to be T1, T2, FLAIR, or MD')
     normalized = nib.Nifti1Image((img.get_data() / wm_peak) * norm_value,
                                  img.affine, img.header)
     return normalized

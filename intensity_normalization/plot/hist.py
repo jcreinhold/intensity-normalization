@@ -11,7 +11,6 @@ Created on: May 21, 2018
 """
 
 import logging
-import os
 import warnings
 
 import ants

@@ -25,7 +25,7 @@ from intensity_normalization.utilities.io import split_filename, glob_nii
 logger = logging.getLogger(__name__)
 
 
-def preprocess(img_dir, mask_dir, out_dir, res=(1,1,1), orientation='RAI', n4_opts=None):
+def preprocess(img_dir, mask_dir, out_dir, res=(1,1,1), orientation='RAI', n4_opts=None, n4_once=False):
     """
     preprocess.py MR images according to a simple scheme,
     that is:
@@ -40,6 +40,8 @@ def preprocess(img_dir, mask_dir, out_dir, res=(1,1,1), orientation='RAI', n4_op
         out_dir (str): path to directory for output preprocessed files
         res (tuple): resolution for resampling (default: (1,1,1) in mm
         n4_opts (dict): n4 processing options (default: None)
+        n4_once (bool): do n4 bias field correction only once vs twice
+            (twice works better in many cases)
 
     Returns:
         None, outputs preprocessed images to file in given out_dir
@@ -78,7 +80,8 @@ def preprocess(img_dir, mask_dir, out_dir, res=(1,1,1), orientation='RAI', n4_op
         mask = ants.image_read(mask_fn)
         smoothed_mask = ants.smooth_image(mask, 1)
         img = ants.n4_bias_field_correction(img, ones, convergence=n4_opts)
-        img = ants.n4_bias_field_correction(img, ones, convergence=n4_opts, weight_mask=smoothed_mask)
+        if not n4_once:
+            img = ants.n4_bias_field_correction(img, ones, convergence=n4_opts, weight_mask=smoothed_mask)
         img = ants.resample_image(img, res, False, 4)
         mask = ants.resample_image(mask, res, False, 1)
         img = img.reorient_image2(orientation)

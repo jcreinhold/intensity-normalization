@@ -34,7 +34,7 @@ def arg_parser():
     parser.add_argument('-o', '--output-dir', type=str, default=None,
                         help='if you want the normalized images saved in a particular location,'
                              'provide that directory here (must already exist)')
-    parser.add_argument('-c', '--contrast', type=str, default='T1', choices=['T1', 'T2', 'FLAIR'],
+    parser.add_argument('-c', '--contrast', type=str, default='t1', choices=['t1', 't2', 'flair', 'md'],
                         help='contrast of the images in img-dir')
     parser.add_argument('-p', '--plot-hist', action='store_true', default=False,
                          help='plot the histograms of the normalized images, save it in the output directory')
