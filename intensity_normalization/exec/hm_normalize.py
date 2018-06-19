@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.hm_normalize.py
+intensity_normalization.exec.hm_normalize
 
 command line executable for histogram matching intensity normalization routine
 

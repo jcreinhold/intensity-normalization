@@ -18,7 +18,6 @@ Created on: May 21, 2018
 """
 
 import argparse
-from glob import glob
 import logging
 import os
 import sys
@@ -27,7 +26,7 @@ import warnings
 with warnings.catch_warnings():
     warnings.filterwarnings('ignore', category=FutureWarning)
     from intensity_normalization.utilities.robex import robex
-    from intensity_normalization.utilities.io import split_filename
+    from intensity_normalization.utilities.io import glob_nii, split_filename
 
 
 def arg_parser():
@@ -38,7 +37,7 @@ def arg_parser():
     parser.add_argument('-m', '--mask-dir', type=str, required=True,
                         help='directory to output the corresponding img files')
     parser.add_argument('-s', '--return-skull-stripped', action='store_true', default=False,
-                        help='return skull-stripped images instead of masks')
+                        help='return skull-stripped images in addition to the masks')
     parser.add_argument('-v', '--verbosity', action="count", default=0,
                         help="increase output verbosity (e.g., -vv is more than -v)")
     return parser
@@ -55,7 +54,7 @@ def main():
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
     logger = logging.getLogger(__name__)
     try:
-        img_fns = glob(os.path.join(args.img_dir, '*.nii*'))
+        img_fns = glob_nii(args.img_dir)
         if not os.path.exists(args.mask_dir):
             logger.info('Making Output Mask Directory: {}'.format(args.mask_dir))
             os.mkdir(args.mask_dir)

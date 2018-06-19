@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.zscore_normalize.py
+intensity_normalization.exec.zscore_normalize
 
 command line executable for Z-score intensity normalization routine
 
@@ -13,7 +13,6 @@ Created on: May 30, 2018
 from __future__ import print_function, division
 
 import argparse
-from glob import glob
 import logging
 import os
 import sys
@@ -77,9 +76,9 @@ def main():
         if not args.single_img:
             if not os.path.isdir(args.image):
                 raise NormalizationError('if single-img option off, then image must be a directory')
-            img_fns = sorted(glob(os.path.join(args.image, '*.nii*')))
+            img_fns = io.glob_nii(args.image)
             if args.brain_mask is not None:
-                mask_fns = sorted(glob(os.path.join(args.brain_mask, '*.nii*')))
+                mask_fns = io.glob_nii(args.brain_mask)
             else:
                 mask_fns = [None] * len(img_fns)
             if len(img_fns) != len(mask_fns) and len(img_fns) > 0:

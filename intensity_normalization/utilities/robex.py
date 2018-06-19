@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.utilities.robex.py
+intensity_normalization.utilities.robex
 
 a python wrapper for an R wrapper of ROBEX
 used for rough, but always reasonably good, skull-stripping
@@ -31,18 +31,19 @@ ROBEX = importr('robex')
 
 def robex(img, out_mask, skull_stripped=False):
     """
-    perform skull-stripping on an image using the
+    perform skull-stripping on the registered image using the
     ROBEX algorithm
 
     Args:
         img (str): path to image to skull strip
         out_mask (str): path to output mask file
-        skull_stripped (bool): return the skull-stripped image
-            or return the mask [default = False]
+        skull_stripped (bool): return the mask
+            AND the skull-stripped image [default = False]
 
     Returns:
         mask (ants.ANTsImage): mask/skull-stripped image
     """
+
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore')
         _ = ROBEX.robex(img, outfile=out_mask)

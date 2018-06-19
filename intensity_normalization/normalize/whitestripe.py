@@ -20,7 +20,6 @@ Created on: Apr 27, 2018
 
 from __future__ import print_function, division
 
-from glob import glob
 import logging
 import os
 
@@ -59,13 +58,13 @@ def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_dis
     """
 
     # grab the file names for the images of interest
-    data = sorted(glob(os.path.join(img_dir, '*.nii*')))
+    data = io.glob_nii(img_dir)
 
     # define and get the brain masks for the images, if defined
     if mask_dir is None:
         masks = [None] * len(data)
     else:
-        masks = sorted(glob(os.path.join(mask_dir, '*.nii*')))
+        masks = io.glob_nii(mask_dir)
         if len(data) != len(masks):
             NormalizationError('Number of images and masks must be equal, Images: {}, Masks: {}'
                                .format(len(data), len(masks)))

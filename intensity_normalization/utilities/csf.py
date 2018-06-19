@@ -12,7 +12,6 @@ Created on: Jun 08, 2018
 """
 
 from functools import reduce
-from glob import glob
 import logging
 from operator import add
 import os
@@ -72,8 +71,8 @@ def csf_mask_intersection(img_dir, masks=None, prob=1):
     """
     if not (0 <= prob <= 1):
         raise NormalizationError('prob must be between 0 and 1. {} given.'.format(prob))
-    data = sorted(glob(os.path.join(img_dir, '*.nii*')))
-    masks = sorted(glob(os.path.join(masks, '*.nii*'))) if isinstance(masks, str) else [masks] * len(data)
+    data = io.glob_nii(img_dir)
+    masks = io.glob_nii(masks) if isinstance(masks, str) else [masks] * len(data)
     csf = []
     for i, (img, mask) in enumerate(zip(data, masks)):
         _, base, _ = io.split_filename(img)

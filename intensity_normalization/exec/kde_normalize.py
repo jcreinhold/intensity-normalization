@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.kde_normalize.py
+intensity_normalization.exec.kde_normalize
 
 command line executable for kernel density intensity normalization routine
 
@@ -13,7 +13,6 @@ Created on: May 08, 2018
 from __future__ import print_function, division
 
 import argparse
-from glob import glob
 import logging
 import os
 import sys
@@ -82,8 +81,8 @@ def main():
         if not args.single_img:
             if not os.path.isdir(args.image) or not os.path.isdir(args.brain_mask):
                 raise NormalizationError('if single-img option off, then image and brain-mask must be directories')
-            img_fns = sorted(glob(os.path.join(args.image, '*.nii*')))
-            mask_fns = sorted(glob(os.path.join(args.brain_mask, '*.nii*')))
+            img_fns = io.glob_nii(args.image)
+            mask_fns = io.glob_nii(args.brain_mask)
             if len(img_fns) != len(mask_fns) and len(img_fns) > 0:
                 raise NormalizationError('input images and masks must be in correspondence and greater than zero '
                                          '({:d} != {:d})'.format(len(img_fns), len(mask_fns)))

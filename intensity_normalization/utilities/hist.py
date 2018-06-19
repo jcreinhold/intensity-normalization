@@ -1,21 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-smooth_hist
+intensity_normalization.utilities.hist
 
+holds routines to process histograms of MR neuro images
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 
 Created on: Jun 13, 2018
 """
 
-import logging
-
 import numpy as np
 from scipy.signal import argrelmax
 import statsmodels.api as sm
-
-logger = logging.getLogger(__name__)
 
 
 def smooth_hist(data):
@@ -23,17 +20,11 @@ def smooth_hist(data):
     use KDE to get smooth estimate of histogram
 
     Args:
-        x (np.ndarray): flat array of data
-        x_grid (np.ndarray): domain associated with data
-        bandwidths:
-        cv:
+        data (np.ndarray): array of image data
 
     Returns:
-        smoothed (np.ndarray): smooth histogram (really a pdf)
-
-    References:
-       Jake VanderPlas, Kernel Density Estimation in Python,
-       https://jakevdp.github.io/blog/2013/12/01/kernel-density-estimation/
+        grid (np.ndarray): domain of the pdf
+        pdf (np.ndarray): kernel density estimate of the pdf of data
     """
     data = data.flatten().astype(np.float64)
     bw = data.max() / 80
@@ -52,8 +43,7 @@ def get_largest_mode(data):
     gets the last (reliable) peak in the histogram
 
     Args:
-        bins (np.ndarray): bins of histogram (see np.histogram)
-        counts (np.ndarray): counts of histogram (see np.histogram)
+        data (np.ndarray): image data
 
     Returns:
         largest_peak (int): index of the largest peak
@@ -68,8 +58,7 @@ def get_last_mode(data, rare_prop=96, remove_tail=True):
     gets the last (reliable) peak in the histogram
 
     Args:
-        data (np.ndarray): bins of histogram (see np.histogram)
-        num_pts (int): number of points in grid
+        data (np.ndarray): image data
         rare_prop (float): if remove_tail, use the proportion of hist above
         remove_tail (bool): remove rare portions of histogram
             (included to replicate the default behavior in the R version)
@@ -92,8 +81,7 @@ def get_first_mode(data, rare_prop=99, remove_tail=True):
     gets the first (reliable) peak in the histogram
 
     Args:
-        data (np.ndarray): bins of histogram (see np.histogram)
-        num_pts (int): number of points in grid
+        data (np.ndarray): image data
         rare_prop (float): if remove_tail, use the proportion of hist above
         remove_tail (bool): remove rare portions of histogram
             (included to replicate the default behavior in the R version)

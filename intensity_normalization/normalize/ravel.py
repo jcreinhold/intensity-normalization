@@ -16,7 +16,6 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: Apr 27, 2018
 """
 
-from glob import glob
 import logging
 import os
 
@@ -62,8 +61,8 @@ def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=
             in magnetic resonance imaging studies,” Neuroimage, vol. 132,
             pp. 198–212, 2016.
     """
-    img_fns = sorted(glob(os.path.join(img_dir, '*.nii*')))
-    mask_fns = sorted(glob(os.path.join(mask_dir, '*.nii*')))
+    img_fns = io.glob_nii(img_dir)
+    mask_fns = io.glob_nii(mask_dir)
 
     if output_dir is None or not write_to_disk:
         out_fns = None

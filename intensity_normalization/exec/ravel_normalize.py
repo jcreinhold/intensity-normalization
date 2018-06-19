@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.ravel_normalize.py
+intensity_normalization.exec.ravel_normalize
 
 command line executable for (modified) RAVEL intensity normalization routine
 
@@ -11,7 +11,6 @@ Created on: May 08, 2018
 """
 
 import argparse
-from glob import glob
 import logging
 import os
 import sys
@@ -69,8 +68,8 @@ def main():
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
     logger = logging.getLogger(__name__)
     try:
-        img_fns = sorted(glob(os.path.join(args.img_dir, '*.nii*')))
-        mask_fns = sorted(glob(os.path.join(args.mask_dir, '*.nii*')))
+        img_fns = io.glob_nii(args.img_dir)
+        mask_fns = io.glob_nii(args.mask_dir)
         if len(img_fns) != len(mask_fns) or len(img_fns) == 0:
             raise NormalizationError('Image directory ({}) and mask directory ({}) must contain the same '
                                      '(positive) number of images!'.format(args.img_dir, args.mask_dir))

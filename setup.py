@@ -49,6 +49,7 @@ args = dict(
                             'robex=intensity_normalization.exec.robex:main',
                             'preprocess=intensity_normalization.exec.preprocess:main',
                             'plot-hists=intensity_normalization.exec.plot_hists:main',
+                            'coregister=intensity_normalization.exec.coregister:main',
                             'tissue-mask=intensity_normalization.exec.tissue_mask:main']
     },
     keywords="mr intensity normalization",

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.preprocess.py
+intensity_normalization.exec.preprocess
 
 preprocess.py a set of MR images according to a simple scheme,
 that is:

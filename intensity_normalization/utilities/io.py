@@ -12,6 +12,7 @@ Created on: Apr 24, 2018
 
 from __future__ import print_function, division
 
+from glob import glob
 import os
 
 import nibabel as nib
@@ -41,3 +42,8 @@ def save_nii(obj, outfile, data=None, is_nii=False):
             .to_filename(outfile)
     else:
         obj.to_filename(outfile)
+
+
+def glob_nii(dir):
+    fns = sorted(glob(os.path.join(dir, '*.nii*')))
+    return fns
