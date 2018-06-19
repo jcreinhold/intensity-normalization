@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.ravel_normalize.py
+intensity_normalization.exec.ravel_normalize
 
 command line executable for (modified) RAVEL intensity normalization routine
 
@@ -11,7 +11,6 @@ Created on: May 08, 2018
 """
 
 import argparse
-from glob import glob
 import logging
 import os
 import sys
@@ -39,8 +38,8 @@ def arg_parser():
                            help='if images are not skull-stripped, directory for '
                                 'corresponding brain masks for img-dir (not intelligently sorted, '
                                 'so ordering must be consistent in directory) [Default = None]')
-    options.add_argument('-c', '--contrast', type=str, default='T1', choices=['T1', 'T2', 'FLAIR'],
-                           help='contrast of the images in img-dir, (e.g, T1, T2, or, FLAIR.) [Default = T1]')
+    options.add_argument('-c', '--contrast', type=str, default='t1', choices=['t1', 't2', 'flair'],
+                           help='contrast of the images in img-dir, (e.g, t1, t2, or, flair.) [Default = t1]')
     options.add_argument('-v', '--verbosity', action="count", default=0,
                          help="increase output verbosity (e.g., -vv is more than -v)")
     options.add_argument('-p', '--plot-hist', action='store_true', default=False,
@@ -69,8 +68,8 @@ def main():
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
     logger = logging.getLogger(__name__)
     try:
-        img_fns = sorted(glob(os.path.join(args.img_dir, '*.nii*')))
-        mask_fns = sorted(glob(os.path.join(args.mask_dir, '*.nii*')))
+        img_fns = io.glob_nii(args.img_dir)
+        mask_fns = io.glob_nii(args.mask_dir)
         if len(img_fns) != len(mask_fns) or len(img_fns) == 0:
             raise NormalizationError('Image directory ({}) and mask directory ({}) must contain the same '
                                      '(positive) number of images!'.format(args.img_dir, args.mask_dir))
@@ -79,8 +78,7 @@ def main():
         Z, _ = ravel.ravel_normalize(args.img_dir, args.mask_dir, args.contrast, do_whitestripe=args.no_whitestripe,
                                      b=args.num_unwanted_factors, membership_thresh=args.control_membership_threshold)
 
-        V = ravel.image_matrix(img_fns, args.contrast, masks=mask_fns,
-                               verbose=True if args.verbosity >= 2 else False)
+        V = ravel.image_matrix(img_fns, args.contrast, masks=mask_fns)
         V_norm = ravel.ravel_correction(V, Z)
         normalized = ravel.image_matrix_to_images(V_norm, img_fns)
 

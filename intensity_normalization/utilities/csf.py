@@ -12,7 +12,6 @@ Created on: Jun 08, 2018
 """
 
 from functools import reduce
-from glob import glob
 import logging
 from operator import add
 import os
@@ -26,7 +25,7 @@ from intensity_normalization.utilities import io
 logger = logging.getLogger(__name__)
 
 
-def csf_mask(img, brain_mask, csf_thresh=0.9, return_prob=False, mrf=0.25):
+def csf_mask(img, brain_mask, contrast='t1', csf_thresh=0.9, return_prob=False, mrf=0.25):
     """
     create a binary mask of csf using atropos (FMM) segmentation
     of a T1-w image
@@ -34,6 +33,7 @@ def csf_mask(img, brain_mask, csf_thresh=0.9, return_prob=False, mrf=0.25):
     Args:
         img (ants.core.ants_image.ANTsImage or nibabel.nifti1.Nifti1Image): target img
         brain_mask (ants.core.ants_image.ANTsImage or nibabel.nifti1.Nifti1Image): brain mask for img
+        contrast (str): contrast of the img (e.g., t1, t2, or flair)
         csf_thresh (float): membership threshold to count as CSF
         return_prob (bool): if true, then return membership values
             instead of binary (i.e., thresholded membership) mask
@@ -49,7 +49,7 @@ def csf_mask(img, brain_mask, csf_thresh=0.9, return_prob=False, mrf=0.25):
         brain_mask = __nibabel_to_ants(brain_mask)
     res = img.kmeans_segmentation(3, kmask=brain_mask, mrf=mrf)
     avg_intensity = [np.mean(img.numpy()[prob_img.numpy() > 0.5]) for prob_img in res['probabilityimages']]
-    csf_arg = np.argmin(avg_intensity)
+    csf_arg = np.argmin(avg_intensity) if contrast.lower() in ('t1', 'flair') else np.argmax(avg_intensity)
     csf = res['probabilityimages'][csf_arg].numpy()
     if not return_prob:
         csf = (csf > csf_thresh).astype(np.float32)
@@ -72,8 +72,8 @@ def csf_mask_intersection(img_dir, masks=None, prob=1):
     """
     if not (0 <= prob <= 1):
         raise NormalizationError('prob must be between 0 and 1. {} given.'.format(prob))
-    data = sorted(glob(os.path.join(img_dir, '*.nii*')))
-    masks = sorted(glob(os.path.join(masks, '*.nii*'))) if isinstance(masks, str) else [masks] * len(data)
+    data = io.glob_nii(img_dir)
+    masks = io.glob_nii(masks) if isinstance(masks, str) else [masks] * len(data)
     csf = []
     for i, (img, mask) in enumerate(zip(data, masks)):
         _, base, _ = io.split_filename(img)

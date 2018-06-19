@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.fcm_normalize.py
+intensity_normalization.exec.fcm_normalize
 
 command line executable for fcm intensity normalization routine
 
@@ -13,7 +13,6 @@ Created on: May 08, 2018
 from __future__ import print_function, division
 
 import argparse
-from glob import glob
 import logging
 import os
 import sys
@@ -88,17 +87,17 @@ def main():
     logger = logging.getLogger(__name__)
     try:
         if not args.single_img:
-            if not os.path.isdir(args.image) or not os.path.isdir(args.brain_mask):
+            if not os.path.isdir(args.image) or (False if args.brain_mask is None else not os.path.isdir(args.brain_mask)):
                 raise NormalizationError('if single-img option off, then image and brain-mask must be directories')
-            img_fns = sorted(glob(os.path.join(args.image, '*.nii*')))
-            mask_fns = sorted(glob(os.path.join(args.brain_mask, '*.nii*')))
+            img_fns = io.glob_nii(args.image)
+            mask_fns = io.glob_nii(args.brain_mask) if args.brain_mask is not None else [None] * len(img_fns)
             if len(img_fns) != len(mask_fns) and len(img_fns) > 0:
                 raise NormalizationError('input images and masks must be in correspondence and greater than zero '
                                          '({:d} != {:d})'.format(len(img_fns), len(mask_fns)))
             output_dir_base = os.path.abspath(os.path.join(args.output_dir, '..'))
-            wm_mask_dir = os.path.join(output_dir_base, 'wm_masks')
 
-            if args.contrast == 'T1':
+            if args.contrast.lower() == 't1':
+                wm_mask_dir = os.path.join(output_dir_base, 'wm_masks')
                 if os.path.exists(wm_mask_dir):
                     logger.warning('WM Mask Directory already exists, may overwrite existing WM masks!')
                 else:
@@ -107,16 +106,18 @@ def main():
                 for i, (img, mask) in enumerate(zip(img_fns, mask_fns), 1):
                     logger.info('Creating WM Mask for {} ({:d}/{:d})'.format(img, i, len(img_fns)))
                     process(img, mask, None, wm_mask_dir, args, logger)
-            elif not os.path.exists(wm_mask_dir):
+            elif os.path.exists(args.wm_mask):
+                wm_mask_dir = args.wm_mask
+            else:
                 NormalizationError('If contrast is not T1, then WM mask directory ({}) '
-                                   'must already be created!'.format(wm_mask_dir))
+                                   'must already be created!'.format(args.wm_mask))
 
-            for i, img in enumerate(img_fns, 1):
-                logger.info('Normalizing image {} ({:d}/{:d})'.format(img, i, len(img_fns)))
+            wm_masks = io.glob_nii(wm_mask_dir)
+            for i, (img, wm_mask) in enumerate(zip(img_fns, wm_masks), 1):
                 dirname, base, _ = io.split_filename(img)
+                logger.info('Normalizing image {} ({:d}/{:d})'.format(base, i, len(img_fns)))
                 if args.output_dir is not None:
                     dirname = args.output_dir
-                wm_mask = os.path.join(wm_mask_dir, base + '_wmmask.nii.gz')
                 process(img, None, wm_mask, dirname, args, logger)
 
         else:

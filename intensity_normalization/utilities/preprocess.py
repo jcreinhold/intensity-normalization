@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.utilities.preprocess.py
+intensity_normalization.utilities.preprocess
 
 preprocess.py MR images according to a simple scheme,
 that is:
@@ -15,18 +15,17 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: May 21, 2018
 """
 
-from glob import glob
 import logging
 import os
 
 import ants
 
-from intensity_normalization.utilities.io import split_filename
+from intensity_normalization.utilities.io import split_filename, glob_nii
 
 logger = logging.getLogger(__name__)
 
 
-def preprocess(img_dir, mask_dir, out_dir, res=(1,1,1), orientation='RAI', n4_opts=None):
+def preprocess(img_dir, mask_dir, out_dir, res=(1,1,1), orientation='RAI', n4_opts=None, n4_once=False):
     """
     preprocess.py MR images according to a simple scheme,
     that is:
@@ -41,6 +40,8 @@ def preprocess(img_dir, mask_dir, out_dir, res=(1,1,1), orientation='RAI', n4_op
         out_dir (str): path to directory for output preprocessed files
         res (tuple): resolution for resampling (default: (1,1,1) in mm
         n4_opts (dict): n4 processing options (default: None)
+        n4_once (bool): do n4 bias field correction only once vs twice
+            (twice works better in many cases)
 
     Returns:
         None, outputs preprocessed images to file in given out_dir
@@ -51,8 +52,8 @@ def preprocess(img_dir, mask_dir, out_dir, res=(1,1,1), orientation='RAI', n4_op
     logger.debug('N4 Options are: {}'.format(n4_opts))
 
     # get and check the images and masks
-    img_fns = sorted(glob(os.path.join(img_dir, '*.nii.gz')))
-    mask_fns = sorted(glob(os.path.join(mask_dir, '*.nii.gz')))
+    img_fns = glob_nii(img_dir)
+    mask_fns = glob_nii(mask_dir)
     assert len(img_fns) == len(mask_fns), 'Number of images and masks must be equal ({:d} != {:d})'\
         .format(len(img_fns), len(mask_fns))
 
@@ -69,7 +70,7 @@ def preprocess(img_dir, mask_dir, out_dir, res=(1,1,1), orientation='RAI', n4_op
         logger.info('Making mask output directory: {}'.format(out_mask_dir))
         os.mkdir(out_mask_dir)
 
-    # preprocess.py the images by n4 correction, resampling, and reorientation
+    # preprocess the images by n4 correction, resampling, and reorientation
     for i, (img_fn, mask_fn) in enumerate(zip(img_fns, mask_fns), 1):
         _, img_base, img_ext = split_filename(img_fn)
         _, mask_base, mask_ext = split_filename(mask_fn)
@@ -79,7 +80,8 @@ def preprocess(img_dir, mask_dir, out_dir, res=(1,1,1), orientation='RAI', n4_op
         mask = ants.image_read(mask_fn)
         smoothed_mask = ants.smooth_image(mask, 1)
         img = ants.n4_bias_field_correction(img, ones, convergence=n4_opts)
-        img = ants.n4_bias_field_correction(img, ones, convergence=n4_opts, weight_mask=smoothed_mask)
+        if not n4_once:
+            img = ants.n4_bias_field_correction(img, ones, convergence=n4_opts, weight_mask=smoothed_mask)
         img = ants.resample_image(img, res, False, 4)
         mask = ants.resample_image(mask, res, False, 1)
         img = img.reorient_image2(orientation)

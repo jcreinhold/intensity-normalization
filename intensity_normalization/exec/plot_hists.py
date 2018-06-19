@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.plot_hists.py
+intensity_normalization.exec.plot_hists
 
 plot the histograms over one another
 

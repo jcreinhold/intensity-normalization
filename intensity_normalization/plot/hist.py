@@ -10,9 +10,7 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: May 21, 2018
 """
 
-from glob import glob
 import logging
-import os
 import warnings
 
 import ants
@@ -20,6 +18,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from intensity_normalization.errors import NormalizationError
+from intensity_normalization.utilities.io import glob_nii
 
 logger = logging.getLogger(__name__)
 
@@ -45,9 +44,9 @@ def all_hists(img_dir, mask_dir=None, alpha=0.8, figsize=(12,10), **kwargs):
     Returns:
         ax (matplotlib.axes.Axes): plotted on ax obj
     """
-    imgs = sorted(glob(os.path.join(img_dir, '*.nii*')))
+    imgs = glob_nii(img_dir)
     if mask_dir is not None:
-        masks = sorted(glob(os.path.join(mask_dir, '*.nii*')))
+        masks = glob_nii(mask_dir)
     else:
         masks = [None] * len(imgs)
     if len(imgs) != len(masks):
@@ -73,8 +72,8 @@ def hist(img, mask=None, ax=None, n_bins=200, log=True, alpha=0.8, lw=3, **kwarg
     plots the histogram of an ants object (line histogram)
 
     Args:
-        img (ants. ): MR image of interest
-        mask (ants. ): brain mask of img (default: None)
+        img (ants.core.ants_image.ANTsImage): MR image of interest
+        mask (ants.core.ants_image.ANTsImage): brain mask of img (default: None)
         ax (matplotlib.axes.Axes): ax to plot on (default: None)
         n_bins (int): number of bins to use in histogram (default: 200)
         log (bool): use log scale (default: True)
@@ -86,7 +85,7 @@ def hist(img, mask=None, ax=None, n_bins=200, log=True, alpha=0.8, lw=3, **kwarg
     """
     if ax is None:
         _, ax = plt.subplots()
-    data = img.numpy()[mask.numpy()==1] if mask is not None else img.numpy()
+    data = img.numpy()[mask.numpy()==1] if mask is not None else img.numpy()[img.numpy() > 0]
     hist, bin_edges = np.histogram(data.flatten(), n_bins, **kwargs)
     bins = np.diff(bin_edges)/2 + bin_edges[:-1]
     if log:

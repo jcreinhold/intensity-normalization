@@ -23,7 +23,6 @@ Created on: May 01, 2018
 
 from __future__ import print_function, division
 
-from glob import glob
 import logging
 import os
 
@@ -58,7 +57,7 @@ def hm_normalize(img_dir, mask_dir=None, output_dir=None, write_to_disk=True):
             normalization on MRIs of human brain with multiple sclerosis,”
             Med. Image Anal., vol. 15, no. 2, pp. 267–282, 2011.
     """
-    input_files = sorted(glob(os.path.join(img_dir, '*.nii*')))
+    input_files = io.glob_nii(img_dir)
     if output_dir is None:
         out_fns = [None] * len(input_files)
     else:
@@ -69,7 +68,7 @@ def hm_normalize(img_dir, mask_dir=None, output_dir=None, write_to_disk=True):
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
 
-    mask_files = [None] * len(input_files) if mask_dir is None else sorted(glob(os.path.join(mask_dir, '*.nii*')))
+    mask_files = [None] * len(input_files) if mask_dir is None else io.glob_nii(mask_dir)
 
     logger.info('Learning standard scale for the set of images')
     landmarks, pts = train(input_files, mask_files)

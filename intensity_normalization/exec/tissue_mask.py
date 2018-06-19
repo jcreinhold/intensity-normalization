@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.tissue_mask.py
+intensity_normalization.exec.tissue_mask
 
 create tissue masks/memberships using FCM or GMM
 for skull-stripped brain or brain w/ mask
@@ -12,7 +12,6 @@ Created on: May 23, 2018
 """
 
 import argparse
-from glob import glob
 import logging
 import os
 import sys
@@ -53,9 +52,9 @@ def main():
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
     logger = logging.getLogger(__name__)
     try:
-        img_fns = sorted(glob(os.path.join(args.img_dir, '*.nii*')))
+        img_fns = io.glob_nii(args.img_dir)
         if args.mask_dir is not None:
-            mask_fns = sorted(glob(os.path.join(args.mask_dir, '*.nii*')))
+            mask_fns = io.glob_nii(args.mask_dir)
         else:
             mask_fns = [None] * len(img_fns)
         if not os.path.exists(args.output_dir):

@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+intensity_normalization.exec.coregister
+
+rigidly register a set of images to a template image (e.g., T1-w or MNI template)
+
+Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
+
+Created on: Jun 19, 2018
+"""
+
+import argparse
+import logging
+import os
+import sys
+import warnings
+
+with warnings.catch_warnings():
+    warnings.filterwarnings('ignore', category=FutureWarning)
+    import ants
+    from intensity_normalization.utilities.io import glob_nii, split_filename
+
+
+def arg_parser():
+    parser = argparse.ArgumentParser(description='coregister a set of MR images (e.g., to MNI or to the T1 image)')
+    parser.add_argument('-i', '--img-dir', type=str, required=True,
+                        help='path to directory with images to be processed '
+                             '(should all be T1w contrast)')
+    parser.add_argument('-o', '--output-dir', type=str, required=True,
+                        help='directory to output the corresponding registered img files')
+    parser.add_argument('-t', '--template-dir', type=str, default=None,
+                        help='directory of images to co-register the images to (if not provided, coreg to MNI)')
+    parser.add_argument('--orientation', type=str, default='RAI',
+                        help='output orientation of imgs')
+    parser.add_argument('-v', '--verbosity', action="count", default=0,
+                        help="increase output verbosity (e.g., -vv is more than -v)")
+    return parser
+
+
+def main():
+    args = arg_parser().parse_args()
+    if args.verbosity == 1:
+        level = logging.getLevelName('INFO')
+    elif args.verbosity >= 2:
+        level = logging.getLevelName('DEBUG')
+    else:
+        level = logging.getLevelName('WARNING')
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
+    logger = logging.getLogger(__name__)
+    try:
+        img_fns = glob_nii(args.img_dir)
+        if not os.path.exists(args.output_dir):
+            logger.info('Making Output Directory: {}'.format(args.output_dir))
+            os.mkdir(args.output_dir)
+        if args.template_dir is None:
+            logger.info('Rigidly registering image to MNI template')
+            template = ants.image_read(ants.get_ants_data('mni')).reorient_image2(args.orientation)
+            orientation = args.orientation
+        else:
+            template_fns = glob_nii(args.template_dir)
+        for i, img in enumerate(img_fns):
+            _, base, _ = split_filename(img)
+            logger.info('Rigidly registering image to template: {}, ({:d}/{:d})'.format(base, i+1, len(img_fns)))
+            if args.template_dir is not None:
+                template = ants.image_read(template_fns[i])
+                orientation = template.orientation
+            input = ants.image_read(img).reorient_image2(orientation)
+            mytx = ants.registration(fixed=template, moving=input, type_of_transform='Rigid')
+            moved = ants.apply_transforms(template, input, mytx['fwdtransforms'], interpolator='bSpline')
+            registered = os.path.join(args.output_dir, base + '_reg.nii.gz')
+            ants.image_write(moved, registered)
+        return 0
+    except Exception as e:
+        logger.exception(e)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
