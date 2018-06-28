@@ -59,7 +59,7 @@ def preprocess(img_dir, mask_dir, out_dir, res=(1,1,1), orientation='RAI', n4_op
 
     # create the output directory structure
     out_img_dir = os.path.join(out_dir, 'imgs')
-    out_mask_dir = os.path.join(out_dir, 'mask')
+    out_mask_dir = os.path.join(out_dir, 'masks')
     if not os.path.exists(out_dir):
         logger.info('Making output directory structure: {}'.format(out_dir))
         os.mkdir(out_dir)
@@ -74,16 +74,16 @@ def preprocess(img_dir, mask_dir, out_dir, res=(1,1,1), orientation='RAI', n4_op
     for i, (img_fn, mask_fn) in enumerate(zip(img_fns, mask_fns), 1):
         _, img_base, img_ext = split_filename(img_fn)
         _, mask_base, mask_ext = split_filename(mask_fn)
-        logger.info('Reading image: {} ({:d}/{:d})'.format(img_base, i, len(img_fns)))
+        logger.info('Preprocessing image: {} ({:d}/{:d})'.format(img_base, i, len(img_fns)))
         img = ants.image_read(img_fn)
-        ones = ants.image_clone(img) * 0 + 1
         mask = ants.image_read(mask_fn)
         smoothed_mask = ants.smooth_image(mask, 1)
-        img = ants.n4_bias_field_correction(img, ones, convergence=n4_opts)
+        img = ants.n4_bias_field_correction(img, convergence=n4_opts)
         if not n4_once:
-            img = ants.n4_bias_field_correction(img, ones, convergence=n4_opts, weight_mask=smoothed_mask)
-        img = ants.resample_image(img, res, False, 4)
-        mask = ants.resample_image(mask, res, False, 1)
+            img = ants.n4_bias_field_correction(img, convergence=n4_opts, weight_mask=smoothed_mask)
+        if res != img.spacing:
+            img = ants.resample_image(img, res, False, 4)
+            mask = ants.resample_image(mask, res, False, 1)
         img = img.reorient_image2(orientation)
         mask = mask.reorient_image2(orientation)
         logger.info('Writing preprocessed image: {} ({:d}/{:d})'.format(img_base, i, len(img_fns)))

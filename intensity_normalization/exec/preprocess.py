@@ -39,10 +39,11 @@ def arg_parser():
                         help='resolution for resampled images')
     parser.add_argument('--orientation', type=str, default='RAI',
                         help='orientation of preprocessed images')
-    parser.add_argument('--n4-opts', type=dict, default=None,
-                        help='n4 options, see ants.n4_bias_field_correction')
+    parser.add_argument('--n4-opts', type=str, default=None,
+                        help='n4 convergence options (add arguments to json file or corrected formatted string), '
+                             'see ants.n4_bias_field_correction')
     parser.add_argument('--n4-once', action='store_true', default=False,
-                        help='do n4 only once vs twice (twice often works better)')
+                        help='do n4 only once vs twice (twice often works better, and is default)')
     parser.add_argument('-v', '--verbosity', action="count", default=0,
                         help="increase output verbosity (e.g., -vv is more than -v)")
     return parser
@@ -59,7 +60,12 @@ def main():
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
     logger = logging.getLogger(__name__)
     try:
-        preprocess(args.img_dir, args.mask_dir, args.out_dir, args.resolution, args.orientation, args.n4_opts, args.n4_once)
+        if args.n4_opts is None:
+            n4_opts = None
+        else:
+            import json
+            n4_opts = json.loads(args.n4_opts)
+        preprocess(args.img_dir, args.mask_dir, args.out_dir, args.resolution, args.orientation, n4_opts, args.n4_once)
         return 0
     except Exception as e:
         logger.exception(e)
