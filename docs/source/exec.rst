@@ -81,6 +81,14 @@ Tissue Mask
    :func: arg_parser
    :prog: tissue_mask
 
+Co-register
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. argparse::
+   :module: intensity_normalization.exec.coregister
+   :func: arg_parser
+   :prog: coregister
+
 Plotting
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 

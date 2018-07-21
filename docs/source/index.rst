@@ -6,6 +6,8 @@
 intensity-normalization documentation
 ===================================================
 
+intensity-normalization is a python library of intensity normalization routines for MR images
+
 .. toctree::
    :maxdepth: 1
    :caption: Contents:
@@ -14,6 +16,7 @@ intensity-normalization documentation
    normalization
    plot
    utilities
+   algorithm
 
 Indices and tables
 ==================

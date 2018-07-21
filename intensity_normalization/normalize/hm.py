@@ -178,7 +178,7 @@ def do_hist_norm(img, h, m, mask=None, i_min=1, i_max=99, i_s_min=0, i_s_max=100
         obs1 = m_obs[i + 1]
         m1 = m_withends[i + 1]
         m0 = m_withends[i]
-        inds = np.logical_and(img_data < obs1, img_data >= obs0)
+        inds = np.logical_and(img_data < obs1, img_data >= obs0)  # segment of image according to decile
         normed[inds] = (((img_data[inds] - obs0) / (obs1 - obs0)) * (m1 - m0)) + m0
 
     return nib.Nifti1Image(normed, img.affine, img.header)

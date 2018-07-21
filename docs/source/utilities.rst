@@ -19,10 +19,16 @@ Preprocessing
 .. automodule:: intensity_normalization.utilities.preprocess
    :members:
 
-Registration
-~~~~~~~~~~~~
+Histogram Operations
+~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: intensity_normalization.utilities.register
+.. automodule:: intensity_normalization.utilities.hist
+   :members:
+
+Control Voxel (CSF) Operations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: intensity_normalization.utilities.csf
    :members:
 
 ROBEX

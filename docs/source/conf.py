@@ -59,7 +59,8 @@ release = '0.0.0'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
-    'sphinxarg.ext'
+    'sphinxarg.ext',
+    'sphinx.ext.mathjax'
 ]
 
 napoleon_google_docstring = True

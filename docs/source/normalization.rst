@@ -6,6 +6,7 @@ normalization
 
 Z-Score
 ~~~~~~~
+
 .. automodule:: intensity_normalization.normalize.zscore
    :members:
 
@@ -41,5 +42,6 @@ WhiteStripe
 
 RAVEL
 ~~~~~
+
 .. automodule:: intensity_normalization.normalize.ravel
    :members:
