@@ -23,6 +23,8 @@ from skfuzzy import cmeans
 from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture
 
+from intensity_normalization.errors import NormalizationError
+
 logger = logging.getLogger(__name__)
 
 
@@ -90,14 +92,19 @@ def gmm_class_mask(img, brain_mask=None, contrast='t1', return_wm_peak=True, har
     gmm = GaussianMixture(3)
     gmm.fit(brain)
 
-    weights = gmm.weights_
     if return_wm_peak:
-        means = gmm.means_.T.squeeze()
-        wm_peak = max(means) if contrast.lower() == 't1' else \
-            max(zip(means, weights), key=lambda x: x[1])[0]
+        means = sorted(gmm.means_.T.squeeze())
+        if contrast.lower() == 't1':
+            wm_peak = means[2]
+        elif contrast.lower() == 'flair':
+            wm_peak = means[1]
+        elif contrast.lower() == 't2':
+            wm_peak = means[0]
+        else:
+            raise NormalizationError('Invalid contrast type: {}. Must be t1, t2, or flair.'.format(contrast))
         return wm_peak
     else:
-        classes = np.argsort(weights)
+        classes = np.argsort(gmm.weights_)
         if hard_seg:
             tmp_predicted = gmm.predict(brain)
             predicted = np.zeros(tmp_predicted.shape)

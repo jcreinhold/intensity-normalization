@@ -39,8 +39,8 @@ def arg_parser():
     parser.add_argument('-o', '--output-dir', type=str, default=None,
                         help='path to output normalized images '
                              '(default: to directory containing images)')
-    parser.add_argument('--contrast', type=str, choices=['T1', 'T2'], default='T1',
-                        help='pick the contrast of the input MR image (T1 or T2)')
+    parser.add_argument('-c', '--contrast', type=str, choices=['t1', 't2', 'flair'], default='t1',
+                        help='pick the contrast of the input MR image (t1, t2, or flair)')
     parser.add_argument('-b', '--background-mask', type=str,
                         help='path to a mask of the background')
     parser.add_argument('-w', '--wm-peak', type=str, default=None,

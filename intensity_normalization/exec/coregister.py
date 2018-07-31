@@ -33,6 +33,10 @@ def arg_parser():
                         help='directory of images to co-register the images to (if not provided, coreg to MNI)')
     parser.add_argument('--orientation', type=str, default='RAI',
                         help='output orientation of imgs')
+    parser.add_argument('-r', '--registration', type=str, default='Affine',
+                        help='Use this type of registration (see ANTsPy for details) [Default: Affine]')
+    parser.add_argument('--no-init', action='store_true', default=False,
+                        help='do not do an affine initialization first')
     parser.add_argument('-v', '--verbosity', action="count", default=0,
                         help="increase output verbosity (e.g., -vv is more than -v)")
     return parser
@@ -54,19 +58,24 @@ def main():
             logger.info('Making Output Directory: {}'.format(args.output_dir))
             os.mkdir(args.output_dir)
         if args.template_dir is None:
-            logger.info('Rigidly registering image to MNI template')
+            logger.info('Registering image to MNI template')
             template = ants.image_read(ants.get_ants_data('mni')).reorient_image2(args.orientation)
             orientation = args.orientation
         else:
             template_fns = glob_nii(args.template_dir)
         for i, img in enumerate(img_fns):
             _, base, _ = split_filename(img)
-            logger.info('Rigidly registering image to template: {}, ({:d}/{:d})'.format(base, i+1, len(img_fns)))
+            logger.info('Registering image to template: {} ({:d}/{:d})'.format(base, i+1, len(img_fns)))
             if args.template_dir is not None:
                 template = ants.image_read(template_fns[i])
                 orientation = template.orientation
             input = ants.image_read(img).reorient_image2(orientation)
-            mytx = ants.registration(fixed=template, moving=input, type_of_transform='Rigid')
+            if not args.no_init:
+                tx = ants.affine_initializer(template, input)
+            else:
+                tx = None
+            mytx = ants.registration(fixed=template, moving=input, initial_transform=tx, type_of_transform=args.registration)
+            logger.debug(mytx)
             moved = ants.apply_transforms(template, input, mytx['fwdtransforms'], interpolator='bSpline')
             registered = os.path.join(args.output_dir, base + '_reg.nii.gz')
             ants.image_write(moved, registered)
