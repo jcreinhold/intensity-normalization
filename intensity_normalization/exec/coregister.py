@@ -19,6 +19,7 @@ import warnings
 with warnings.catch_warnings():
     warnings.filterwarnings('ignore', category=FutureWarning)
     import ants
+    from intensity_normalization.errors import NormalizationError
     from intensity_normalization.utilities.io import glob_nii, split_filename
 
 
@@ -35,8 +36,8 @@ def arg_parser():
                         help='output orientation of imgs')
     parser.add_argument('-r', '--registration', type=str, default='Affine',
                         help='Use this type of registration (see ANTsPy for details) [Default: Affine]')
-    parser.add_argument('--no-init', action='store_true', default=False,
-                        help='do not do an affine initialization first')
+    parser.add_argument('--no-rigid', action='store_true', default=False,
+                        help='do not do rigid registration first')
     parser.add_argument('-v', '--verbosity', action="count", default=0,
                         help="increase output verbosity (e.g., -vv is more than -v)")
     return parser
@@ -63,6 +64,9 @@ def main():
             orientation = args.orientation
         else:
             template_fns = glob_nii(args.template_dir)
+            if len(template_fns) != len(img_fns):
+                raise NormalizationError('If template images are provided, they must be in '
+                                         'correspondence (i.e., equal number) with the source images')
         for i, img in enumerate(img_fns):
             _, base, _ = split_filename(img)
             logger.info('Registering image to template: {} ({:d}/{:d})'.format(base, i+1, len(img_fns)))
@@ -70,10 +74,13 @@ def main():
                 template = ants.image_read(template_fns[i])
                 orientation = template.orientation
             input = ants.image_read(img).reorient_image2(orientation)
-            if not args.no_init:
-                tx = ants.affine_initializer(template, input)
+            if not args.no_rigid:
+                logger.info('Starting rigid registration: {} ({:d}/{:d})'.format(base, i+1, len(img_fns)))
+                mytx = ants.registration(fixed=template, moving=input, type_of_transform="Rigid")
+                tx = mytx['fwdtransforms'][0]
             else:
                 tx = None
+            logger.info('Starting {} registration: {} ({:d}/{:d})'.format(args.registration, base, i+1, len(img_fns)))
             mytx = ants.registration(fixed=template, moving=input, initial_transform=tx, type_of_transform=args.registration)
             logger.debug(mytx)
             moved = ants.apply_transforms(template, input, mytx['fwdtransforms'], interpolator='bSpline')
