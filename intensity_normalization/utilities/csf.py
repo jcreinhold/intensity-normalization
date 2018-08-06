@@ -45,8 +45,8 @@ def csf_mask(img, brain_mask, contrast='t1', csf_thresh=0.9, return_prob=False, 
     """
     # convert nibabel to antspy format images (to do atropos segmentation)
     if hasattr(img, 'get_data') and hasattr(brain_mask, 'get_data'):
-        img = __nibabel_to_ants(img)
-        brain_mask = __nibabel_to_ants(brain_mask)
+        img = nibabel_to_ants(img)
+        brain_mask = nibabel_to_ants(brain_mask)
     res = img.kmeans_segmentation(3, kmask=brain_mask, mrf=mrf)
     avg_intensity = [np.mean(img.numpy()[prob_img.numpy() > 0.5]) for prob_img in res['probabilityimages']]
     csf_arg = np.argmin(avg_intensity) if contrast.lower() in ('t1', 'flair') else np.argmax(avg_intensity)
@@ -88,7 +88,7 @@ def csf_mask_intersection(img_dir, masks=None, prob=1):
 
 
 # TODO: remove this function when ANTsPy releases new binaries, replace use cases with ants.from_nibabel()
-def __nibabel_to_ants(nib_image):
+def nibabel_to_ants(nib_image):
     """ convert a nibabel image to an ants image """
     from tempfile import mktemp
     tmpfile = mktemp(suffix='.nii.gz')

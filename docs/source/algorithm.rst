@@ -150,16 +150,16 @@ $$ V_c = \\gamma Z^T + R $$
 where $V_c$ are the set of control (CSF) voxels.
 
 Note that we can rewrite $V_c$ as
-$$ V_c = U \\Sigma V^T $$
-through the SVD. If $V$ is an $n\\times n$ matrix of right singular vectors.
+$$ V_c = U \\Sigma W^T $$
+through the SVD. If $W$ is an $n\\times n$ matrix of right singular vectors.
 Then we can use $b<n$ right singular vectors to form an orthogonal basis for the
-unwanted factors $Z$ [5]. That is, we use $V_b$ as the estimate of
-$Z$, where $V_b$ are the select $b$ right singular vectors. We then do
+unwanted factors $Z$ [5]. That is, we use $W_b$ as the estimate of
+$Z$, where $W_b$ are the select $b$ right singular vectors. We then do
 voxel-wise linear regression to estimate the coefficients $\\gamma$. Then the
 RAVEL normalized image is simply
 $$ I_{\\text{ravel}}(\\mathbf x) = I_{\\text{ws}}(\\mathbf x) - \\gamma_{\\mathbf x} Z^T. $$
 where $\\gamma_{\\mathbf x}$ are the coefficients of unwanted variation associated
-with the voxel $\\mathbf x$. In our experiments, we follow the original
+with the voxel $\\mathbf x$ found via linear regression. In our experiments, we follow the original
 paper [4] and set $b=1$ to be the first singular
 vector (the first right singular vector is highly correlated (>95%)
 with the mean intensity of the CSF).

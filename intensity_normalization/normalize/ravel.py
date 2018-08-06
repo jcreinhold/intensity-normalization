@@ -8,7 +8,7 @@ Use RAVEL [1] to intensity normalize a population of MR images
 References:
    ﻿[1] J. P. Fortin, E. M. Sweeney, J. Muschelli, C. M. Crainiceanu,
         and R. T. Shinohara, “Removing inter-subject technical variability
-        in magnetic resonance imaging studies,” Neuroimage, vol. 132,
+        in magnetic resonance imaging studies,” NeuroImage, vol. 132,
         pp. 198–212, 2016.
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
@@ -16,9 +16,12 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: Apr 27, 2018
 """
 
+from functools import reduce
 import logging
+from operator import add
 import os
 
+import ants
 import nibabel as nib
 import numpy as np
 
@@ -31,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=False,
-                    do_whitestripe=True, b=1, membership_thresh=0.99):
+                    do_whitestripe=True, b=1, membership_thresh=0.99, do_registration=False):
     """
     Use RAVEL [1] to normalize the intensities of a set of MR images to eliminate
     unwanted technical variation in images (but, hopefully, preserve biological variation)
@@ -50,6 +53,7 @@ def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=
         do_whitestripe (bool): whitestripe normalize the images before applying RAVEL correction
         b (int): number of unwanted factors to estimate
         membership_thresh (float): threshold of membership for control voxels
+        do_registration (bool): deformably register images to find control mask
 
     Returns:
         Z (np.ndarray): unwanted factors (used in ravel correction)
@@ -76,7 +80,8 @@ def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=
 
     # get parameters necessary and setup the V array
     V, Vc = image_matrix(img_fns, contrast, masks=mask_fns, do_whitestripe=do_whitestripe,
-                         return_ctrl_matrix=True, membership_thresh=membership_thresh)
+                         return_ctrl_matrix=True, membership_thresh=membership_thresh,
+                         do_registration=do_registration)
 
     # estimate the unwanted factors Z
     _, _, vh = np.linalg.svd(Vc)
@@ -116,7 +121,8 @@ def ravel_correction(V, Z):
 
 
 def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_matrix=False,
-                 membership_thresh=0.99, smoothness=0.25, max_ctrl_vox=10000):
+                 membership_thresh=0.99, smoothness=0.25, max_ctrl_vox=10000, do_registration=False,
+                 ctrl_prob=1):
     """
     creates an matrix of images where the rows correspond the the voxels of
     each image and the columns are the images
@@ -130,7 +136,11 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
         membership_thresh (float): threshold of membership for control voxels (want this very high)
         smoothness (float): smoothness parameter for segmentation for control voxels
         max_ctrl_vox (int): maximum number of control voxels (if too high, everything
-            crashes depending on available memory)
+            crashes depending on available memory) only used if do_registration is false
+        do_registration (bool): register the images together and take the intersection of the csf
+            masks (as done in the original paper, note that this takes much longer)
+        ctrl_prob (float): given all data, proportion of data labeled as csf to be
+            used for intersection (i.e., when do_registration is true)
 
     Returns:
         V (np.ndarray): image matrix (rows are voxels, columns are images)
@@ -160,17 +170,36 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
         img_data = img.get_data()
         V[:,i] = img_data.flatten()
         if return_ctrl_matrix:
-            logger.info('Finding control voxels for image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
-            ctrl_mask = csf.csf_mask(img, mask, contrast=contrast, csf_thresh=membership_thresh, mrf=smoothness)
-            if np.sum(ctrl_mask) == 0:
-                raise NormalizationError('No control voxels found for image ({}) at threshold ({})'
-                                         .format(base, membership_thresh))
-            elif np.sum(ctrl_mask) < 100:
-                logger.warning('Few control voxels found ({:d}) (potentially a problematic image ({}) or '
-                               'threshold ({}) too high)'.format(int(np.sum(ctrl_mask)), base, membership_thresh))
-            ctrl_vox.append(img_data[ctrl_mask == 1].flatten())
+            if do_registration and i == 0:
+                logger.info('Creating control mask for image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
+                verbose = True if logger.getEffectiveLevel() == logging.getLevelName('DEBUG') else False
+                ctrl_masks = []
+                reg_imgs = []
+                reg_imgs.append(csf.nibabel_to_ants(img))
+                ctrl_masks.append(csf.csf_mask(img, mask, contrast=contrast, csf_thresh=membership_thresh, mrf=smoothness))
+            elif do_registration and i != 0:
+                template = ants.image_read(imgs[0])
+                tmask = ants.image_read(masks[0])
+                img = csf.nibabel_to_ants(img)
+                logger.info('Starting registration for image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
+                reg_result = ants.registration(template, img, type_of_transform='SyN', mask=tmask, verbose=verbose)
+                img = reg_result['warpedmovout']
+                mask = csf.nibabel_to_ants(mask)
+                reg_imgs.append(img)
+                logger.info('Creating control mask for image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
+                ctrl_masks.append(csf.csf_mask(img, mask, contrast=contrast, csf_thresh=membership_thresh, mrf=smoothness))
+            else:
+                logger.info('Finding control voxels for image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
+                ctrl_mask = csf.csf_mask(img, mask, contrast=contrast, csf_thresh=membership_thresh, mrf=smoothness)
+                if np.sum(ctrl_mask) == 0:
+                    raise NormalizationError('No control voxels found for image ({}) at threshold ({})'
+                                             .format(base, membership_thresh))
+                elif np.sum(ctrl_mask) < 100:
+                    logger.warning('Few control voxels found ({:d}) (potentially a problematic image ({}) or '
+                                   'threshold ({}) too high)'.format(int(np.sum(ctrl_mask)), base, membership_thresh))
+                ctrl_vox.append(img_data[ctrl_mask == 1].flatten())
 
-    if return_ctrl_matrix:
+    if return_ctrl_matrix and not do_registration:
         min_len = min(min(map(len, ctrl_vox)), max_ctrl_vox)
         logger.info('Using {:d} control voxels'.format(min_len))
         Vc = np.zeros((min_len, len(imgs)))
@@ -179,6 +208,19 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
             logger.info('Image {:d} control voxel stats -  mean: {:.3f}, std: {:.3f}'
                          .format(i+1, np.mean(ctrl_voxs), np.std(ctrl_voxs)))
             Vc[:,i] = ctrl_voxs
+    elif return_ctrl_matrix and do_registration:
+        ctrl_sum = reduce(add, ctrl_masks)  # need to use reduce instead of sum b/c data structure
+        intersection = np.zeros(ctrl_sum.shape)
+        intersection[ctrl_sum >= np.floor(len(ctrl_masks) * ctrl_prob)] = 1
+        num_ctrl_vox = int(np.sum(intersection))
+        Vc = np.zeros((num_ctrl_vox, len(imgs)))
+        for i, img in enumerate(reg_imgs):
+            ctrl_voxs = img.numpy()[intersection == 1]
+            logger.info('Image {:d} control voxel stats -  mean: {:.3f}, std: {:.3f}'
+                         .format(i+1, np.mean(ctrl_voxs), np.std(ctrl_voxs)))
+            Vc[:,i] = ctrl_voxs
+        del ctrl_masks, reg_imgs
+        import gc; gc.collect()  # force a garbage collection, since we just used the majority of the system memory
 
     return V if not return_ctrl_matrix else (V, Vc)
 

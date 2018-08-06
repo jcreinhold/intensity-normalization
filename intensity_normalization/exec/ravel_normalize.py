@@ -54,6 +54,8 @@ def arg_parser():
                              help='smoothness parameter for segmentation for control voxels [Default = 0.25]')
     adv_options.add_argument('--no-whitestripe', action='store_false', default=True,
                              help='do not use whitestripe in RAVEL if this flag is on')
+    adv_options.add_argument('--do-registration', action='store_true', default=False,
+                             help='do deformable registration to find control mask (*much* slower but follows paper)')
     return parser
 
 
