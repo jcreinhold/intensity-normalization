@@ -30,7 +30,7 @@ else:
 
 args = dict(
     name='intensity-normalization',
-    version='0.0.0',
+    version='1.0.0',
     description="Normalize the intensity values of MR images",
     long_description=readme,
     author='Jacob Reinhold',
@@ -60,6 +60,7 @@ setup(install_requires=['antspy',
                         'matplotlib',
                         'nibabel',
                         'numpy',
+                        'scikit-image',
                         'scikit-learn',
                         'scikit-fuzzy',
                         'scipy',

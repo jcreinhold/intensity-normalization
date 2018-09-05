@@ -21,7 +21,8 @@ install:
   - python --version
   - which python
   - pip --version
-  - travis_retry pip install coverage==4.0.3 nose pytest-pep8 pytest-cov python-coveralls
+  # coveralls requires coverage==4.0.3, recent versions of pytest-cov require coverage>=4.4
+  - travis_retry pip install coverage==4.0.3 nose pytest-pep8 pytest-cov==2.5.1 python-coveralls
   - travis_retry python setup.py install
 script:
   - nosetests -v --with-coverage --cover-tests --cover-package=intensity_normalization --ignore-files=intensity_normalization/utilities/robex.py tests

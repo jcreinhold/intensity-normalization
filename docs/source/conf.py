@@ -21,6 +21,7 @@ MOCK_MODULES = ['ants','matplotlib','nibabel','numpy','sklearn.mixture','skfuzzy
                 'scipy','statsmodels','matplotlib.pyplot','scipy.ndimage','scipy.ndimage.morphology',
                 'scipy.linalg','skfuzzy.fuzzymath','rpy2','rpy2.robjects.packages','sklearn.cluster',
                 'statsmodels.api','scipy.signal','seaborn']
+
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
 
@@ -42,9 +43,9 @@ copyright = '2018, Jacob Reinhold'
 author = 'Jacob Reinhold'
 
 # The short X.Y version
-version = ''
+version = '1.0'
 # The full version, including alpha/beta/rc tags
-release = '0.0.0'
+release = '1.0.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -104,7 +105,8 @@ html_theme = 'alabaster'
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = {'github_user': 'jcreinhold',
+                      'github_repo': 'intensity-normalization'}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
