@@ -32,16 +32,15 @@ packages=(
 )
 
 conda_forge_packages=(
-    sphinx-argparse
     itk==4.13.1
     libiconv
     nibabel==2.3.0
-    plotly==3.1.1
+    sphinx-argparse
     statsmodels==0.9.0
     webcolors==1.8.1
 )
 
-conda create --channel conda-forge --name intensity_normalization ${packages[@]} ${conda_forge_packages[@]} --yes || return
+conda create --channel conda-forge --name intensity_normalization python==3.6.6 ${packages[@]} ${conda_forge_packages[@]} --yes || return
 source activate intensity_normalization || return
 pip install -U scikit-fuzzy==0.3.1 || return
 

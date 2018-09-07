@@ -43,8 +43,8 @@ def arg_parser():
     return parser
 
 
-def main():
-    args = arg_parser().parse_args()
+def main(args=None):
+    args = arg_parser().parse_args(args)
     if args.verbosity == 1:
         level = logging.getLevelName('INFO')
     elif args.verbosity >= 2:
@@ -93,4 +93,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))

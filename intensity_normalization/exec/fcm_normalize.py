@@ -73,8 +73,8 @@ def process(image_fn, brain_mask_fn, wm_mask_fn, output_dir, args, logger):
         io.save_nii(normalized, outfile, is_nii=True)
 
 
-def main():
-    args = arg_parser().parse_args()
+def main(args=None):
+    args = arg_parser().parse_args(args)
     if not (args.brain_mask is None) ^ (args.wm_mask is None):
         raise NormalizationError('Only one of {brain mask, wm mask} should be given')
     if args.verbosity == 1:
@@ -154,4 +154,4 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))

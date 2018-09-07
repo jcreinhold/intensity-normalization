@@ -67,8 +67,8 @@ def process(image_fn, brain_mask_fn, args, logger):
     io.save_nii(normalized, outfile, is_nii=True)
 
 
-def main():
-    args = arg_parser().parse_args()
+def main(args=None):
+    args = arg_parser().parse_args(args)
     if args.verbosity == 1:
         level = logging.getLevelName('INFO')
     elif args.verbosity >= 2:
@@ -110,4 +110,4 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))
