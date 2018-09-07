@@ -84,8 +84,13 @@ def preprocess(img_dir, mask_dir, out_dir, res=(1,1,1), orientation='RAI', n4_op
         if res != img.spacing:
             img = ants.resample_image(img, res, False, 4)
             mask = ants.resample_image(mask, res, False, 1)
-        img = img.reorient_image2(orientation)
-        mask = mask.reorient_image2(orientation)
+        if hasattr(img, 'reorient_image2'):
+            img = img.reorient_image2(orientation)
+            mask = mask.reorient_image2(orientation)
+        else:
+            logger.info('Cannot reorient image to a custom orientation. Update ANTsPy to a version >= 0.1.5.')
+            img = img.reorient_image((1,0,0))['reoimage']
+            mask = mask.reorient_image((1,0,0))['reoimage']
         logger.info('Writing preprocessed image: {} ({:d}/{:d})'.format(img_base, i, len(img_fns)))
         out_img = os.path.join(out_img_dir, img_base + img_ext)
         out_mask = os.path.join(out_mask_dir, mask_base + mask_ext)

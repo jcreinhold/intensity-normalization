@@ -12,8 +12,10 @@ ADD . /app
 # 2) Install any needed packages specified in requirements.txt
 # 3) Install ANTsPy which currently requires a specific path
 # 4) Install this package into the container
+# 5) Setup matplotlib to not pull in a GUI
 RUN pip install --upgrade pip && \
     pip install numpy && \
     pip install --trusted-host pypi.python.org -r requirements.txt && \
     pip install https://github.com/ANTsX/ANTsPy/releases/download/v0.1.4/antspy-0.1.4-cp36-cp36m-linux_x86_64.whl && \
-    python setup.py install
+    python setup.py install && \
+    echo "backend: agg" > matplotlibrc

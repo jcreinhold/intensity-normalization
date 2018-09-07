@@ -1,0 +1,4 @@
+[report]
+omit =
+    */intensity_normalization/utilities/robex.py
+    */intensity_normalization/exec/robex.py

@@ -43,8 +43,8 @@ def arg_parser():
     return parser
 
 
-def main():
-    args = arg_parser().parse_args()
+def main(args=None):
+    args = arg_parser().parse_args(args)
     if args.verbosity == 1:
         level = logging.getLevelName('INFO')
     elif args.verbosity >= 2:
@@ -72,18 +72,19 @@ def main():
             logger.info('Registering image to template: {} ({:d}/{:d})'.format(base, i+1, len(img_fns)))
             if args.template_dir is not None:
                 template = ants.image_read(template_fns[i])
-                orientation = template.orientation
-            input = ants.image_read(img).reorient_image2(orientation)
+                orientation = template.orientation if hasattr(template, 'orientation') else None
+            input_img = ants.image_read(img)
+            input_img = input_img.reorient_image2(orientation) if orientation is not None else input_img
             if not args.no_rigid:
                 logger.info('Starting rigid registration: {} ({:d}/{:d})'.format(base, i+1, len(img_fns)))
-                mytx = ants.registration(fixed=template, moving=input, type_of_transform="Rigid")
+                mytx = ants.registration(fixed=template, moving=input_img, type_of_transform="Rigid")
                 tx = mytx['fwdtransforms'][0]
             else:
                 tx = None
             logger.info('Starting {} registration: {} ({:d}/{:d})'.format(args.registration, base, i+1, len(img_fns)))
-            mytx = ants.registration(fixed=template, moving=input, initial_transform=tx, type_of_transform=args.registration)
+            mytx = ants.registration(fixed=template, moving=input_img, initial_transform=tx, type_of_transform=args.registration)
             logger.debug(mytx)
-            moved = ants.apply_transforms(template, input, mytx['fwdtransforms'], interpolator='bSpline')
+            moved = ants.apply_transforms(template, input_img, mytx['fwdtransforms'], interpolator='bSpline')
             registered = os.path.join(args.output_dir, base + '_reg.nii.gz')
             ants.image_write(moved, registered)
         return 0
@@ -93,4 +94,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))

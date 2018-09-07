@@ -24,8 +24,12 @@ install:
   # coveralls requires coverage==4.0.3, recent versions of pytest-cov require coverage>=4.4
   - travis_retry pip install coverage==4.0.3 nose pytest-pep8 pytest-cov==2.5.1 python-coveralls
   - travis_retry python setup.py install
+before_script: # configure a headless display to test plot generation
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+  - sleep 3 # give xvfb some time to start
 script:
-  - nosetests -v --with-coverage --cover-tests --cover-package=intensity_normalization --ignore-files=intensity_normalization/utilities/robex.py tests
+  - nosetests -v --with-coverage --cover-tests --cover-package=intensity_normalization --ignore-files=intensity_normalization/utilities/robex.py --ignore-files=intensity_normalization/exec/robex.py tests
 after_success:
   - coveralls
 
