@@ -42,7 +42,7 @@ args = dict(
     author_email='jacob.reinhold@jhu.edu',
     url='https://gitlab.com/jcreinhold/intensity-normalization',
     license=license,
-    packages=find_packages(exclude=('tests', 'docs')),
+    packages=find_packages(exclude=('tests', 'docs', 'tutorials')),
     entry_points = {
         'console_scripts': ['fcm-normalize=intensity_normalization.exec.fcm_normalize:main',
                             'gmm-normalize=intensity_normalization.exec.gmm_normalize:main',

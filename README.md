@@ -66,11 +66,16 @@ e.g.,
     ravel-normalize -i t1/ -m masks/ -o test_ravel -v
 
 where `t1/` is a directory full of N T1-w images and `masks/` is a directory full of N corresponding brain masks,
-`test_ravel` is the output directory for the normalized images, and `-v` controls the verbosity of the output. 
+`test_ravel` is the output directory for the normalized images, and `-v` controls the verbosity of the output.
 
 The command line interface is standard across all normalization routines (i.e., you should be able to 
 run all normalization routines with the same call as in the above example), however each has unique options.
 Call any executable script with the `-h` flag to see more detailed instructions about the proper call.
+
+Tutorial
+--------
+
+[5 minute Overview](https://github.com/jcreinhold/intensity-normalization/blob/master/tutorials/5min_tutorial.md)
 
 Test Package
 ------------
