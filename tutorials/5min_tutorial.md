@@ -27,16 +27,24 @@ or
 
 ## Fuzzy C-means-based Normalization
 
-Once the package is installed, if you just want to do some sort of normalization and not think about it, a reasonable choice is Fuzzy C-means (FCM)-based
-normalization and Gaussian Mixture Model (GMM)-based normalization; these are covered in this section and the next section respectively.
+Once the package is installed, if you just want to do some sort of normalization and not think too much about it, a reasonable choice is Fuzzy C-means (FCM)-based
+normalization or Gaussian Mixture Model (GMM)-based normalization. These two methods are covered in this section and the next section respectively.
 
-We can do Fuzzy C-means-based white matter (WM) mean normalization as follows:
+Note that FCM-based normalization acts on the image by calculating the white matter (WM) mean and setting that to a specified value
+(the default is 1000 in the code base although that is a tunable parameter). Our FCM-based normalization method requires that
+a set of scans contain a T1-w image. We use the T1-w image to create a mask of the WM over which we calculate the mean and normalize 
+as previously stated (see [here](https://intensity-normalization.readthedocs.io/en/latest/algorithm.html#fuzzy-c-means) for more detail).
+This mask can then be used to normalize the remaining contrasts in the set of images for a specific patient assuming that the
+remaining contrast images are registered to the T1-w image.
+
+Since all the command line interfaces (CLIs) are installed along with the package, we can run `fcm-normalize`
+in the terminal to normalize a T1-w image and create a WM mask by running the following command (replacing paths as necessary):
 
 ```bash
-fcm-normalize -i t1_w_image_path.nii.gz -m mask_path.nii.gz -o t1_norm_path.nii.gz -v
+fcm-normalize -i t1_w_image_path.nii.gz -m mask_path.nii.gz -o t1_norm_path.nii.gz -v -c t1 --single-img
 ```
  
-This will output the normalized T1-w image to `output_path.nii.gz` and will create a directory 
+This will output the normalized T1-w image to `t1_norm_path.nii.gz` and will create a directory 
 called `wm_masks` in which the WM mask will be saved. You can then input the WM mask back in to 
 the program to normalize an image of a different contrast, e.g. for T2,
 
@@ -48,11 +56,18 @@ You can run `fcm-normalize -h` to see more options, but the above covers most of
 run FCM normalization on a single image.  You can also input a directory of images like this:
 
 ```bash
-fcm-normalize -i t1_imgs/ -m brain_masks/ -o out/ -v
+fcm-normalize -i t1_imgs/ -m brain_masks/ -o out/ -v -c t1
 ``` 
  
-and it will FCM normalize all the images in the directory so long as the number of images and brain masks 
-are equal and correspond to one another.
+and it will FCM normalize all the images in the directory `t1_imgs/` so long as the number of images and brain masks 
+are equal and correspond to one another and output the normalized images into the directory `out/`.
+
+If you want to quickly inspect the normalization results on a directory (as in the last command), you can append the
+`-p` flag which will create a plot of the histograms inside the brain mask of the normalized images. For the above
+case, you should expect to see alignment around the intensity level of 1000 (or whatever the `--norm-value` is set to). 
+You can also use the `plot-hists` CLI which is also installed (see [here](https://intensity-normalization.readthedocs.io/en/latest/exec.html#plotting)
+for documentation). A use case of the `plot-hists` command would be to inspect the histograms of a set of images *before* normalization
+to compare with the results of normalization.
 
 ## Gaussian Mixture Model-based Normalization 
 
@@ -62,7 +77,7 @@ installed and accessible via the command-line to your path like `fcm-normalize` 
 intermediate WM mask is created, but it only supports T1, T2, and FLAIR. So you would just call:
 
 ```bash
-gmm-normalize -i imgs/ -m masks/ -o norm/ -v
+gmm-normalize -i t1_imgs/ -m masks/ -o norm/ -v -c t1
 ``` 
 
 ## Other Normalization Methods
@@ -76,8 +91,10 @@ The other methods not listed above are accessible via:
 5) `hm-normalize` - Nyul & Udupa Piecewise linear histogram matching normalization
 
 Note that these all have approximately the same interface with the `-i`, `-m` and `-o` options, but each 
-individual method *may* need some additional input. To determine if this is the case you can either run the 
-command line interface (CLI) or run the CLI with the `-h` or `--help` option.
+individual method *may* need some additional input. To determine if this is the case you can either view the 
+[executable documentation here](https://intensity-normalization.readthedocs.io/en/latest/exec.html) or run the command line interface (CLI) with the `-h` 
+or `--help` option. To get more detail about what each of these algorithms actually does
+see the [algorithm documentation here](https://intensity-normalization.readthedocs.io/en/latest/algorithm.html).
 
 ## Additional Provided Routines
 
@@ -87,3 +104,15 @@ There a variety of other routines provided for analysis and preprocessing. The C
 2) `plot-hists` - plot the histograms of a directory of images on one figure for comparison
 3) `tissue-mask` - create a tissue mask of an input image
 4) `preprocess` - resample, N4-correct, and reorient the image and mask
+
+## Final Note
+
+While in this tutorial we discussed interfacing with the package through command line interfaces (CLIs), 
+it is worth noting that the normalization routines (and other utilities) are available as importable python functions 
+which you can import, e.g.,
+
+```python
+from intensity_normalization.normalize import fcm
+wm_mask = fcm.find_wm_mask(img, brain_mask)
+normalized = fcm.fcm_normalize(img, wm_mask)
+```

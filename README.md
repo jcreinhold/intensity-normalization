@@ -3,15 +3,14 @@ intensity-normalization
 
 [![Build Status](https://travis-ci.org/jcreinhold/intensity-normalization.svg?branch=master)](https://travis-ci.org/jcreinhold/intensity-normalization)
 [![Coverage Status](https://coveralls.io/repos/github/jcreinhold/intensity-normalization/badge.svg?branch=master)](https://coveralls.io/github/jcreinhold/intensity-normalization?branch=master)
-[![Documentation Status](https://readthedocs.org/projects/intensity-normalization/badge/?version=latest)](http://intensity-normalization.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/intensity-normalization/badge/?version=latest)](http://intensity-normalization.readthedocs.io/en/latest/)
 [![Docker Automated Build](https://img.shields.io/docker/build/jcreinhold/intensity-normalization.svg)](https://hub.docker.com/r/jcreinhold/intensity-normalization/)
 [![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/)
 
 This package contains various routines to normalize the intensity of various contrasts of magnetic resonance (MR) brain images; specifically, 
 T1-weighted (T1-w), T2-weighted (T2-w), and FLuid-Attenuated Inversion Recovery (FLAIR). Intensity normalization is an important pre-processing step
-in many image processing applications regarding MR images since MR images do not have a consistent intensity scale. That is,
-even when a single scanner is run with the same parameters and pulse sequence, the intensity scale of the output images may not 
-be comparable. We implement various individual image-based and sample-based (i.e., a set of images of the same contrast taken from the same scanner) 
+in many image processing applications regarding MR images since MR images do not have a consistent intensity scale. We implement various individual 
+image-based and sample-based (i.e., a set of images of the same contrast taken from the same scanner) 
 intensity normalization routines to help alleviate this issue.
 
 We implement the following normalization methods:
@@ -76,6 +75,8 @@ Tutorial
 --------
 
 [5 minute Overview](https://github.com/jcreinhold/intensity-normalization/blob/master/tutorials/5min_tutorial.md)
+
+In addition to the above small tutorial, there is consolidated documentation [here](https://intensity-normalization.readthedocs.io/en/latest/).
 
 Test Package
 ------------
