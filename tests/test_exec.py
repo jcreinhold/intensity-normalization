@@ -69,12 +69,12 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(retval, 0)
 
     def test_ravel_normalization_cli_no_register(self):
-        args = self.args
+        args = self.args + ['--no-registration']
         retval = ravel(args)
         self.assertEqual(retval, 0)
 
     def test_ravel_normalization_cli_register(self):
-        args = self.args + ['--do-registration']
+        args = self.args
         retval = ravel(args)
         self.assertEqual(retval, 0)
 

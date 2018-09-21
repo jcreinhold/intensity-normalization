@@ -39,9 +39,10 @@ def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=
     Use RAVEL [1] to normalize the intensities of a set of MR images to eliminate
     unwanted technical variation in images (but, hopefully, preserve biological variation)
 
-    this is modified from [1] in that *no* registration is done, the control mask is defined
-    dynamically by finding a tissue segmentation of the brain and thresholding the membership
-    at a very high level (this seems to work well and is *much* faster)
+    this function has an option that is modified from [1] in where no registration is done,
+    the control mask is defined dynamically by finding a tissue segmentation of the brain and
+    thresholding the membership at a very high level (this seems to work well and is *much* faster)
+    but there seems to be some more inconsistency in the results
 
     Args:
         img_dir (str): directory containing MR images to be normalized
@@ -134,7 +135,9 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
         do_whitestripe (bool): do whitestripe on the images before storing in matrix or nah
         return_ctrl_matrix (bool): return control matrix for imgs (i.e., a subset of V's rows)
         membership_thresh (float): threshold of membership for control voxels (want this very high)
+            this option is only used if the registration is turned off
         smoothness (float): smoothness parameter for segmentation for control voxels
+            this option is only used if the registration is turned off
         max_ctrl_vox (int): maximum number of control voxels (if too high, everything
             crashes depending on available memory) only used if do_registration is false
         do_registration (bool): register the images together and take the intersection of the csf

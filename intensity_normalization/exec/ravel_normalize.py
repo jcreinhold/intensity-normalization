@@ -54,8 +54,9 @@ def arg_parser():
                              help='smoothness parameter for segmentation for control voxels [Default = 0.25]')
     adv_options.add_argument('--no-whitestripe', action='store_false', default=True,
                              help='do not use whitestripe in RAVEL if this flag is on')
-    adv_options.add_argument('--do-registration', action='store_true', default=False,
-                             help='do deformable registration to find control mask (*much* slower but follows paper)')
+    adv_options.add_argument('--no-registration', action='store_false', default=True,
+                             help='do not do deformable registration to find control mask '
+                                  '(*much* slower but follows paper and is more consistent)')
     return parser
 
 
@@ -78,7 +79,8 @@ def main(args=None):
 
         logger.info('Normalizing the images according to RAVEL')
         Z, _ = ravel.ravel_normalize(args.img_dir, args.mask_dir, args.contrast, do_whitestripe=args.no_whitestripe,
-                                     b=args.num_unwanted_factors, membership_thresh=args.control_membership_threshold)
+                                     b=args.num_unwanted_factors, membership_thresh=args.control_membership_threshold,
+                                     do_registration=args.no_registration)
 
         V = ravel.image_matrix(img_fns, args.contrast, masks=mask_fns)
         V_norm = ravel.ravel_correction(V, Z)
