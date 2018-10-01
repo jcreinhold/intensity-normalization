@@ -52,6 +52,8 @@ def arg_parser():
                              help='threshold for the membership of the control (CSF) voxels [Default = 0.99]')
     adv_options.add_argument('-s', '--segmentation-smoothness', type=float, default=0.25,
                              help='smoothness parameter for segmentation for control voxels [Default = 0.25]')
+    adv_options.add_argument('--use-fcm', action='store_true', default=False,
+                             help='use fuzzy c-means segmentation instead of atropos')
     adv_options.add_argument('--no-whitestripe', action='store_false', default=True,
                              help='do not use whitestripe in RAVEL if this flag is on')
     adv_options.add_argument('--no-registration', action='store_false', default=True,
@@ -80,7 +82,8 @@ def main(args=None):
         logger.info('Normalizing the images according to RAVEL')
         Z, _ = ravel.ravel_normalize(args.img_dir, args.mask_dir, args.contrast, do_whitestripe=args.no_whitestripe,
                                      b=args.num_unwanted_factors, membership_thresh=args.control_membership_threshold,
-                                     do_registration=args.no_registration)
+                                     do_registration=args.no_registration, segmentation_smoothness=args.segmentation_smoothness,
+                                     use_fcm=args.use_fcm)
 
         V = ravel.image_matrix(img_fns, args.contrast, masks=mask_fns)
         V_norm = ravel.ravel_correction(V, Z)

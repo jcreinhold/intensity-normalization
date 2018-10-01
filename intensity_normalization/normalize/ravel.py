@@ -34,7 +34,8 @@ logger = logging.getLogger(__name__)
 
 
 def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=False,
-                    do_whitestripe=True, b=1, membership_thresh=0.99, do_registration=False):
+                    do_whitestripe=True, b=1, membership_thresh=0.99, segmentation_smoothness=0.25,
+                    do_registration=False, use_fcm=False):
     """
     Use RAVEL [1] to normalize the intensities of a set of MR images to eliminate
     unwanted technical variation in images (but, hopefully, preserve biological variation)
@@ -54,7 +55,10 @@ def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=
         do_whitestripe (bool): whitestripe normalize the images before applying RAVEL correction
         b (int): number of unwanted factors to estimate
         membership_thresh (float): threshold of membership for control voxels
+        segmentation_smoothness (float): segmentation smoothness parameter for atropos ANTsPy
+            segmentation scheme (i.e., mrf parameter)
         do_registration (bool): deformably register images to find control mask
+        use_fcm (bool): use FCM for segmentation instead of atropos (may be less accurate)
 
     Returns:
         Z (np.ndarray): unwanted factors (used in ravel correction)
@@ -82,7 +86,8 @@ def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=
     # get parameters necessary and setup the V array
     V, Vc = image_matrix(img_fns, contrast, masks=mask_fns, do_whitestripe=do_whitestripe,
                          return_ctrl_matrix=True, membership_thresh=membership_thresh,
-                         do_registration=do_registration)
+                         do_registration=do_registration, smoothness=segmentation_smoothness,
+                         use_fcm=use_fcm)
 
     # estimate the unwanted factors Z
     _, _, vh = np.linalg.svd(Vc)
@@ -123,7 +128,7 @@ def ravel_correction(V, Z):
 
 def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_matrix=False,
                  membership_thresh=0.99, smoothness=0.25, max_ctrl_vox=10000, do_registration=False,
-                 ctrl_prob=1):
+                 ctrl_prob=1, use_fcm=False):
     """
     creates an matrix of images where the rows correspond the the voxels of
     each image and the columns are the images
@@ -144,6 +149,7 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
             masks (as done in the original paper, note that this takes much longer)
         ctrl_prob (float): given all data, proportion of data labeled as csf to be
             used for intersection (i.e., when do_registration is true)
+        use_fcm (bool): use FCM for segmentation instead of atropos (may be less accurate)
 
     Returns:
         V (np.ndarray): image matrix (rows are voxels, columns are images)
@@ -161,16 +167,19 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
     if masks is None:
         masks = [None] * len(imgs)
 
-    # do whitestripe on the image before applying RAVEL (if desired)
     for i, (img_fn, mask_fn) in enumerate(zip(imgs, masks)):
         _, base, _ = io.split_filename(img_fn)
         img = io.open_nii(img_fn)
         mask = io.open_nii(mask_fn) if mask_fn is not None else None
+        # do whitestripe on the image before applying RAVEL (if desired)
         if do_whitestripe:
             logger.info('Applying WhiteStripe to image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
             inds = whitestripe(img, contrast, mask)
             img = whitestripe_norm(img, inds)
         img_data = img.get_data()
+        if img_data.shape != img_shape:
+            raise NormalizationError('Cannot normalize because image {} needs to have same dimension '
+                                     'as all other images ({} != {})'.format(base, img_data.shape, img_shape))
         V[:,i] = img_data.flatten()
         if return_ctrl_matrix:
             if do_registration and i == 0:
@@ -179,7 +188,8 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
                 ctrl_masks = []
                 reg_imgs = []
                 reg_imgs.append(csf.nibabel_to_ants(img))
-                ctrl_masks.append(csf.csf_mask(img, mask, contrast=contrast, csf_thresh=membership_thresh, mrf=smoothness))
+                ctrl_masks.append(csf.csf_mask(img, mask, contrast=contrast, csf_thresh=membership_thresh,
+                                               mrf=smoothness, use_fcm=use_fcm))
             elif do_registration and i != 0:
                 template = ants.image_read(imgs[0])
                 tmask = ants.image_read(masks[0])
@@ -190,10 +200,12 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
                 mask = csf.nibabel_to_ants(mask)
                 reg_imgs.append(img)
                 logger.info('Creating control mask for image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
-                ctrl_masks.append(csf.csf_mask(img, mask, contrast=contrast, csf_thresh=membership_thresh, mrf=smoothness))
+                ctrl_masks.append(csf.csf_mask(img, mask, contrast=contrast, csf_thresh=membership_thresh,
+                                               mrf=smoothness, use_fcm=use_fcm))
             else:
                 logger.info('Finding control voxels for image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
-                ctrl_mask = csf.csf_mask(img, mask, contrast=contrast, csf_thresh=membership_thresh, mrf=smoothness)
+                ctrl_mask = csf.csf_mask(img, mask, contrast=contrast, csf_thresh=membership_thresh,
+                                         mrf=smoothness, use_fcm=use_fcm)
                 if np.sum(ctrl_mask) == 0:
                     raise NormalizationError('No control voxels found for image ({}) at threshold ({})'
                                              .format(base, membership_thresh))

@@ -66,8 +66,8 @@ def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_dis
     else:
         masks = io.glob_nii(mask_dir)
         if len(data) != len(masks):
-            NormalizationError('Number of images and masks must be equal, Images: {}, Masks: {}'
-                               .format(len(data), len(masks)))
+            raise NormalizationError('Number of images and masks must be equal, Images: {}, Masks: {}'
+                                     .format(len(data), len(masks)))
 
     # define the output directory and corresponding output file names
     if output_dir is None:
