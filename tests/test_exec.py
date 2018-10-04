@@ -25,6 +25,7 @@ from intensity_normalization.exec.zscore_normalize import main as zscore
 
 from intensity_normalization.exec.coregister import main as coregister
 from intensity_normalization.exec.plot_hists import main as plot_hists
+from intensity_normalization.exec.norm_quality import main as norm_quality
 from intensity_normalization.exec.preprocess import main as preprocess
 from intensity_normalization.exec.tissue_mask import main as tissue_mask
 
@@ -86,6 +87,11 @@ class TestCLI(unittest.TestCase):
     def test_coregister_cli(self):
         args = f'-i {self.data_dir} -t {self.data_dir} -o {self.out_dir}'.split()
         retval = coregister(args)
+        self.assertEqual(retval, 0)
+
+    def test_norm_quality_cli(self):
+        args = f'-i {self.data_dir} -m {self.mask_dir} -o {self.out_dir}/pairwisejsd.png'.split()
+        retval = norm_quality(args)
         self.assertEqual(retval, 0)
 
     def test_plot_hists_cli(self):
