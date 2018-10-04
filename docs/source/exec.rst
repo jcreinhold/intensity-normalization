@@ -7,7 +7,7 @@ Z-Score Normalization
 .. argparse:: 
    :module: intensity_normalization.exec.zscore_normalize
    :func: arg_parser
-   :prog: zscore_normalize
+   :prog: zscore-normalize
 
 FCM Normalization
 ~~~~~~~~~~~~~~~~~
@@ -15,7 +15,7 @@ FCM Normalization
 .. argparse:: 
    :module: intensity_normalization.exec.fcm_normalize
    :func: arg_parser
-   :prog: fcm_normalize
+   :prog: fcm-normalize
 
 GMM Normalization
 ~~~~~~~~~~~~~~~~~
@@ -23,7 +23,7 @@ GMM Normalization
 .. argparse:: 
    :module: intensity_normalization.exec.gmm_normalize
    :func: arg_parser
-   :prog: gmm_normalize
+   :prog: gmm-normalize
 
 KDE Normalization
 ~~~~~~~~~~~~~~~~~
@@ -31,7 +31,7 @@ KDE Normalization
 .. argparse:: 
    :module: intensity_normalization.exec.kde_normalize
    :func: arg_parser
-   :prog: kde_normalize
+   :prog: kde-normalize
 
 Histogram Matching Normalization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -39,7 +39,7 @@ Histogram Matching Normalization
 .. argparse:: 
    :module: intensity_normalization.exec.hm_normalize
    :func: arg_parser
-   :prog: hm_normalize
+   :prog: hm-normalize
 
 WhiteStripe Normalization
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -47,7 +47,7 @@ WhiteStripe Normalization
 .. argparse:: 
    :module: intensity_normalization.exec.ws_normalize
    :func: arg_parser
-   :prog: ws_normalize
+   :prog: ws-normalize
 
 RAVEL Normalization
 ~~~~~~~~~~~~~~~~~~~
@@ -55,7 +55,7 @@ RAVEL Normalization
 .. argparse:: 
    :module: intensity_normalization.exec.ravel_normalize
    :func: arg_parser
-   :prog: ravel_normalize
+   :prog: ravel-normalize
 
 Skull-stripping
 ~~~~~~~~~~~~~~~
@@ -79,7 +79,7 @@ Tissue Mask
 .. argparse:: 
    :module: intensity_normalization.exec.tissue_mask
    :func: arg_parser
-   :prog: tissue_mask
+   :prog: tissue-mask
 
 Co-register
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -89,11 +89,19 @@ Co-register
    :func: arg_parser
    :prog: coregister
 
-Plotting
+Plot Histograms
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. argparse:: 
    :module: intensity_normalization.exec.plot_hists
    :func: arg_parser
-   :prog: plot_hists
+   :prog: plot-hists
+
+Plot Quality Metric
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. argparse::
+   :module: intensity_normalization.exec.norm_quality
+   :func: arg_parser
+   :prog: norm-quality
 

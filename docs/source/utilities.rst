@@ -31,6 +31,12 @@ Control Voxel (CSF) Operations
 .. automodule:: intensity_normalization.utilities.csf
    :members:
 
+Quality Metrics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: intensity_normalization.utilities.quality
+   :members:
+
 ROBEX
 ~~~~~
 .. automodule:: intensity_normalization.utilities.robex

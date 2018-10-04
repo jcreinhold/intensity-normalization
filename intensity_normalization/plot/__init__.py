@@ -1,1 +1,1 @@
-from . import hist
+from . import hist, quality

@@ -60,7 +60,7 @@ def pairwise_jsd(img_dir, mask_dir, nbins=200):
     mask_fns = io.glob_nii(mask_dir)
 
     if len(img_fns) != len(mask_fns):
-        raise NormalizationError(f'Number of images ({img_fns}) must be equal to the number of masks ({len(mask_fns)}).')
+        raise NormalizationError(f'Number of images ({len(img_fns)}) must be equal to the number of masks ({len(mask_fns)}).')
 
     min_intensities, max_intensities = [], []
     for img_fn, mask_fn in zip(img_fns, mask_fns):

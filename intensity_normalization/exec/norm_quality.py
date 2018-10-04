@@ -16,8 +16,6 @@ import logging
 import sys
 import warnings
 
-import matplotlib.pyplot as plt
-
 with warnings.catch_warnings():
     warnings.filterwarnings('ignore', category=FutureWarning)
     from intensity_normalization.plot.quality import plot_pairwise_jsd
@@ -31,6 +29,10 @@ def arg_parser():
                         help='directory to brain masks for imgs')
     parser.add_argument('-o', '--out-name', type=str, default='pairwisejsd.png',
                         help='name for output histogram (default: pairwisejsd.png)')
+    parser.add_argument('--nbins', type=int, default=200,
+                        help='number of bins to use when calculating JSD')
+    parser.add_argument('--fit-exp', action='store_true', default=False,
+                        help='fit an exponential to the data and report statistics')
     parser.add_argument('-v', '--verbosity', action="count", default=0,
                         help="increase output verbosity (e.g., -vv is more than -v)")
     return parser
@@ -47,7 +49,7 @@ def main(args=None):
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
     logger = logging.getLogger(__name__)
     try:
-        ax = plot_pairwise_jsd(args.img_dir, args.mask_dir, args.out_name)
+        plot_pairwise_jsd(args.img_dir, args.mask_dir, args.out_name, args.nbins, args.fit_exp)
         return 0
     except Exception as e:
         logger.exception(e)

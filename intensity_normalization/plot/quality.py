@@ -26,7 +26,7 @@ except ImportError:
     logger.debug("Seaborn not installed, so plots won't look as pretty :-(")
 
 
-def plot_pairwise_jsd(img_dir, mask_dir, outfn='pairwisejsd.png'):
+def plot_pairwise_jsd(img_dir, mask_dir, outfn='pairwisejsd.png', nbins=200, fit_exp=True):
     """
     create a figure of pairwise jensen-shannon divergence for all images in a directory
 
@@ -37,10 +37,23 @@ def plot_pairwise_jsd(img_dir, mask_dir, outfn='pairwisejsd.png'):
     Returns:
         None (saves a figure)
     """
-    pairwise_jsd = quality.pairwise_jsd(img_dir, mask_dir) * 10e4
-    plt.hist(pairwise_jsd)
-    plt.xlabel(r'Jensen-Shannon Divergence ($\times 10^{4}$)')
-    plt.ylabel('Count')
-    plt.title(
-        r'Histogram of Pairwise JSD — $\mu$ = ' + f'{np.mean(pairwise_jsd):.2e}' + r' $\sigma$ = ' + f'{np.std(pairwise_jsd):.2e}')
+    pairwise_jsd = quality.pairwise_jsd(img_dir, mask_dir, nbins=nbins)
+    _, ax = plt.subplots(1, 1)
+    ax.hist(pairwise_jsd, label='Hist.', density=True)
+    if fit_exp:
+        from scipy.stats import expon
+        loc, scale = expon.fit(pairwise_jsd, floc=0)
+        x = np.linspace(0, np.max(pairwise_jsd))
+        ax.plot(x, expon.pdf(x, loc, scale), lw=3, label='Exp. Fit')
+        ax.legend()
+        textstr = r'$\lambda = $' + f'{1/scale:.02e}'
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        ax.text(0.72, 0.80, textstr, transform=ax.transAxes,
+                verticalalignment='top', bbox=props)
+    ax.set_xlabel(r'Jensen-Shannon Divergence')
+    ax.set_ylabel('Density')
+    ax.set_title(
+        r'Density of Pairwise JSD — $\mu$ = ' + f'{np.mean(pairwise_jsd):.2e}' + r' $\sigma$ = ' + f'{np.std(pairwise_jsd):.2e}',
+        pad=20)
+    ax.ticklabel_format(style='sci', axis='both', scilimits=(0, 0))
     plt.savefig(outfn, transparent=True, dpi=200)
