@@ -34,6 +34,9 @@ def all_hists(img_dir, mask_dir=None, alpha=0.8, figsize=(12,10), **kwargs):
     plot all histograms over one another to get an idea of the
     spread for a sample/population
 
+    note that all hsitograms are for the intensities within a given brain mask
+    or estimated foreground mask (the estimate is just all intensities above the mean)
+
     Args:
         img_dir (str): path to images
         mask_dir (str): path to corresponding masks of imgs
@@ -69,7 +72,8 @@ def all_hists(img_dir, mask_dir=None, alpha=0.8, figsize=(12,10), **kwargs):
 
 def hist(img, mask=None, ax=None, n_bins=200, log=True, alpha=0.8, lw=3, **kwargs):
     """
-    plots the histogram of an ants object (line histogram)
+    plots the histogram of an ants object (line histogram) within a given brain mask
+    or estimated foreground mask (the estimate is just all intensities above the mean)
 
     Args:
         img (ants.core.ants_image.ANTsImage): MR image of interest
@@ -85,7 +89,7 @@ def hist(img, mask=None, ax=None, n_bins=200, log=True, alpha=0.8, lw=3, **kwarg
     """
     if ax is None:
         _, ax = plt.subplots()
-    data = img.numpy()[mask.numpy()==1] if mask is not None else img.numpy()[img.numpy() > 0]
+    data = img.numpy()[mask.numpy()==1] if mask is not None else img.numpy()
     hist, bin_edges = np.histogram(data.flatten(), n_bins, **kwargs)
     bins = np.diff(bin_edges)/2 + bin_edges[:-1]
     if log:

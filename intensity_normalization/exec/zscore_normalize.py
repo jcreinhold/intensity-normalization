@@ -57,7 +57,7 @@ def process(image_fn, brain_mask_fn, output_dir, logger):
     else:
         mask = None
     normalized = zscore.zscore_normalize(img, mask)
-    outfile = os.path.join(dirname, base + '_norm.nii.gz')
+    outfile = os.path.join(dirname, base + '_zscore.nii.gz')
     logger.info('Normalized image saved: {}'.format(outfile))
     io.save_nii(normalized, outfile, is_nii=True)
 

@@ -62,7 +62,7 @@ def process(image_fn, brain_mask_fn, args, logger):
             logger.info('Making output directory: {}'.format(dirname))
             os.mkdir(dirname)
     normalized = kde.kde_normalize(img, mask, args.contrast, args.norm_value)
-    outfile = os.path.join(dirname, base + '_norm.nii.gz')
+    outfile = os.path.join(dirname, base + '_kde.nii.gz')
     logger.info('Normalized image saved: {}'.format(outfile))
     io.save_nii(normalized, outfile, is_nii=True)
 

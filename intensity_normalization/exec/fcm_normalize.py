@@ -68,7 +68,7 @@ def process(image_fn, brain_mask_fn, wm_mask_fn, output_dir, args, logger):
     if wm_mask_fn is not None:
         wm_mask = io.open_nii(wm_mask_fn)
         normalized = fcm.fcm_normalize(img, wm_mask, args.norm_value)
-        outfile = os.path.join(dirname, base + '_norm.nii.gz')
+        outfile = os.path.join(dirname, base + '_fcm.nii.gz')
         logger.info('Normalized image saved: {}'.format(outfile))
         io.save_nii(normalized, outfile, is_nii=True)
 

@@ -3,7 +3,8 @@
 """
 intensity_normalization.exec.plot_hists
 
-plot the histograms over one another
+plot the histograms of a set of NIfTI images (within a brain mask
+or within an estimate foreground region) over one another
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 
@@ -23,7 +24,7 @@ with warnings.catch_warnings():
 
 
 def arg_parser():
-    parser = argparse.ArgumentParser(description='Plot all histograms for a set of nifti MR images')
+    parser = argparse.ArgumentParser(description='Plot all histograms within a brain maskfor a set of nifti MR images')
     parser.add_argument('-i', '--img-dir', type=str, required=True,
                         help='path to directory with images to be processed')
     parser.add_argument('-m', '--mask-dir', type=str, default=None,

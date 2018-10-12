@@ -94,7 +94,7 @@ def main(args=None):
         out_fns = []
         for fn in img_fns:
             _, base, ext = io.split_filename(fn)
-            out_fns.append(os.path.join(output_dir, base + ext))
+            out_fns.append(os.path.join(output_dir, base + '_ravel' + ext))
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
         for norm, out_fn in zip(normalized, out_fns):

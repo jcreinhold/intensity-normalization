@@ -46,7 +46,7 @@ def fcm_class_mask(img, brain_mask=None, hard_seg=False):
     if brain_mask is not None:
         mask_data = brain_mask.get_data() > 0
     else:
-        mask_data = img_data > 0
+        mask_data = img_data > img_data.mean()
     [t1_cntr, t1_mem, _, _, _, _, _] = cmeans(img_data[mask_data].reshape(-1, len(mask_data[mask_data])),
                                               3, 2, 0.005, 50)
     t1_mem_list = [t1_mem[i] for i, _ in sorted(enumerate(t1_cntr), key=lambda x: x[1])]  # CSF/GM/WM
@@ -86,7 +86,7 @@ def gmm_class_mask(img, brain_mask=None, contrast='t1', return_wm_peak=True, har
     if brain_mask is not None:
         mask_data = brain_mask.get_data() > 0
     else:
-        mask_data = img_data > 0
+        mask_data = img_data > img_data.mean()
 
     brain = np.expand_dims(img_data[mask_data].flatten(), 1)
     gmm = GaussianMixture(3)

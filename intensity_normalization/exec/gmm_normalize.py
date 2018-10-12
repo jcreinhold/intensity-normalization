@@ -86,7 +86,7 @@ def process(image, brain_mask, args, logger):
             np.save(os.path.join(dirname, base + '_wmpeak.npy'), peak)
     normalized = gmm.gmm_normalize(img, mask, args.norm_value, args.contrast,
                                    args.background_mask, peak)
-    outfile = os.path.join(dirname, base + '_norm' + ext)
+    outfile = os.path.join(dirname, base + '_gmm' + ext)
     logger.info('Normalized image saved: {}'.format(outfile))
     io.save_nii(normalized, outfile, is_nii=True)
 

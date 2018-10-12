@@ -76,7 +76,7 @@ def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_dis
         output_files = []
         for fn in data:
             _, base, ext = io.split_filename(fn)
-            output_files.append(os.path.join(output_dir, base + ext))
+            output_files.append(os.path.join(output_dir, base + '_ws' + ext))
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
 
@@ -121,7 +121,7 @@ def whitestripe(img, contrast, mask=None, width=0.05, width_l=None, width_u=None
         voi = img_data[mask_data == 1]
     else:
         masked = img_data
-        voi = img_data[img_data > 0]
+        voi = img_data[img_data > img_data.mean()]
     if contrast.lower() in ['t1', 'flair', 'last']:
         mode = hist.get_last_mode(voi)
     elif contrast.lower() in ['t2', 'largest']:

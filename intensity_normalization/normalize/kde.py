@@ -42,7 +42,7 @@ def kde_normalize(img, mask=None, contrast='T1', norm_value=1000):
     if mask is not None:
         voi = img.get_data()[mask.get_data() == 1].flatten()
     else:
-        voi = img.get_data()[img.get_data() > 0].flatten()
+        voi = img.get_data()[img.get_data() > img.get_data().mean()].flatten()
     if contrast.lower() in ['t1', 'flair', 'last']:
         wm_peak = hist.get_last_mode(voi)
     elif contrast.lower() in ['t2', 'largest']:

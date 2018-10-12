@@ -64,7 +64,7 @@ def hm_normalize(img_dir, mask_dir=None, output_dir=None, write_to_disk=True):
         out_fns = []
         for fn in input_files:
             _, base, ext = io.split_filename(fn)
-            out_fns.append(os.path.join(output_dir, base + ext))
+            out_fns.append(os.path.join(output_dir, base + '_hm' + ext))
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
 

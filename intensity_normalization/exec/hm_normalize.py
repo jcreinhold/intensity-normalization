@@ -36,7 +36,8 @@ def arg_parser():
                            help='save the normalized images to this path [Default = None]')
     options.add_argument('-m', '--mask-dir', type=str, default=None,
                            help='directory for corresponding brain masks for img-dir (not intelligently sorted, '
-                                'so ordering must be consistent in directory) [Default = None]')
+                                'so ordering must be consistent in directory). **If masks are provided, the '
+                                'corresponding images should be skull-stripped!** [Default = None]')
     options.add_argument('-v', '--verbosity', action="count", default=0,
                          help="increase output verbosity (e.g., -vv is more than -v)")
     options.add_argument('-p', '--plot-hist', action='store_true', default=False,
