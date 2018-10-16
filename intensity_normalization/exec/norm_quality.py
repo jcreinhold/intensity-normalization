@@ -22,7 +22,10 @@ with warnings.catch_warnings():
 
 
 def arg_parser():
-    parser = argparse.ArgumentParser(description='Plot all histograms for a set of nifti MR images')
+    parser = argparse.ArgumentParser(description='Create a plot measuring the quality/consistency of a normalization '
+                                                 'method on a set of images given a directory of images. To measure'
+                                                 'consistency, we create a histogram of the pairwise Jensen-Shannon '
+                                                 'Divergence of all images and report some statistics of the hist.')
     parser.add_argument('-i', '--img-dir', type=str, required=True,
                         help='path to directory with images to be processed')
     parser.add_argument('-m', '--mask-dir', type=str, default=None,

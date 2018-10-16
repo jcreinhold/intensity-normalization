@@ -19,6 +19,7 @@ import nibabel as nib
 
 
 def split_filename(filepath):
+    """ split a filepath into the full path, filename, and extension (works with .nii.gz) """
     path = os.path.dirname(filepath)
     filename = os.path.basename(filepath)
     base, ext = os.path.splitext(filename)
@@ -29,12 +30,14 @@ def split_filename(filepath):
 
 
 def open_nii(filepath):
+    """ open a nifti file with nibabel and return the object """
     image = os.path.abspath(os.path.expanduser(filepath))
     obj = nib.load(image)
     return obj
 
 
 def save_nii(obj, outfile, data=None, is_nii=False):
+    """ save a nifti object """
     if not is_nii:
         if data is None:
             data = obj.get_data()
@@ -45,5 +48,6 @@ def save_nii(obj, outfile, data=None, is_nii=False):
 
 
 def glob_nii(dir):
+    """ return a sorted list of nifti files for a given directory """
     fns = sorted(glob(os.path.join(dir, '*.nii*')))
     return fns

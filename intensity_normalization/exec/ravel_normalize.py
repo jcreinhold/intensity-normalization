@@ -28,16 +28,16 @@ def arg_parser():
 
     required = parser.add_argument_group('Required')
     required.add_argument('-i', '--img-dir', type=str, required=True,
-                        help='path to directory with images to be processed '
-                             '(should all be of one contrast)')
+                        help='path to directory with images to be processed (should all be of one contrast)')
+    required.add_argument('-m', '--mask-dir', type=str, required=True,
+                           help='directory of corresponding brain masks for img-dir (not intelligently sorted, '
+                                'so ordering must be consistent in directory, e.g., if img1.nii.gz and img2.nii.gz are '
+                                'in img-dir, then the mask should preserve the alphabetical/numeric order like'
+                                'naming them img1_mask.nii.gz and img2_mask.nii.gz)' )
 
     options = parser.add_argument_group('Options')
     options.add_argument('-o', '--output-dir', type=str, default=None,
                            help='save the normalized images to this path [Default = None]')
-    options.add_argument('-m', '--mask-dir', type=str, default=None,
-                           help='if images are not skull-stripped, directory for '
-                                'corresponding brain masks for img-dir (not intelligently sorted, '
-                                'so ordering must be consistent in directory) [Default = None]')
     options.add_argument('-c', '--contrast', type=str, default='t1', choices=['t1', 't2', 'flair'],
                            help='contrast of the images in img-dir, (e.g, t1, t2, or, flair.) [Default = t1]')
     options.add_argument('-v', '--verbosity', action="count", default=0,

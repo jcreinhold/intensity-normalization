@@ -3,7 +3,7 @@
 """
 intensity_normalization.plot.quality
 
-create plots measuring quality
+create plots measuring quality of normalization on a set of images
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 

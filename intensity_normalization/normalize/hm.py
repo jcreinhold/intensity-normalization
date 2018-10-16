@@ -28,6 +28,7 @@ import os
 
 import nibabel as nib
 import numpy as np
+from scipy.interpolate import interp1d
 
 from intensity_normalization.utilities import io
 
@@ -71,21 +72,36 @@ def hm_normalize(img_dir, mask_dir=None, output_dir=None, write_to_disk=True):
     mask_files = [None] * len(input_files) if mask_dir is None else io.glob_nii(mask_dir)
 
     logger.info('Learning standard scale for the set of images')
-    landmarks, pts = train(input_files, mask_files)
+    standard_scale, percs = train(input_files, mask_files)
 
     for i, (img_fn, mask_fn, out_fn) in enumerate(zip(input_files, mask_files, out_fns)):
         _, base, _ = io.split_filename(img_fn)
         logger.info('Transforming image {} to standard scale ({:d}/{:d})'.format(base, i+1, len(input_files)))
         img = io.open_nii(img_fn)
         mask = io.open_nii(mask_fn) if mask_fn is not None else None
-        normalized = do_hist_norm(img, pts, landmarks, mask)
+        normalized = do_hist_norm(img, percs, standard_scale, mask)
         if write_to_disk:
             io.save_nii(normalized, out_fn, is_nii=True)
 
     return normalized
 
 
-def train(img_fns, mask_fns=None, i_min=1, i_max=99, i_s_min=0, i_s_max=100, l_percentile=10, u_percentile=90, step=10):
+def get_landmarks(img, percs):
+    """
+    get the landmarks for the Nyul and Udupa norm method for a specific image
+
+    Args:
+        img (nibabel.nifti1.Nifti1Image): image on which to find landmarks
+        percs (np.ndarray): corresponding landmark percentiles to extract
+
+    Returns:
+        landmarks (np.ndarray): intensity values corresponding to percs in img
+    """
+    landmarks = np.percentile(img, percs)
+    return landmarks
+
+
+def train(img_fns, mask_fns=None, i_min=1, i_max=99, i_s_min=1, i_s_max=100, l_percentile=10, u_percentile=90, step=10):
     """
     determine the standard scale for the set of images
 
@@ -101,84 +117,46 @@ def train(img_fns, mask_fns=None, i_min=1, i_max=99, i_s_min=0, i_s_max=100, l_p
         step (int): step for middle percentiles (e.g., for deciles 10)
 
     Returns:
-        m (np.ndarray): average landmark intensity for images
-        h (np.ndarray): corresponding landmark points (i.e., the domain of m)
+        standard_scale (np.ndarray): average landmark intensity for images
+        percs (np.ndarray): array of all percentiles used
     """
     mask_fns = [None] * len(img_fns) if mask_fns is None else mask_fns
-    h = np.arange(l_percentile, u_percentile+1, step)  # percentile landmarks
-    ms = np.zeros(len(h))
+    percs = np.concatenate(([i_min], np.arange(l_percentile, u_percentile+1, step), [i_max]))
+    standard_scale = np.zeros(len(percs))
     for i, (img_fn, mask_fn) in enumerate(zip(img_fns, mask_fns)):
-        img = io.open_nii(img_fn)
+        img_data = io.open_nii(img_fn).get_data()
         mask = io.open_nii(mask_fn) if mask_fn is not None else None
-        ms += get_landmarks(img, h, mask, i_min, i_max, i_s_min, i_s_max)
-    m = ms / len(img_fns)
-    return m, h
+        mask_data = img_data > img_data.mean() if mask is None else mask.get_data()
+        masked = img_data[mask_data > 0]
+        landmarks = get_landmarks(masked, percs)
+        min_p = np.percentile(masked, i_min)
+        max_p = np.percentile(masked, i_max)
+        f = interp1d([min_p, max_p], [i_s_min, i_s_max])
+        landmarks = np.array(f(landmarks))
+        standard_scale += landmarks
+    standard_scale = standard_scale / len(img_fns)
+    return standard_scale, percs
 
 
-def get_landmarks(img, h, mask=None, i_min=1, i_max=99, i_s_min=0, i_s_max=100):
-    """
-    get the landmarks for Nyul and Udupa for a specific image
 
-    Args:
-        img (nibabel.nifti1.Nifti1Image): image on which to find landmarks
-        h (np.ndarray): corresponding landmark points (i.e., the domain of m)
-        mask (nibabel.nifti1.Nifti1Image): foreground mask for img
-        i_min (float): minimum percentile to consider in the images
-        i_max (float): maximum percentile to consider in the images
-        i_s_min (float): minimum percentile on the standard scale
-        i_s_max (float): maximum percentile on the standard scale
-
-    Returns:
-        landmarks (np.ndarray): intensity values corresponding to h in img (w/ mask)
-    """
-    img_data = img.get_data()
-    mask_data = img_data > img_data.mean() if mask is None else mask.get_data()
-    masked = img_data[mask_data > 0]
-    min_p = np.percentile(masked, i_min)
-    max_p = np.percentile(masked, i_max)
-    scaled_data = ((img_data - min_p + i_s_min) / max_p) * i_s_max
-    landmarks = np.percentile(scaled_data[mask_data > 0], h)
-    return landmarks
-
-
-def do_hist_norm(img, h, m, mask=None, i_min=1, i_max=99, i_s_min=0, i_s_max=100):
+def do_hist_norm(img, landmark_percs, standard_scale, mask=None):
     """
     do the Nyul and Udupa histogram normalization routine with a given set of learned landmarks
 
     Args:
         img (nibabel.nifti1.Nifti1Image): image on which to find landmarks
-        h (np.ndarray): corresponding landmark points (i.e., the domain of m)
-        m (np.ndarray): landmarks on the standard scale
+        landmark_percs (np.ndarray): corresponding landmark points of standard scale
+        standard_scale (np.ndarray): landmarks on the standard scale
         mask (nibabel.nifti1.Nifti1Image): foreground mask for img
-        i_min (float): minimum percentile to consider in the images
-        i_max (float): maximum percentile to consider in the images
-        i_s_min (float): minimum percentile on the standard scale
-        i_s_max (float): maximum percentile on the standard scale
 
     Returns:
         normalized (nibabel.nifti1.Nifti1Image): normalized image
     """
     img_data = img.get_data()
     mask_data = img_data > img_data.mean() if mask is None else mask.get_data()
-    percentiles = np.concatenate((np.array([i_min]), h, np.array([i_max])))
     masked = img_data[mask_data > 0]
-    m_obs = np.percentile(masked, percentiles)
-    m_withends = np.concatenate((np.array([i_s_min]), m, np.array([i_s_max])))
-    normed = img_data
-
-    l_thresh = np.percentile(masked, i_min)
-    u_thresh = np.percentile(masked, i_max)
-    normed[normed <= l_thresh] = i_s_min
-    normed[normed >= u_thresh] = i_s_max
-
-    assert len(m_obs) == len(m_withends)
-
-    for i in range(len(m_obs)-1):
-        obs0 = m_obs[i]
-        obs1 = m_obs[i + 1]
-        m1 = m_withends[i + 1]
-        m0 = m_withends[i]
-        inds = np.logical_and(img_data < obs1, img_data >= obs0)  # segment of image according to decile
-        normed[inds] = (((img_data[inds] - obs0) / (obs1 - obs0)) * (m1 - m0)) + m0
-
+    landmarks = get_landmarks(masked, landmark_percs)
+    f = interp1d(landmarks, standard_scale, fill_value='extrapolate')
+    normed = np.zeros(img_data.shape)
+    normed[mask_data > 0] = f(masked)
     return nib.Nifti1Image(normed, img.affine, img.header)
