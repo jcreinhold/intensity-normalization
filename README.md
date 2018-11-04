@@ -5,7 +5,7 @@ intensity-normalization
 [![Coverage Status](https://coveralls.io/repos/github/jcreinhold/intensity-normalization/badge.svg?branch=master)](https://coveralls.io/github/jcreinhold/intensity-normalization?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/intensity-normalization/badge/?version=latest)](http://intensity-normalization.readthedocs.io/en/latest/)
 [![Docker Automated Build](https://img.shields.io/docker/build/jcreinhold/intensity-normalization.svg)](https://hub.docker.com/r/jcreinhold/intensity-normalization/)
-[![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/)
+[![Python Versions](https://img.shields.io/badge/python-3.6%20%7C%203.7-blue.svg)](https://www.python.org/downloads/release/python-360/)
 
 This package contains various routines to normalize the intensity of various contrasts of magnetic resonance (MR) brain images; specifically, 
 T1-weighted (T1-w), T2-weighted (T2-w), and FLuid-Attenuated Inversion Recovery (FLAIR). Intensity normalization is an important pre-processing step
@@ -25,7 +25,7 @@ We implement the following normalization methods:
 
 ** Note that while this release was carefully inspected, there may be bugs. Please submit an issue if you encounter a problem. **
 
-This package was developed by [Jacob Reinhold](https:jcreinhold.github.io) and the other students and researchers of the 
+This package was developed by [Jacob Reinhold](https://jcreinhold.github.io) and the other students and researchers of the 
 [Image Analysis and Communication Lab (IACL)](http://iacl.ece.jhu.edu/index.php/Main_Page).
 
 [Link to main Gitlab Repository](https://gitlab.com/jcreinhold/intensity-normalization)
