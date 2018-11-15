@@ -52,10 +52,13 @@ def process(image_fn, brain_mask_fn, output_dir, logger):
         if not os.path.exists(dirname):
             logger.info('Making output directory: {}'.format(dirname))
             os.mkdir(dirname)
-    if brain_mask_fn is not None:
-        mask = io.open_nii(brain_mask_fn)
-    else:
+    if brain_mask_fn is None:
         mask = None
+    else:
+        if brain_mask_fn == 'nomask':
+            mask = 'nomask'
+        else:
+            mask = io.open_nii(brain_mask_fn)
     normalized = zscore.zscore_normalize(img, mask)
     outfile = os.path.join(dirname, base + '_zscore.nii.gz')
     logger.info('Normalized image saved: {}'.format(outfile))
@@ -77,10 +80,14 @@ def main(args=None):
             if not os.path.isdir(args.image):
                 raise NormalizationError('if single-img option off, then image must be a directory')
             img_fns = io.glob_nii(args.image)
-            if args.brain_mask is not None:
-                mask_fns = io.glob_nii(args.brain_mask)
-            else:
+            if args.brain_mask is None:
                 mask_fns = [None] * len(img_fns)
+            else:
+                if os.path.isdir(args.brain_mask):
+                    mask_fns = io.glob_nii(args.brain_mask)
+                else:
+                    logger.info('whole image z-score normalization enabled')
+                    mask_fns = ['nomask'] * len(img_fns)
             if len(img_fns) != len(mask_fns) and len(img_fns) > 0:
                 raise NormalizationError('input images and masks must be in correspondence and greater than zero '
                                          '({:d} != {:d})'.format(len(img_fns), len(mask_fns)))
@@ -104,7 +111,9 @@ def main(args=None):
                 warnings.filterwarnings('ignore', category=FutureWarning)
                 from intensity_normalization.plot.hist import all_hists
                 import matplotlib.pyplot as plt
-            ax = all_hists(args.output_dir, args.brain_mask)
+            bm = args.brain_mask if args.brain_mask is None else \
+                 args.brain_mask if os.path.isdir(args.brain_mask) else None
+            ax = all_hists(args.output_dir, bm)
             ax.set_title('Z-Score')
             plt.savefig(os.path.join(args.output_dir, 'hist.png'))
 

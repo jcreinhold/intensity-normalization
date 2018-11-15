@@ -34,8 +34,10 @@ def zscore_normalize(img, mask=None):
     """
 
     img_data = img.get_data()
-    if mask is not None:
+    if mask is not None and not isinstance(mask, str):
         mask_data = mask.get_data()
+    elif mask == 'nomask':
+        mask_data = img_data == img_data
     else:
         mask_data = img_data > img_data.mean()
     logical_mask = mask_data == 1  # force the mask to be logical type

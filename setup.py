@@ -35,7 +35,7 @@ else:
 
 args = dict(
     name='intensity-normalization',
-    version='1.1.0',
+    version='1.1.1',
     description="Normalize the intensity values of MR images",
     long_description=readme,
     author='Jacob Reinhold',
