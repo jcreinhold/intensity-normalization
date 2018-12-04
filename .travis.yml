@@ -17,7 +17,7 @@ before_install:
   - conda update --yes conda
   - chmod 755 create_env.sh
 install:
-  - travis_retry . ./create_env.sh
+  - travis_retry . ./create_env.sh --antspy
   - python --version
   - which python
   - pip --version

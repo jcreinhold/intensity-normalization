@@ -13,7 +13,9 @@ Created on: Apr 24, 2018
 
 from setuptools import setup, find_packages
 from sys import platform
+import sys
 
+install_antspy = '--antspy' in sys.argv[1:]
 
 with open('README.md') as f:
     readme = f.read()
@@ -21,21 +23,24 @@ with open('README.md') as f:
 with open('LICENSE') as f:
     license = f.read()
 
-if platform == "linux" or platform == "linux32":
-    antspy = "https://github.com/ANTsX/ANTsPy/releases/download/v0.1.4/antspy-0.1.4-cp36-cp36m-linux_x86_64.whl"
-elif platform == "darwin":
-    try:
-        import ants
-        antspy = ""
-    except ImportError:
-        raise Exception('On OS X you need to build ANTsPy from source before installing the intensity-normalization package. '
-                        'See the "install ANTsPy" section of create_env.sh for the necessary commands.')
+if install_antspy:
+    if platform == "linux" or platform == "linux32":
+        antspy = "https://github.com/ANTsX/ANTsPy/releases/download/v0.1.4/antspy-0.1.4-cp36-cp36m-linux_x86_64.whl"
+    elif platform == "darwin":
+        try:
+            import ants
+            antspy = ""
+        except ImportError:
+            raise Exception('On OS X you need to build ANTsPy from source before installing the intensity-normalization package. '
+                            'See the "install ANTsPy" section of create_env.sh for the necessary commands.')
+    else:
+        raise Exception('antspy package only supports linux and OS X, must install without antspy option')
 else:
-    raise Exception('intensity-normalization package only supports linux and OS X')
+    antspy = ""
 
 args = dict(
     name='intensity-normalization',
-    version='1.1.1',
+    version='1.2.0',
     description="Normalize the intensity values of MR images",
     long_description=readme,
     author='Jacob Reinhold',
@@ -62,12 +67,11 @@ args = dict(
     dependency_links=[antspy]
 )
 
-setup(install_requires=['antspy',
-                        'matplotlib',
+setup(install_requires=['matplotlib',
                         'nibabel',
                         'numpy',
                         'scikit-image',
                         'scikit-learn',
                         'scikit-fuzzy',
                         'scipy',
-                        'statsmodels'], **args)
+                        'statsmodels'] + ['antspy'] if install_antspy else [], **args)

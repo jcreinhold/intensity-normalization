@@ -13,8 +13,6 @@ Created on: Sep 06, 2018
 import os
 import unittest
 
-from intensity_normalization.plot.hist import all_hists
-
 
 class TestPlot(unittest.TestCase):
 
@@ -24,6 +22,7 @@ class TestPlot(unittest.TestCase):
         self.mask_dir = os.path.join(wd, 'test_data', 'masks')
 
     def test_all_hist(self):
+        from intensity_normalization.plot.hist import all_hists
         _ = all_hists(self.data_dir, self.mask_dir)
 
     def tearDown(self):

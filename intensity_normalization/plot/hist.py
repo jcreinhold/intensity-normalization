@@ -13,8 +13,8 @@ Created on: May 21, 2018
 import logging
 import warnings
 
-import ants
 import matplotlib.pyplot as plt
+import nibabel as nib
 import numpy as np
 
 from intensity_normalization.errors import NormalizationError
@@ -58,9 +58,9 @@ def all_hists(img_dir, mask_dir=None, alpha=0.8, figsize=(12,10), **kwargs):
     _, ax = plt.subplots(figsize=figsize)
     for i, (img_fn, mask_fn) in enumerate(zip(imgs, masks), 1):
         logger.info('Creating histogram for image {:d}/{:d}'.format(i,len(imgs)))
-        img = ants.image_read(img_fn)
+        img = nib.load(img_fn)
         if mask_fn is not None:
-            mask = ants.image_read(mask_fn)
+            mask = nib.load(mask_fn)
         else:
             mask = None
         _ = hist(img, mask, ax=ax, alpha=alpha, **kwargs)
@@ -89,7 +89,7 @@ def hist(img, mask=None, ax=None, n_bins=200, log=True, alpha=0.8, lw=3, **kwarg
     """
     if ax is None:
         _, ax = plt.subplots()
-    data = img.numpy()[mask.numpy()==1] if mask is not None else img.numpy()
+    data = img.get_data()[mask.get_data()==1] if mask is not None else img.get_data()
     hist, bin_edges = np.histogram(data.flatten(), n_bins, **kwargs)
     bins = np.diff(bin_edges)/2 + bin_edges[:-1]
     if log:

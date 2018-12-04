@@ -33,7 +33,6 @@ This package was developed by [Jacob Reinhold](https://jcreinhold.github.io) and
 Requirements
 ------------
 
-- antspy
 - matplotlib
 - numpy
 - nibabel
@@ -51,7 +50,11 @@ the environment script).
 Basic Usage
 -----------
 
-Install from the source directory
+The easiest way to install the package is through the following command:
+
+    pip install git+git://github.com/jcreinhold/synthnn.git
+    
+To install from the source directory, use
 
     python setup.py install
     
@@ -62,10 +65,13 @@ or (if you actively want to make changes to the package)
 and use the several provided command line scripts to interface with the package,
 e.g., 
 
-    ravel-normalize -i t1/ -m masks/ -o test_ravel -v
+    fcm-normalize -i t1/ -m masks/ -o test_fcm -v
 
 where `t1/` is a directory full of N T1-w images and `masks/` is a directory full of N corresponding brain masks,
-`test_ravel` is the output directory for the normalized images, and `-v` controls the verbosity of the output.
+`test_fcm` is the output directory for the normalized images, and `-v` controls the verbosity of the output.
+
+To also install the [antspy](https://github.com/ANTsX/ANTsPy) package either append `--antspy` to your call to `setup.py`
+or `create_env.sh`.
 
 The command line interface is standard across all normalization routines (i.e., you should be able to 
 run all normalization routines with the same call as in the above example), however each has unique options.
