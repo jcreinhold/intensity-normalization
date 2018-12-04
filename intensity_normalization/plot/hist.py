@@ -76,8 +76,8 @@ def hist(img, mask=None, ax=None, n_bins=200, log=True, alpha=0.8, lw=3, **kwarg
     or estimated foreground mask (the estimate is just all intensities above the mean)
 
     Args:
-        img (ants.core.ants_image.ANTsImage): MR image of interest
-        mask (ants.core.ants_image.ANTsImage): brain mask of img (default: None)
+        img (nibabel.nifti1.Nifti1Image): MR image of interest
+        mask (nibabel.nifti1.Nifti1Image): brain mask of img (default: None)
         ax (matplotlib.axes.Axes): ax to plot on (default: None)
         n_bins (int): number of bins to use in histogram (default: 200)
         log (bool): use log scale (default: True)

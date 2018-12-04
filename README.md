@@ -52,7 +52,7 @@ Basic Usage
 
 The easiest way to install the package is through the following command:
 
-    pip install git+git://github.com/jcreinhold/synthnn.git
+    pip install git+git://github.com/jcreinhold/intensity-normalization.git
     
 To install from the source directory, use
 
