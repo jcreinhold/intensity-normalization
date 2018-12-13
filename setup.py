@@ -14,6 +14,8 @@ Created on: Apr 24, 2018
 from setuptools import setup, find_packages
 from sys import platform
 import sys
+import warnings
+
 
 install_antspy = '--antspy' in sys.argv[1:]
 
@@ -24,15 +26,14 @@ with open('LICENSE') as f:
     license = f.read()
 
 if install_antspy:
+    warnings.warn('Will try to install antspy. There is a reasonable chance that this will not work. Build antspy from source if that is the case.')
     if platform == "linux" or platform == "linux32":
-        antspy = "https://github.com/ANTsX/ANTsPy/releases/download/v0.1.4/antspy-0.1.4-cp36-cp36m-linux_x86_64.whl"
+        if '--1.4' in sys.argv[1:]:
+            antspy = "https://github.com/ANTsX/ANTsPy/releases/download/v0.1.4/antspy-0.1.4-cp36-cp36m-linux_x86_64.whl"
+        else:
+            antspy = "https://github.com/ANTsX/ANTsPy/releases/download/v0.1.6/antspy-0.1.6-cp36-cp36m-linux_x86_64.whl"
     elif platform == "darwin":
-        try:
-            import ants
-            antspy = ""
-        except ImportError:
-            raise Exception('On OS X you need to build ANTsPy from source before installing the intensity-normalization package. '
-                            'See the "install ANTsPy" section of create_env.sh for the necessary commands.')
+        antspy = "https://github.com/ANTsX/ANTsPy/releases/download/v0.1.6/antspy-0.1.6-cp36-cp36m-macosx_10_13_x86_64.whl"
     else:
         raise Exception('antspy package only supports linux and OS X, must install without antspy option')
 else:
@@ -40,7 +41,7 @@ else:
 
 args = dict(
     name='intensity-normalization',
-    version='1.2.0',
+    version='1.2.1',
     description="Normalize the intensity values of MR images",
     long_description=readme,
     author='Jacob Reinhold',

@@ -23,6 +23,8 @@ We implement the following normalization methods:
 - WhiteStripe [3]
 - RAVEL [4]
 
+We use this package to explore the impact of intensity normalization on a synthesis task (pre-print available [here](https://arxiv.org/abs/1812.04652)).
+
 ** Note that while this release was carefully inspected, there may be bugs. Please submit an issue if you encounter a problem. **
 
 This package was developed by [Jacob Reinhold](https://jcreinhold.github.io) and the other students and researchers of the 
@@ -70,8 +72,11 @@ e.g.,
 where `t1/` is a directory full of N T1-w images and `masks/` is a directory full of N corresponding brain masks,
 `test_fcm` is the output directory for the normalized images, and `-v` controls the verbosity of the output.
 
-To also install the [antspy](https://github.com/ANTsX/ANTsPy) package either append `--antspy` to your call to `setup.py`
-or `create_env.sh`.
+Note the package [antspy](https://github.com/ANTsX/ANTsPy) is required for the RAVEL normalization routine, the preprocessing
+tool as well as the co-registration tool, but all other normalization and processing tools work without it. To also install 
+the antspy package either append `--antspy` to your call to `setup.py` or `create_env.sh`. The installation of antspy may not 
+work, in which case you can either (if you are on linux) append `--1.4` to your list of input arguments to `setup.py` 
+(which installs a previous version of the binaries of antspy or you can just build antspy from source.
 
 The command line interface is standard across all normalization routines (i.e., you should be able to 
 run all normalization routines with the same call as in the above example), however each has unique options.
@@ -101,7 +106,20 @@ Singularity
 You can build a singularity image from the docker image hosted on dockerhub via the following command:
 
     singularity pull --name intensity_normalization.simg docker://jcreinhold/intensity-normalization
-    
+
+Citation
+--------
+
+If you use the `intensity-normalization` package in an academic paper, please cite the corresponding [paper](https://arxiv.org/abs/1812.04652):
+
+    @article{reinhold2018,
+        author  = {Jacob C. Reinhold and Blake E. Dewey and Aaron Carass and Jerry L. Prince},
+        title   = {Evaluating the Impact of Intensity Normalization on MR Image Synthesis},
+        journal = {CoRR}
+        volume  = {abs/1812.04652},     
+        year    = {2018},
+    }
+         
 References
 ----------
 
