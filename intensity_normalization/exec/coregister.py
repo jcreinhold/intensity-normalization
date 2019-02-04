@@ -25,20 +25,23 @@ with warnings.catch_warnings():
 
 def arg_parser():
     parser = argparse.ArgumentParser(description='coregister a set of MR images (e.g., to MNI or to the T1 image)')
-    parser.add_argument('-i', '--img-dir', type=str, required=True,
+    required = parser.add_argument_group('Required')
+    required.add_argument('-i', '--img-dir', type=str, required=True,
                         help='path to directory with images to be processed '
                              '(should all be T1w contrast)')
-    parser.add_argument('-o', '--output-dir', type=str, required=True,
+    required.add_argument('-o', '--output-dir', type=str, required=True,
                         help='directory to output the corresponding registered img files')
-    parser.add_argument('-t', '--template-dir', type=str, default=None,
+
+    options = parser.add_argument_group('Options')
+    options.add_argument('-t', '--template-dir', type=str, default=None,
                         help='directory of images to co-register the images to (if not provided, coreg to MNI)')
-    parser.add_argument('--orientation', type=str, default='RAI',
+    options.add_argument('--orientation', type=str, default='RAI',
                         help='output orientation of imgs')
-    parser.add_argument('-r', '--registration', type=str, default='Affine',
+    options.add_argument('-r', '--registration', type=str, default='Affine',
                         help='Use this type of registration (see ANTsPy for details) [Default: Affine]')
-    parser.add_argument('--no-rigid', action='store_true', default=False,
+    options.add_argument('--no-rigid', action='store_true', default=False,
                         help='do not do rigid registration first')
-    parser.add_argument('-v', '--verbosity', action="count", default=0,
+    options.add_argument('-v', '--verbosity', action="count", default=0,
                         help="increase output verbosity (e.g., -vv is more than -v)")
     return parser
 

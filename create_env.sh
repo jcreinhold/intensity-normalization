@@ -70,9 +70,9 @@ if $ANTSPY; then
     else
         pip install https://github.com/ANTsX/ANTsPy/releases/download/v0.1.6/antspy-0.1.6-cp36-cp36m-macosx_10_13_x86_64.whl
     fi
-    python setup.py install --antspy
+    python setup.py install --antspy --preprocess --quality
 else
-    python setup.py install
+    python setup.py install --preprocess --quality
 fi
 
 # now finally install the intensity-normalization package

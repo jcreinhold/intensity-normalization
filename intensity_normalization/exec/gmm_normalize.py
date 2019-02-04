@@ -31,36 +31,39 @@ with warnings.catch_warnings():
 def arg_parser():
     parser = argparse.ArgumentParser(description='Use GMM to model the tissue classes in brain and '
                                                  'normalize the WM peak w/ this method for a set of nifti MR images')
-    parser.add_argument('-i', '--image', type=str, required=True,
-                        help='path to a nifti MR image of the brain')
-    parser.add_argument('-m', '--brain-mask', type=str,
-                        help='path to a nifti brain mask for the image, '
-                             'provide this if image is not skull-stripped')
-    parser.add_argument('-o', '--output-dir', type=str, default=None,
-                        help='path to output normalized images '
-                             '(default: to directory containing images)')
-    parser.add_argument('-c', '--contrast', type=str, choices=['t1', 't2', 'flair'], default='t1',
-                        help='pick the contrast of the input MR image (t1, t2, or flair)')
-    parser.add_argument('-b', '--background-mask', type=str,
-                        help='path to a mask of the background')
-    parser.add_argument('-w', '--wm-peak', type=str, default=None,
-                        help='saved WM peak value, found by first input T1 image,'
-                             'can be used consecutively for other contrasts for the same patient')
-    parser.add_argument('--save-wm-peak', action='store_true', default=False,
-                        help='store the found WM peak or nah, use wm-peak as the name if true')
-    parser.add_argument('--find-background-mask', action='store_true', default=False,
-                        help='calculate a mask for the background (to zero it out)')
-    parser.add_argument('--norm-value', type=float, default=1000,
-                        help='value by which to normalize the WM peak')
-    parser.add_argument('--keep-bg', action='store_true', default=False,
-                        help='if this flag is activated, then no background mask '
-                             'is calculated or used')
-    parser.add_argument('--single-img', action='store_true', default=False,
-                        help='image and mask are individual images, not directories')
-    parser.add_argument('-p', '--plot-hist', action='store_true', default=False,
+    required = parser.add_argument_group('Required')
+    required.add_argument('-i', '--image', type=str, required=True,
+                          help='path to a nifti MR image of the brain')
+    required.add_argument('-m', '--brain-mask', type=str,
+                          help='path to a nifti brain mask for the image, '
+                               'provide this if image is not skull-stripped')
+    required.add_argument('-o', '--output-dir', type=str, default=None,
+                          help='path to output normalized images '
+                               '(default: to directory containing images)')
+
+    options = parser.add_argument_group('Options')
+    options.add_argument('-c', '--contrast', type=str, choices=['t1', 't2', 'flair'], default='t1',
+                         help='pick the contrast of the input MR image (t1, t2, or flair)')
+    options.add_argument('-b', '--background-mask', type=str,
+                         help='path to a mask of the background')
+    options.add_argument('-w', '--wm-peak', type=str, default=None,
+                         help='saved WM peak value, found by first input T1 image,'
+                              'can be used consecutively for other contrasts for the same patient')
+    options.add_argument('-n', '--norm-value', type=float, default=1,
+                         help='value by which to normalize the WM peak')
+    options.add_argument('-s', '--single-img', action='store_true', default=False,
+                         help='image and mask are individual images, not directories')
+    options.add_argument('-p', '--plot-hist', action='store_true', default=False,
                          help='plot the histograms of the normalized images, save it in the output directory')
-    parser.add_argument('-v', '--verbosity', action="count", default=0,
-                        help="increase output verbosity (e.g., -vv is more than -v)")
+    options.add_argument('--save-wm-peak', action='store_true', default=False,
+                         help='store the found WM peak, uses wm-peak as the name if true')
+    options.add_argument('--find-background-mask', action='store_true', default=False,
+                         help='calculate a mask for the background (to zero it out)')
+    options.add_argument('--keep-bg', action='store_true', default=False,
+                         help='if this flag is activated, then no background mask '
+                              'is calculated or used')
+    options.add_argument('-v', '--verbosity', action="count", default=0,
+                         help="increase output verbosity (e.g., -vv is more than -v)")
     return parser
 
 

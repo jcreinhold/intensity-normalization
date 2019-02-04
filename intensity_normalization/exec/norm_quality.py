@@ -26,17 +26,20 @@ def arg_parser():
                                                  'method on a set of images given a directory of images. To measure'
                                                  'consistency, we create a histogram of the pairwise Jensen-Shannon '
                                                  'Divergence of all images and report some statistics of the hist.')
-    parser.add_argument('-i', '--img-dir', type=str, required=True,
+    required = parser.add_argument_group('Required')
+    required.add_argument('-i', '--img-dir', type=str, required=True,
                         help='path to directory with images to be processed')
-    parser.add_argument('-m', '--mask-dir', type=str, default=None,
+    required.add_argument('-m', '--mask-dir', type=str, default=None,
                         help='directory to brain masks for imgs')
-    parser.add_argument('-o', '--out-name', type=str, default='pairwisejsd.png',
+    required.add_argument('-o', '--out-name', type=str, default='pairwisejsd.png',
                         help='name for output histogram (default: pairwisejsd.png)')
-    parser.add_argument('--nbins', type=int, default=200,
+
+    options = parser.add_argument_group('Options')
+    options.add_argument('--nbins', type=int, default=200,
                         help='number of bins to use when calculating JSD')
-    parser.add_argument('--fit-chi2', action='store_true', default=False,
+    options.add_argument('--fit-chi2', action='store_true', default=False,
                         help='fit a chi-square distribution to the data and report statistics')
-    parser.add_argument('-v', '--verbosity', action="count", default=0,
+    options.add_argument('-v', '--verbosity', action="count", default=0,
                         help="increase output verbosity (e.g., -vv is more than -v)")
     return parser
 

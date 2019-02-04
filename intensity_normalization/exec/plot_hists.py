@@ -25,21 +25,24 @@ with warnings.catch_warnings():
 
 def arg_parser():
     parser = argparse.ArgumentParser(description='Plot all histograms within a brain maskfor a set of nifti MR images')
-    parser.add_argument('-i', '--img-dir', type=str, required=True,
+    required = parser.add_argument_group('Required')
+    required.add_argument('-i', '--img-dir', type=str, required=True,
                         help='path to directory with images to be processed')
-    parser.add_argument('-m', '--mask-dir', type=str, default=None,
+    required.add_argument('-m', '--mask-dir', type=str, default=None,
                         help='directory to brain masks for imgs')
-    parser.add_argument('-t', '--plot-title', type=str, default=None,
+
+    options = parser.add_argument_group('Options')
+    options.add_argument('-t', '--plot-title', type=str, default=None,
                         help='title for output histogram plot')
-    parser.add_argument('-o', '--out-name', type=str, default='hist.png',
+    options.add_argument('-o', '--out-name', type=str, default='hist.png',
                         help='name for output histogram (default: hist.png)')
-    parser.add_argument('-a', '--alpha', type=float, default=0.8,
+    options.add_argument('-a', '--alpha', type=float, default=0.8,
                         help='alpha parameter for line plots')
-    parser.add_argument('-f', '--figsize', type=tuple, default=(12,10),
+    options.add_argument('-f', '--figsize', type=tuple, default=(12,10),
                         help='alpha parameter for line plots')
-    parser.add_argument('-l', '--linewidth', type=float, default=3,
+    options.add_argument('-l', '--linewidth', type=float, default=3,
                         help='linewidth parameter for line plots')
-    parser.add_argument('-v', '--verbosity', action="count", default=0,
+    options.add_argument('-v', '--verbosity', action="count", default=0,
                         help="increase output verbosity (e.g., -vv is more than -v)")
     return parser
 

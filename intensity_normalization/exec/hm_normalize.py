@@ -30,19 +30,18 @@ def arg_parser():
     required.add_argument('-i', '--img-dir', type=str, required=True,
                         help='path to directory with images to be processed '
                              '(should all be of one contrast)')
+    required.add_argument('-o', '--output-dir', type=str, default=None,
+                         help='save the normalized images to this path [Default = None]')
 
     options = parser.add_argument_group('Options')
-    options.add_argument('-o', '--output-dir', type=str, default=None,
-                           help='save the normalized images to this path [Default = None]')
     options.add_argument('-m', '--mask-dir', type=str, default=None,
                            help='directory for corresponding brain masks for img-dir (not intelligently sorted, '
                                 'so ordering must be consistent in directory). **If masks are provided, the '
                                 'corresponding images should be skull-stripped!** [Default = None]')
-    options.add_argument('-v', '--verbosity', action="count", default=0,
-                         help="increase output verbosity (e.g., -vv is more than -v)")
     options.add_argument('-p', '--plot-hist', action='store_true', default=False,
                          help='plot the histograms of the normalized images, save it in the output directory')
-
+    options.add_argument('-v', '--verbosity', action="count", default=0,
+                         help="increase output verbosity (e.g., -vv is more than -v)")
     return parser
 
 

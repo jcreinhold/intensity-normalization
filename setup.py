@@ -18,6 +18,22 @@ import warnings
 
 
 install_antspy = '--antspy' in sys.argv[1:]
+link_preprocess = '--preprocess' in sys.argv[1:]
+link_quality = '--quality' in sys.argv[1:]
+
+console_scripts = ['fcm-normalize=intensity_normalization.exec.fcm_normalize:main',
+                   'gmm-normalize=intensity_normalization.exec.gmm_normalize:main',
+                   'hm-normalize=intensity_normalization.exec.hm_normalize:main',
+                   'kde-normalize=intensity_normalization.exec.kde_normalize:main',
+                   'ws-normalize=intensity_normalization.exec.ws_normalize:main',
+                   'zscore-normalize=intensity_normalization.exec.zscore_normalize:main',
+                   'ravel-normalize=intensity_normalization.exec.ravel_normalize:main',
+                   'plot-hists=intensity_normalization.exec.plot_hists:main']
+
+if link_preprocess: console_scripts.extend(['preprocess=intensity_normalization.exec.preprocess:main',
+                                            'coregister=intensity_normalization.exec.coregister:main',
+                                            'tissue-mask=intensity_normalization.exec.tissue_mask:main'])
+if link_quality: console_scripts.append('norm-quality=intensity_normalization.exec.norm_quality:main')
 
 with open('README.md') as f:
     readme = f.read()
@@ -41,7 +57,7 @@ else:
 
 args = dict(
     name='intensity-normalization',
-    version='1.2.1',
+    version='1.3.0',
     description="Normalize the intensity values of MR images",
     long_description=readme,
     author='Jacob Reinhold',
@@ -50,19 +66,7 @@ args = dict(
     license=license,
     packages=find_packages(exclude=('tests', 'docs', 'tutorials')),
     entry_points = {
-        'console_scripts': ['fcm-normalize=intensity_normalization.exec.fcm_normalize:main',
-                            'gmm-normalize=intensity_normalization.exec.gmm_normalize:main',
-                            'hm-normalize=intensity_normalization.exec.hm_normalize:main',
-                            'kde-normalize=intensity_normalization.exec.kde_normalize:main',
-                            'ravel-normalize=intensity_normalization.exec.ravel_normalize:main',
-                            'ws-normalize=intensity_normalization.exec.ws_normalize:main',
-                            'zscore-normalize=intensity_normalization.exec.zscore_normalize:main',
-                            'robex=intensity_normalization.exec.robex:main',
-                            'preprocess=intensity_normalization.exec.preprocess:main',
-                            'plot-hists=intensity_normalization.exec.plot_hists:main',
-                            'norm-quality=intensity_normalization.exec.norm_quality:main',
-                            'coregister=intensity_normalization.exec.coregister:main',
-                            'tissue-mask=intensity_normalization.exec.tissue_mask:main']
+        'console_scripts': console_scripts
     },
     keywords="mr intensity normalization",
     dependency_links=[antspy]

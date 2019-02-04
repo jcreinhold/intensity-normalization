@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=False,
                     do_whitestripe=True, b=1, membership_thresh=0.99, segmentation_smoothness=0.25,
-                    do_registration=False, use_fcm=False):
+                    do_registration=False, use_fcm=True):
     """
     Use RAVEL [1] to normalize the intensities of a set of MR images to eliminate
     unwanted technical variation in images (but, hopefully, preserve biological variation)

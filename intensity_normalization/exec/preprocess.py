@@ -28,24 +28,27 @@ with warnings.catch_warnings():
 def arg_parser():
     parser = argparse.ArgumentParser(description='Do some basic preprocessing on a set of nifti MR images of the brain. '
                                                  '(i.e., resampling, reorientation, and bias field correction)')
-    parser.add_argument('-i', '--img-dir', type=str, required=True,
-                        help='path to directory with images to be processed '
-                             '(should all be T1w contrast)')
-    parser.add_argument('-m', '--mask-dir', type=str, required=True,
-                        help='directory to output the corresponding img files')
-    parser.add_argument('-o', '--out-dir', type=str, required=True,
-                        help='output directory for preprocessed files')
-    parser.add_argument('-r', '--resolution', nargs=3, type=int, default=(1,1,1),
-                        help='resolution for resampled images')
-    parser.add_argument('--orientation', type=str, default='RAI',
-                        help='orientation of preprocessed images')
-    parser.add_argument('--n4-opts', type=str, default=None,
-                        help='n4 convergence options (add arguments to json file or corrected formatted string), '
-                             'see ants.n4_bias_field_correction')
-    parser.add_argument('--n4-once', action='store_true', default=False,
-                        help='do n4 only once vs twice (twice often works better, and is default)')
-    parser.add_argument('-v', '--verbosity', action="count", default=0,
-                        help="increase output verbosity (e.g., -vv is more than -v)")
+    required = parser.add_argument_group('Required')
+    required.add_argument('-i', '--img-dir', type=str, required=True,
+                          help='path to directory with images to be processed '
+                               '(should all be T1w contrast)')
+    required.add_argument('-m', '--mask-dir', type=str, required=True,
+                          help='directory to output the corresponding img files')
+    required.add_argument('-o', '--out-dir', type=str, required=True,
+                          help='output directory for preprocessed files')
+
+    options = parser.add_argument_group('Options')
+    options.add_argument('-r', '--resolution', nargs=3, type=int, default=(1,1,1),
+                         help='resolution for resampled images')
+    options.add_argument('--orientation', type=str, default='RAI',
+                         help='orientation of preprocessed images')
+    options.add_argument('--n4-opts', type=str, default=None,
+                         help='n4 convergence options (add arguments to json file or corrected formatted string), '
+                              'see ants.n4_bias_field_correction')
+    options.add_argument('--n4-once', action='store_true', default=False,
+                         help='do n4 only once vs twice (twice often works better, and is default)')
+    options.add_argument('-v', '--verbosity', action="count", default=0,
+                         help="increase output verbosity (e.g., -vv is more than -v)")
     return parser
 
 

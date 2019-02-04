@@ -28,27 +28,30 @@ with warnings.catch_warnings():
 def arg_parser():
     parser = argparse.ArgumentParser(description='Use FCM to model the tissue classes of the brain and use the '
                                                  'found WM to normalize a set of nifti MR images')
-    parser.add_argument('-i', '--image', type=str, required=True,
-                        help='path to a directory of/single nifti MR image of the brain')
-    parser.add_argument('-m', '--brain-mask', type=str, default=None,
-                        help='path to a directory of/single nifti brain mask for the image, '
-                             'provide this if not providing WM mask, (step 1)')
-    parser.add_argument('-w', '--wm-mask', type=str, default=None,
-                        help='path to a nifti mask of the WM (found through FCM), '
-                             'provide this if not providing the brain mask (step 2)')
-    parser.add_argument('-c', '--contrast', type=str, default='T1',
-                        help='contrast of images being normalized (must be T1w when calculating the WM masks!)')
-    parser.add_argument('-o', '--output-dir', type=str, default=None,
-                        help='path to output normalized images '
-                             '(default: to directory containing images)')
-    parser.add_argument('--norm-value', type=float, default=1000,
-                        help='normalize the WM of the image to this value (default 1000)')
-    parser.add_argument('--single-img', action='store_true', default=False,
-                        help='image and mask are individual images, not directories')
-    parser.add_argument('-p', '--plot-hist', action='store_true', default=False,
+    required = parser.add_argument_group('Required')
+    required.add_argument('-i', '--image', type=str, required=True,
+                          help='path to a directory of/single nifti MR image of the brain')
+    required.add_argument('-m', '--brain-mask', type=str, default=None,
+                          help='path to a directory of/single nifti brain mask for the image, '
+                               'provide this if not providing WM mask, (step 1)')
+    required.add_argument('-w', '--wm-mask', type=str, default=None,
+                          help='path to a nifti mask of the WM (found through FCM), '
+                               'provide this if not providing the brain mask (step 2)')
+    required.add_argument('-o', '--output-dir', type=str, default=None,
+                          help='path to output normalized images '
+                               '(default: to directory containing images)')
+
+    options = parser.add_argument_group('Options')
+    options.add_argument('-c', '--contrast', type=str, default='t1',
+                         help='contrast of images being normalized (must be `t1` when calculating the WM masks!)')
+    options.add_argument('-n', '--norm-value', type=float, default=1,
+                         help='normalize the WM of the image to this value (default 1)')
+    options.add_argument('-s', '--single-img', action='store_true', default=False,
+                         help='image and mask are individual images, not directories')
+    options.add_argument('-p', '--plot-hist', action='store_true', default=False,
                          help='plot the histograms of the normalized images, save it in the output directory')
-    parser.add_argument('-v', '--verbosity', action="count", default=0,
-                        help="increase output verbosity (e.g., -vv is more than -v)")
+    options.add_argument('-v', '--verbosity', action="count", default=0,
+                         help="increase output verbosity (e.g., -vv is more than -v)")
     return parser
 
 
@@ -109,8 +112,8 @@ def main(args=None):
             elif os.path.exists(args.wm_mask):
                 wm_mask_dir = args.wm_mask
             else:
-                NormalizationError('If contrast is not T1, then WM mask directory ({}) '
-                                   'must already be created!'.format(args.wm_mask))
+                raise NormalizationError('If contrast is not T1, then WM mask directory ({}) '
+                                         'must already be created!'.format(args.wm_mask))
 
             wm_masks = io.glob_nii(wm_mask_dir)
             for i, (img, wm_mask) in enumerate(zip(img_fns, wm_masks), 1):
@@ -123,9 +126,9 @@ def main(args=None):
         else:
             if not os.path.isfile(args.image) or not os.path.isfile(args.brain_mask):
                 raise NormalizationError('if single-img option on, then image and brain-mask must be files')
-            if args.wm_mask is None and args.contrast == 'T1':
+            if args.wm_mask is None and args.contrast.lower() == 't1':
                 logger.info('Creating WM Mask for {}'.format(args.image))
-                process(args.image, args.brain_mask, None, args, logger)
+                process(args.image, args.brain_mask, None, args.output_dir, args, logger)
             else:
                 raise NormalizationError('If contrast is not T1, then WM mask must be provided!')
             logger.info('Normalizing image {}'.format(args.image))

@@ -24,7 +24,7 @@ from intensity_normalization.utilities import hist
 logger = logging.getLogger(__name__)
 
 
-def kde_normalize(img, mask=None, contrast='T1', norm_value=1000):
+def kde_normalize(img, mask=None, contrast='t1', norm_value=1):
     """
     use kernel density estimation to find the peak of the white
     matter in the histogram of a skull-stripped image. Normalize
@@ -50,7 +50,7 @@ def kde_normalize(img, mask=None, contrast='T1', norm_value=1000):
     elif contrast.lower() in ['md', 'first']:
         wm_peak = hist.get_first_mode(voi)
     else:
-        raise NormalizationError('Contrast {} not valid, needs to be T1, T2, FLAIR, or MD')
+        raise NormalizationError('Contrast {} not valid, needs to be `t1`,`t2`,`flair`,`md`,`first`,`largest`,`last`'.format(contrast))
     normalized = nib.Nifti1Image((img.get_data() / wm_peak) * norm_value,
                                  img.affine, img.header)
     return normalized

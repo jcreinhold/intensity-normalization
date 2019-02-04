@@ -28,7 +28,7 @@ from intensity_normalization.utilities.mask import gmm_class_mask
 logger = logging.getLogger(__name__)
 
 
-def gmm_normalize(img, brain_mask=None, norm_value=1000, contrast='t1', bg_mask=None, wm_peak=None):
+def gmm_normalize(img, brain_mask=None, norm_value=1, contrast='t1', bg_mask=None, wm_peak=None):
     """
     normalize the white matter of an image using a GMM to find the tissue classes
 

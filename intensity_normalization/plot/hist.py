@@ -90,14 +90,14 @@ def hist(img, mask=None, ax=None, n_bins=200, log=True, alpha=0.8, lw=3, **kwarg
     if ax is None:
         _, ax = plt.subplots()
     data = img.get_data()[mask.get_data()==1] if mask is not None else img.get_data()
-    hist, bin_edges = np.histogram(data.flatten(), n_bins, **kwargs)
+    hist_, bin_edges = np.histogram(data.flatten(), n_bins, **kwargs)
     bins = np.diff(bin_edges)/2 + bin_edges[:-1]
     if log:
         # catch divide by zero warnings in call to log
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore')
-            hist =  np.log10(hist)
-            hist[hist == -np.inf] = 0
-    ax.plot(bins, hist, alpha=alpha, linewidth=lw)
+            hist_ =  np.log10(hist_)
+            hist_[hist_ == -np.inf] = 0
+    ax.plot(bins, hist_, alpha=alpha, linewidth=lw)
     return ax
 

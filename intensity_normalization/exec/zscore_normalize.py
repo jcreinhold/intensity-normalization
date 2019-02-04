@@ -28,19 +28,22 @@ with warnings.catch_warnings():
 def arg_parser():
     parser = argparse.ArgumentParser(description='Normalize image intensity by subtracting the mean '
                                                  'and dividing by the standard deviation of the whole brain')
-    parser.add_argument('-i', '--image', type=str, required=True,
-                        help='path to a directory of/single nifti MR image of the brain')
-    parser.add_argument('-m', '--brain-mask', type=str, default=None,
-                        help='path to a directory of/single nifti brain mask for the image')
-    parser.add_argument('-o', '--output-dir', type=str, default=None,
-                        help='path to output normalized images '
-                             '(default: to directory containing images)')
-    parser.add_argument('--single-img', action='store_true', default=False,
-                        help='image and mask are individual images, not directories')
-    parser.add_argument('-p', '--plot-hist', action='store_true', default=False,
+    required = parser.add_argument_group('Required')
+    required.add_argument('-i', '--image', type=str, required=True,
+                          help='path to a directory of/single nifti MR image of the brain')
+    required.add_argument('-o', '--output-dir', type=str, default=None,
+                          help='path to output normalized images '
+                               '(default: to directory containing images)')
+
+    options = parser.add_argument_group('Options')
+    options.add_argument('-m', '--brain-mask', type=str, default=None,
+                         help='path to a directory of/single nifti brain mask for the image')
+    options.add_argument('-s', '--single-img', action='store_true', default=False,
+                         help='image and mask are individual images, not directories')
+    options.add_argument('-p', '--plot-hist', action='store_true', default=False,
                          help='plot the histograms of the normalized images, save it in the output directory')
-    parser.add_argument('-v', '--verbosity', action="count", default=0,
-                        help="increase output verbosity (e.g., -vv is more than -v)")
+    options.add_argument('-v', '--verbosity', action="count", default=0,
+                         help="increase output verbosity (e.g., -vv is more than -v)")
     return parser
 
 

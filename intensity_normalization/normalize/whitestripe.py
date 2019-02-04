@@ -129,7 +129,7 @@ def whitestripe(img, contrast, mask=None, width=0.05, width_l=None, width_u=None
     elif contrast.lower() in ['md', 'first']:
         mode = hist.get_first_mode(voi)
     else:
-        raise NormalizationError('Contrast {} not valid, needs to be T1, T2, FLAIR or MD'.format(contrast))
+        raise NormalizationError('Contrast {} not valid, needs to be `t1`,`t2`,`flair`,`md`,`first`,`largest`,`last`'.format(contrast))
     img_mode_q = np.mean(voi < mode)
     ws = np.percentile(voi, (max(img_mode_q - width_l, 0) * 100, min(img_mode_q + width_u, 1) * 100))
     ws_ind = np.logical_and(masked > ws[0], masked < ws[1])

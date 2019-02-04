@@ -24,22 +24,25 @@ with warnings.catch_warnings():
 
 def arg_parser():
     parser = argparse.ArgumentParser(description='Use WhiteStripe to normalize a set nifti MR images of the brain')
-    parser.add_argument('-i', '--img-dir', type=str, required=True,
-                        help = 'path to directory with images to be processed '
-                               '(should all be of one contrast)')
-    parser.add_argument('-m', '--mask-dir', type=str, default=None,
-                        help='if images are not skull-stripped, directory for '
-                             'corresponding brain masks for img-dir (not intelligently sorted, '
-                             'so ordering must be consistent in directory)')
-    parser.add_argument('-o', '--output-dir', type=str, default=None,
-                        help='if you want the normalized images saved in a particular location,'
-                             'provide that directory here (must already exist)')
-    parser.add_argument('-c', '--contrast', type=str, default='t1', choices=['t1', 't2', 'flair', 'md'],
-                        help='contrast of the images in img-dir')
-    parser.add_argument('-p', '--plot-hist', action='store_true', default=False,
+    required = parser.add_argument_group('Required')
+    required.add_argument('-i', '--img-dir', type=str, required=True,
+                          help = 'path to directory with images to be processed '
+                                 '(should all be of one contrast)')
+    required.add_argument('-m', '--mask-dir', type=str, default=None,
+                          help='if images are not skull-stripped, directory for '
+                               'corresponding brain masks for img-dir (not intelligently sorted, '
+                               'so ordering must be consistent in directory)')
+    required.add_argument('-o', '--output-dir', type=str, default=None,
+                          help='if you want the normalized images saved in a particular location,'
+                               'provide that directory here (must already exist)')
+
+    options = parser.add_argument_group('Options')
+    options.add_argument('-c', '--contrast', type=str, default='t1', choices=['t1', 't2', 'flair', 'md'],
+                         help='contrast of the images in img-dir')
+    options.add_argument('-p', '--plot-hist', action='store_true', default=False,
                          help='plot the histograms of the normalized images, save it in the output directory')
-    parser.add_argument('-v', '--verbosity', action="count", default=0,
-                        help="increase output verbosity (e.g., -vv is more than -v)")
+    options.add_argument('-v', '--verbosity', action="count", default=0,
+                         help="increase output verbosity (e.g., -vv is more than -v)")
     return parser
 
 

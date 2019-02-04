@@ -25,19 +25,22 @@ with warnings.catch_warnings():
 
 def arg_parser():
     parser = argparse.ArgumentParser(description='Create a tissue mask for a given brain (i.e., label CSF/GM/WM)')
-    parser.add_argument('-i', '--img-dir', type=str, required=True,
-                        help='path to directory with images to be processed '
-                             '(should all be T1w contrast)')
-    parser.add_argument('-m', '--mask-dir', type=str, default=None,
-                        help='directory of corresponding brain mask img files')
-    parser.add_argument('-o', '--output-dir', type=str, default=None,
-                        help='directory to output the tissue masks img files')
-    parser.add_argument('--gmm', action='store_true', default=False,
-                        help='use a gmm to create tissue class membership instead of FCM')
-    parser.add_argument('--memberships', action='store_true', default=False,
-                        help='output individual class membership masks instead of hard segmentation')
-    parser.add_argument('-v', '--verbosity', action="count", default=0,
-                        help="increase output verbosity (e.g., -vv is more than -v)")
+    required = parser.add_argument_group('Required')
+    required.add_argument('-i', '--img-dir', type=str, required=True,
+                          help='path to directory with images to be processed '
+                               '(should all be T1w contrast)')
+    required.add_argument('-m', '--mask-dir', type=str, default=None,
+                          help='directory of corresponding brain mask img files')
+    required.add_argument('-o', '--output-dir', type=str, default=None,
+                          help='directory to output the tissue masks img files')
+
+    options = parser.add_argument_group('Options')
+    options.add_argument('--gmm', action='store_true', default=False,
+                         help='use a gmm to create tissue class membership instead of FCM')
+    options.add_argument('--memberships', action='store_true', default=False,
+                         help='output individual class membership masks instead of hard segmentation')
+    options.add_argument('-v', '--verbosity', action="count", default=0,
+                         help="increase output verbosity (e.g., -vv is more than -v)")
     return parser
 
 

@@ -27,7 +27,7 @@ from intensity_normalization.utilities import mask
 logger = logging.getLogger(__name__)
 
 
-def fcm_normalize(img, wm_mask, norm_value=1000):
+def fcm_normalize(img, wm_mask, norm_value=1):
     """
     Use FCM generated mask to normalize the WM of a target image
 

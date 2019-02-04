@@ -57,13 +57,15 @@ RAVEL Normalization
    :func: arg_parser
    :prog: ravel-normalize
 
-Skull-stripping
-~~~~~~~~~~~~~~~
+Plot Histograms
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. argparse:: 
-   :module: intensity_normalization.exec.robex
+.. argparse::
+   :module: intensity_normalization.exec.plot_hists
    :func: arg_parser
-   :prog: robex
+   :prog: plot-hists
+
+The following three scripts are only installed if the `--preprocess` flag is used during installation
 
 Preprocessing
 ~~~~~~~~~~~~~
@@ -89,13 +91,7 @@ Co-register
    :func: arg_parser
    :prog: coregister
 
-Plot Histograms
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. argparse:: 
-   :module: intensity_normalization.exec.plot_hists
-   :func: arg_parser
-   :prog: plot-hists
+The `norm_quality` script is only installed if the `--quality` flag was provided during installation
 
 Plot Quality Metric
 ~~~~~~~~~~~~~~~~~~~~~~~~~

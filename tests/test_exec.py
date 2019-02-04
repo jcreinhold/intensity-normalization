@@ -83,7 +83,7 @@ class TestCLI(unittest.TestCase):
     @unittest.skipIf(ants is None, "ANTsPy is not installed on this system")
     def test_ravel_normalization_cli_fcm(self):
         from intensity_normalization.exec.ravel_normalize import main as ravel
-        args = self.args + ['--no-registration', '--use-fcm']
+        args = self.args + ['--no-registration', '--use-atropos']
         retval = ravel(args)
         self.assertEqual(retval, 0)
 

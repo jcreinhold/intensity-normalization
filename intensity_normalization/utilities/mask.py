@@ -101,10 +101,18 @@ def gmm_class_mask(img, brain_mask=None, contrast='t1', return_wm_peak=True, har
         elif contrast.lower() == 't2':
             wm_peak = means[0]
         else:
-            raise NormalizationError('Invalid contrast type: {}. Must be t1, t2, or flair.'.format(contrast))
+            raise NormalizationError('Invalid contrast type: {}. Must be `t1`, `t2`, or `flair`.'.format(contrast))
         return wm_peak
     else:
-        classes = np.argsort(gmm.weights_)
+        classes_ = np.argsort(gmm.means_.T.squeeze())
+        if contrast.lower() == 't1':
+            classes = [classes_[0], classes_[1], classes_[2]]
+        elif contrast.lower() == 'flair':
+            classes = [classes_[0], classes_[2], classes_[1]]
+        elif contrast.lower() == 't2':
+            classes = [classes_[2], classes_[1], classes_[0]]
+        else:
+            raise NormalizationError('Invalid contrast type: {}. Must be `t1`, `t2`, or `flair`.'.format(contrast))
         if hard_seg:
             tmp_predicted = gmm.predict(brain)
             predicted = np.zeros(tmp_predicted.shape)
