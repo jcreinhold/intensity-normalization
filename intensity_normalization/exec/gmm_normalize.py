@@ -59,9 +59,6 @@ def arg_parser():
                          help='store the found WM peak, uses wm-peak as the name if true')
     options.add_argument('--find-background-mask', action='store_true', default=False,
                          help='calculate a mask for the background (to zero it out)')
-    options.add_argument('--keep-bg', action='store_true', default=False,
-                         help='if this flag is activated, then no background mask '
-                              'is calculated or used')
     options.add_argument('-v', '--verbosity', action="count", default=0,
                          help="increase output verbosity (e.g., -vv is more than -v)")
     return parser
