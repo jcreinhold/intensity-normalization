@@ -36,9 +36,3 @@ Quality Metrics
 
 .. automodule:: intensity_normalization.utilities.quality
    :members:
-
-ROBEX
-~~~~~
-.. automodule:: intensity_normalization.utilities.robex
-   :members:
-

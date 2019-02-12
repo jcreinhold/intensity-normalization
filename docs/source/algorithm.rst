@@ -13,6 +13,8 @@
      });
    </script>
 
+.. _paper: https://arxiv.org/abs/1812.04652
+
 Algorithm Descriptions
 ======================
 
@@ -20,6 +22,8 @@ For all the algorithm descriptions, let $I(\\mathbf x)$ be the MR brain image un
 $\\mathbf x \\in \[0,N\]\\times\[0,M\]\\times\[0,L\]\\subset \\mathbb{N}^3$ for $N,M,L \\in \\mathbb{N}$, the dimensions of $I$,
 and let $B \\subset I$ be the corresponding brain mask (i.e., the set of indices
 corresponding to the location of the brain in $I$).
+
+If any of the descriptions here are unclear, please see the corresponding paper_ for a more concise, refined description.
 
 Z-score
 ~~~~~~~
@@ -67,10 +71,10 @@ $$ I_{\\text{kde}}(\\mathbf x) = \\frac{c \\cdot I(\\mathbf x)}{\\pi} $$
 where $c \\in \\mathbb{R}_{>0}$ is some constant. In this experiment, we
 arbitrarily set $c = 1000$.
 
-Histogram Matching
+Nyul and Udupa
 ~~~~~~~~~~~~~~~~~~
 
-Piecewise linear histogram matching (which we will denote as HM for
+Piecewise affine histogram-based normalization (which we will denote as NU for
 brevity)---proposed by Nyul and Udupa [1]---addresses the
 normalization problem by learning a
 standard histogram for a set of contrast images and mapping the intensities of each
@@ -110,7 +114,7 @@ in the set greater than $i$. We then piecewise linearly map the
 intensities associated with these deciles to the corresponding decile on the
 standard scale landmarks. Noting that each $D_{i,j}$ is disjoint from the other,
 the normalized image is then defined as
-$$ I_{\\text{hm}} = \\bigcup_{\\substack{i,j \\in \\{1,10,20,\\ldots,90,99\\}\\newline i\\neq j, i \\le j + 10}} \\left(\\frac{I(D_{i,j}) - m_i}{m_j - m_i}\\right) \\left(m_j^s - m_i^s\\right) + m_i^s. $$
+$$ I_{\\text{nu}} = \\bigcup_{\\substack{i,j \\in \\{1,10,20,\\ldots,90,99\\}\\newline i\\neq j, i \\le j + 10}} \\left(\\frac{I(D_{i,j}) - m_i}{m_j - m_i}\\right) \\left(m_j^s - m_i^s\\right) + m_i^s. $$
 
 WhiteStripe
 ~~~~~~~~~~~
