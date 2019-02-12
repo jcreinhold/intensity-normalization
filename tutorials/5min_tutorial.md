@@ -79,7 +79,7 @@ The other methods not listed above are accessible via:
 2) `ws-normalize` - WhiteStripe normalization
 3) `ravel-normalize` - RAVEL normalization
 4) `kde-normalize` - Kernel Density Estimate WM peak normalization
-5) `hm-normalize` - Nyul & Udupa Piecewise linear histogram matching normalization
+5) `nyul-normalize` - Nyul & Udupa Piecewise linear affine normalization based on learned histogram features
 6) `gmm-normalize` - use a GMM to normalize the WM mean over the brain mask, like FCM (do not recommend using this method!)
 
 Note that these all have approximately the same interface with the `-i`, `-m` and `-o` options, but each 

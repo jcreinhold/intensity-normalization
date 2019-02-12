@@ -23,7 +23,7 @@ link_quality = '--quality' in sys.argv[1:]
 
 console_scripts = ['fcm-normalize=intensity_normalization.exec.fcm_normalize:main',
                    'gmm-normalize=intensity_normalization.exec.gmm_normalize:main',
-                   'hm-normalize=intensity_normalization.exec.hm_normalize:main',
+                   'nyul-normalize=intensity_normalization.exec.nyul_normalize:main',
                    'kde-normalize=intensity_normalization.exec.kde_normalize:main',
                    'ws-normalize=intensity_normalization.exec.ws_normalize:main',
                    'zscore-normalize=intensity_normalization.exec.zscore_normalize:main',
@@ -57,7 +57,7 @@ else:
 
 args = dict(
     name='intensity-normalization',
-    version='1.3.0',
+    version='1.3.1',
     description="Normalize the intensity values of MR images",
     long_description=readme,
     author='Jacob Reinhold',

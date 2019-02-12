@@ -55,9 +55,17 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(retval, 0)
 
     def test_hm_normalization_cli(self):
-        from intensity_normalization.exec.hm_normalize import main as hm
+        from intensity_normalization.exec.nyul_normalize import main as nyul
         args = self.args
-        retval = hm(args)
+        retval = nyul(args)
+        self.assertEqual(retval, 0)
+
+    def test_nyul_normalization_save_sh_cli(self):
+        from intensity_normalization.exec.nyul_normalize import main as nyul
+        args = self.args + f'-sh {self.out_dir}/sh.npy'.split()
+        retval = nyul(args)
+        self.assertEqual(retval, 0)
+        retval = nyul(args)
         self.assertEqual(retval, 0)
 
     def test_ws_normalization_cli(self):

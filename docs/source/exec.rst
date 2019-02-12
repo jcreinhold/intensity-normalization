@@ -33,13 +33,13 @@ KDE Normalization
    :func: arg_parser
    :prog: kde-normalize
 
-Histogram Matching Normalization
+Nyul Normalization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. argparse:: 
-   :module: intensity_normalization.exec.hm_normalize
+   :module: intensity_normalization.exec.nyul_normalize
    :func: arg_parser
-   :prog: hm-normalize
+   :prog: nyul-normalize
 
 WhiteStripe Normalization
 ~~~~~~~~~~~~~~~~~~~~~~~~~

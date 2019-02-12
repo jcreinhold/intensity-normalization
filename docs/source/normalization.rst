@@ -28,10 +28,10 @@ Kernel Density Estimation
 .. automodule:: intensity_normalization.normalize.kde
    :members:
 
-Histogram Matching
+Nyul and Udupa
 ~~~~~~~~~~~~~~~~~~
 
-.. automodule:: intensity_normalization.normalize.hm
+.. automodule:: intensity_normalization.normalize.nyul
    :members:
 
 WhiteStripe

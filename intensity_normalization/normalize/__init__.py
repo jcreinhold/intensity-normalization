@@ -1,1 +1,1 @@
-from . import fcm, gmm, kde, hm, whitestripe, zscore
+from . import fcm, gmm, kde, nyul, whitestripe, zscore

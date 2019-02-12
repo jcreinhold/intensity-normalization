@@ -55,9 +55,9 @@ class TestNormalization(unittest.TestCase):
         normalized = kde.kde_normalize(self.img, self.brain_mask, contrast='T1', norm_value=self.norm_val)
         self.assertAlmostEqual(normalized.get_data()[self.wm_mask.get_data()].mean(), self.norm_val, delta=20)
 
-    def test_hm_normalization(self):
-        from intensity_normalization.normalize import hm
-        normalized = hm.hm_normalize(self.data_dir, write_to_disk=False)
+    def test_nyul_normalization(self):
+        from intensity_normalization.normalize import nyul
+        normalized = nyul.nyul_normalize(self.data_dir, write_to_disk=False)
 
     def test_ws_normalization(self):
         from intensity_normalization.normalize import whitestripe

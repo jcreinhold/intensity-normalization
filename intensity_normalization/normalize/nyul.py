@@ -4,7 +4,7 @@
 intensity_normalization.normalize.hm
 
 Use the method of Nyul and Udupa [1] (updated in [2])
-to do histogram matching intensity normalization on a
+to do piecewise affine histogram-based intensity normalization on a
 population of MR images
 
 References:
@@ -35,15 +35,16 @@ from intensity_normalization.utilities import io
 logger = logging.getLogger(__name__)
 
 
-def hm_normalize(img_dir, mask_dir=None, output_dir=None, write_to_disk=True):
+def nyul_normalize(img_dir, mask_dir=None, output_dir=None, standard_hist=None, write_to_disk=True):
     """
-    Use histogram matching method ([1,2]) to normalize the intensities of a set of MR images
+    Use Nyul and Udupa method ([1,2]) to normalize the intensities of a set of MR images
 
     Args:
         img_dir (str): directory containing MR images
         img_dir (str): directory containing masks for MR images
         output_dir (str): directory to save images if you do not want them saved in
             same directory as data_dir
+        standard_hist (str): path to output or use standard histogram landmarks
         write_to_disk (bool): write the normalized data to disk or nah
 
     Returns:
@@ -72,7 +73,13 @@ def hm_normalize(img_dir, mask_dir=None, output_dir=None, write_to_disk=True):
     mask_files = [None] * len(input_files) if mask_dir is None else io.glob_nii(mask_dir)
 
     logger.info('Learning standard scale for the set of images')
-    standard_scale, percs = train(input_files, mask_files)
+    if standard_hist is None:
+        standard_scale, percs = train(input_files, mask_files)
+    elif not os.path.isfile(standard_hist):
+        standard_scale, percs = train(input_files, mask_files)
+        np.save(standard_hist, np.vstack((standard_scale, percs)))
+    else:
+        standard_scale, percs = np.load(standard_hist)
 
     for i, (img_fn, mask_fn, out_fn) in enumerate(zip(input_files, mask_files, out_fns)):
         _, base, _ = io.split_filename(img_fn)
@@ -136,7 +143,6 @@ def train(img_fns, mask_fns=None, i_min=1, i_max=99, i_s_min=1, i_s_max=100, l_p
         standard_scale += landmarks
     standard_scale = standard_scale / len(img_fns)
     return standard_scale, percs
-
 
 
 def do_hist_norm(img, landmark_percs, standard_scale, mask=None):

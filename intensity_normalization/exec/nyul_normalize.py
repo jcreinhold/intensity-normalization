@@ -20,7 +20,7 @@ import warnings
 
 with warnings.catch_warnings():
     warnings.filterwarnings('ignore', category=FutureWarning)
-    from intensity_normalization.normalize import hm
+    from intensity_normalization.normalize import nyul
 
 
 def arg_parser():
@@ -38,6 +38,8 @@ def arg_parser():
                            help='directory for corresponding brain masks for img-dir (not intelligently sorted, '
                                 'so ordering must be consistent in directory). **If masks are provided, the '
                                 'corresponding images should be skull-stripped!** [Default = None]')
+    options.add_argument('-sh', '--standard-hist', default=None, type=str,
+                         help='path to output/use standard histogram [Default=None]')
     options.add_argument('-p', '--plot-hist', action='store_true', default=False,
                          help='plot the histograms of the normalized images, save it in the output directory')
     options.add_argument('-v', '--verbosity', action="count", default=0,
@@ -56,7 +58,7 @@ def main(args=None):
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
     logger = logging.getLogger(__name__)
     try:
-        _ = hm.hm_normalize(args.img_dir, args.mask_dir, args.output_dir)
+        _ = nyul.nyul_normalize(args.img_dir, args.mask_dir, args.output_dir, args.standard_hist)
 
         if args.plot_hist:
             with warnings.catch_warnings():
