@@ -28,7 +28,7 @@ or
 ## Fuzzy C-means-based Normalization
 
 Once the package is installed, if you just want to do some sort of normalization and not think too much about it, a reasonable choice is Fuzzy C-means (FCM)-based
-normalization. Note that FCM requires access to a T1-w image, if this is not possible then I would recommend doing either z-score or KDE normalization
+normalization. Note that FCM requires access to a (_non-gadolinium-enhanced_) T1-w image, if this is not possible then I would recommend doing either z-score or KDE normalization
 for simple normalization tasks.
 
 Note that FCM-based normalization acts on the image by calculating the white matter (WM) mean and setting that to a specified value

@@ -38,6 +38,12 @@ class TestCLI(unittest.TestCase):
 
     def test_fcm_normalization_cli(self):
         from intensity_normalization.exec.fcm_normalize import main as fcm
+        args = f'-i {self.data_dir}/test.nii.gz -m {self.mask_dir}/mask.nii.gz -s -o {self.out_dir}'.split()
+        retval = fcm(args)
+        self.assertEqual(retval, 0)
+
+    def test_fcm_single_img_normalization_cli(self):
+        from intensity_normalization.exec.fcm_normalize import main as fcm
         args = self.args
         retval = fcm(args)
         self.assertEqual(retval, 0)
