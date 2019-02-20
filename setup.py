@@ -16,10 +16,12 @@ from sys import platform
 import sys
 import warnings
 
+custom_args = sys.argv[2:].copy()
+del sys.argv[2:]
 
-install_antspy = '--antspy' in sys.argv[1:]
-link_preprocess = '--preprocess' in sys.argv[1:]
-link_quality = '--quality' in sys.argv[1:]
+install_antspy = '--antspy' in custom_args
+link_preprocess = '--preprocess' in custom_args
+link_quality = '--quality' in custom_args
 
 console_scripts = ['fcm-normalize=intensity_normalization.exec.fcm_normalize:main',
                    'gmm-normalize=intensity_normalization.exec.gmm_normalize:main',
@@ -44,7 +46,7 @@ with open('LICENSE') as f:
 if install_antspy:
     warnings.warn('Will try to install antspy. There is a reasonable chance that this will not work. Build antspy from source if that is the case.')
     if platform == "linux" or platform == "linux32":
-        if '--1.4' in sys.argv[1:]:
+        if '--1.4' in custom_args:
             antspy = "https://github.com/ANTsX/ANTsPy/releases/download/v0.1.4/antspy-0.1.4-cp36-cp36m-linux_x86_64.whl"
         else:
             antspy = "https://github.com/ANTsX/ANTsPy/releases/download/v0.1.6/antspy-0.1.6-cp36-cp36m-linux_x86_64.whl"
