@@ -36,28 +36,28 @@ conda update -n base conda --yes
 packages=(
     coverage
     libiconv
-    matplotlib==2.2.2
+    matplotlib=3.0.2
     nose
-    numpy==1.15.1
-    pandas==0.23.4
-    pillow==5.2.0
-    scikit-learn==0.19.2
-    scikit-image==0.14.0
-    scipy==1.1.0
+    numpy=1.15.4
+    pandas=0.23.4
+    pillow=5.3.0
+    scikit-learn=0.20.1
+    scikit-image=0.14.1
+    scipy=1.1.0
     sphinx
 )
 
 conda_forge_packages=(
-    nibabel==2.3.0
+    nibabel=2.3.0
     sphinx-argparse
-    statsmodels==0.9.0
-    webcolors==1.8.1
+    statsmodels=0.9.0
+    webcolors=1.8.1
 )
 
-conda create --override-channels -c defaults -n intensity_normalization python==3.6.6 ${packages[@]} -y
+conda create --override-channels -c defaults -n intensity_normalization python=3.6.7 ${packages[@]} -y
 source activate intensity_normalization
 conda install -c conda-forge ${conda_forge_packages[@]} -y
-pip install -U scikit-fuzzy==0.3.1
+pip install -U scikit-fuzzy==0.4.0
 
 if $ANTSPY; then
     # install ANTsPy
