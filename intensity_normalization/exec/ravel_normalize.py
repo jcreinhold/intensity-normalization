@@ -24,7 +24,7 @@ with warnings.catch_warnings():
 
 
 def arg_parser():
-    parser = argparse.ArgumentParser(description='Use RAVEL to normalize a directory of nifti MR images of the brain.')
+    parser = argparse.ArgumentParser(description='Use RAVEL to normalize a directory of NIfTI MR images of the brain.')
 
     required = parser.add_argument_group('Required')
     required.add_argument('-i', '--img-dir', type=str, required=True,

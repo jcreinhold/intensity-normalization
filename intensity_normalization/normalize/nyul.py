@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.normalize.hm
+intensity_normalization.normalize.nyul
 
 Use the method of Nyul and Udupa [1] (updated in [2])
 to do piecewise affine histogram-based intensity normalization on a

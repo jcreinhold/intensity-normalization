@@ -23,7 +23,7 @@ with warnings.catch_warnings():
 
 
 def arg_parser():
-    parser = argparse.ArgumentParser(description='Use WhiteStripe to normalize a set nifti MR images of the brain')
+    parser = argparse.ArgumentParser(description='Use Whitestripe to normalize a set NIfTI MR images of the brain')
     required = parser.add_argument_group('Required')
     required.add_argument('-i', '--img-dir', type=str, required=True,
                           help = 'path to directory with images to be processed '

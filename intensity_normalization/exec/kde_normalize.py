@@ -27,7 +27,7 @@ with warnings.catch_warnings():
 
 def arg_parser():
     parser = argparse.ArgumentParser(description='Use Kernel Density Estimation method to WM peak '
-                                                 'normalize a set of nifti MR images.')
+                                                 'normalize a set of NIfTI MR images.')
     required = parser.add_argument_group('Required')
     required.add_argument('-i', '--image', type=str, required=True,
                         help='path to a nifti MR image of the brain')

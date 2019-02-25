@@ -24,7 +24,7 @@ with warnings.catch_warnings():
 
 
 def arg_parser():
-    parser = argparse.ArgumentParser(description='Plot all histograms within a brain maskfor a set of nifti MR images')
+    parser = argparse.ArgumentParser(description='Plot all histograms within a brain mask for a set of NIfTI MR images')
     required = parser.add_argument_group('Required')
     required.add_argument('-i', '--img-dir', type=str, required=True,
                         help='path to directory with images to be processed')

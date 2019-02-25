@@ -26,7 +26,7 @@ with warnings.catch_warnings():
 
 
 def arg_parser():
-    parser = argparse.ArgumentParser(description='Normalize image intensity by subtracting the mean '
+    parser = argparse.ArgumentParser(description='Normalize NIfTI MR image intensity by subtracting the mean '
                                                  'and dividing by the standard deviation of the whole brain')
     required = parser.add_argument_group('Required')
     required.add_argument('-i', '--image', type=str, required=True,

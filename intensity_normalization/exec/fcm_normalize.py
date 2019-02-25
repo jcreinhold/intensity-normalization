@@ -27,7 +27,7 @@ with warnings.catch_warnings():
 
 def arg_parser():
     parser = argparse.ArgumentParser(description='Use FCM to model the tissue classes of the brain and use the '
-                                                 'found WM to normalize a set of nifti MR images')
+                                                 'found WM mean to normalize NIfTI MR images')
     required = parser.add_argument_group('Required')
     required.add_argument('-i', '--image', type=str, required=True,
                           help='path to a directory of/single nifti MR image of the brain')

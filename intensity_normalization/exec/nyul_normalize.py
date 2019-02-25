@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.exec.hm_normalize
+intensity_normalization.exec.nyul_normalize
 
 command line executable for histogram matching intensity normalization routine
 
@@ -24,8 +24,8 @@ with warnings.catch_warnings():
 
 
 def arg_parser():
-    parser = argparse.ArgumentParser(description='Use Nyul and Udapa method of histogram normalization to '
-                                                 'normalize the intensity of a set of nifti MR images')
+    parser = argparse.ArgumentParser(description='Use Nyul and Udupa method of intensity normalization to '
+                                                 'normalize the intensity of a set of NIfTI MR images')
     required = parser.add_argument_group('Required')
     required.add_argument('-i', '--img-dir', type=str, required=True,
                         help='path to directory with images to be processed '
@@ -66,7 +66,7 @@ def main(args=None):
                 from intensity_normalization.plot.hist import all_hists
                 import matplotlib.pyplot as plt
             ax = all_hists(args.output_dir, args.mask_dir)
-            ax.set_title('Histogram Matching')
+            ax.set_title('Nyul and Udupa')
             plt.savefig(os.path.join(args.output_dir, 'hist.png'))
 
         return 0
