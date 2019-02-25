@@ -72,13 +72,15 @@ def nyul_normalize(img_dir, mask_dir=None, output_dir=None, standard_hist=None, 
 
     mask_files = [None] * len(input_files) if mask_dir is None else io.glob_nii(mask_dir)
 
-    logger.info('Learning standard scale for the set of images')
     if standard_hist is None:
+        logger.info('Learning standard scale for the set of images')
         standard_scale, percs = train(input_files, mask_files)
     elif not os.path.isfile(standard_hist):
+        logger.info('Learning standard scale for the set of images')
         standard_scale, percs = train(input_files, mask_files)
         np.save(standard_hist, np.vstack((standard_scale, percs)))
     else:
+        logger.info('Loading standard scale ({}) for the set of images'.format(standard_hist))
         standard_scale, percs = np.load(standard_hist)
 
     for i, (img_fn, mask_fn, out_fn) in enumerate(zip(input_files, mask_files, out_fns)):
