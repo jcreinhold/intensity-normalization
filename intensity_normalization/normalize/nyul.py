@@ -165,6 +165,5 @@ def do_hist_norm(img, landmark_percs, standard_scale, mask=None):
     masked = img_data[mask_data > 0]
     landmarks = get_landmarks(masked, landmark_percs)
     f = interp1d(landmarks, standard_scale, fill_value='extrapolate')
-    normed = np.zeros(img_data.shape)
-    normed[mask_data > 0] = f(masked)
+    normed = f(img_data)
     return nib.Nifti1Image(normed, img.affine, img.header)
