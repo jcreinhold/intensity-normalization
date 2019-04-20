@@ -24,6 +24,8 @@ import os
 import ants
 import nibabel as nib
 import numpy as np
+from scipy.sparse import bsr_matrix
+from scipy.sparse.linalg import svds
 
 from intensity_normalization.errors import NormalizationError
 from intensity_normalization.normalize.whitestripe import whitestripe, whitestripe_norm
@@ -35,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=False,
                     do_whitestripe=True, b=1, membership_thresh=0.99, segmentation_smoothness=0.25,
-                    do_registration=False, use_fcm=True):
+                    do_registration=False, use_fcm=True, sparse_svd=False):
     """
     Use RAVEL [1] to normalize the intensities of a set of MR images to eliminate
     unwanted technical variation in images (but, hopefully, preserve biological variation)
@@ -59,6 +61,8 @@ def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=
             segmentation scheme (i.e., mrf parameter)
         do_registration (bool): deformably register images to find control mask
         use_fcm (bool): use FCM for segmentation instead of atropos (may be less accurate)
+        sparse_svd (bool): use traditional SVD (LAPACK) to calculate right singular vectors
+            else use ARPACK
 
     Returns:
         Z (np.ndarray): unwanted factors (used in ravel correction)
@@ -90,7 +94,8 @@ def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=
                          use_fcm=use_fcm)
 
     # estimate the unwanted factors Z
-    _, _, vh = np.linalg.svd(Vc)
+    _, _, vh = np.linalg.svd(Vc, full_matrices=False) if not sparse_svd else \
+               svds(bsr_matrix(Vc), k=b, return_singular_vectors='vh')
     Z = vh.T[:, 0:b]
 
     # perform the ravel correction
