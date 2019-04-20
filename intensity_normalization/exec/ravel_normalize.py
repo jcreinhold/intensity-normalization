@@ -59,6 +59,9 @@ def arg_parser():
     adv_options.add_argument('--no-registration', action='store_false', default=True,
                              help='do not do deformable registration to find control mask '
                                   '(*much* slower but follows paper and is more consistent)')
+    adv_options.add_argument('--sparse-svd', action='store_true', default=False,
+                             help='use a sparse version of the svd (should have lower memory requirements)')
+
     return parser
 
 
@@ -83,7 +86,7 @@ def main(args=None):
         Z, _ = ravel.ravel_normalize(args.img_dir, args.mask_dir, args.contrast, do_whitestripe=args.no_whitestripe,
                                      b=args.num_unwanted_factors, membership_thresh=args.control_membership_threshold,
                                      do_registration=args.no_registration, segmentation_smoothness=args.segmentation_smoothness,
-                                     use_fcm=not args.use_atropos)
+                                     use_fcm=not args.use_atropos, sparse_svd=args.sparse_svd)
 
         V = ravel.image_matrix(img_fns, args.contrast, masks=mask_fns)
         V_norm = ravel.ravel_correction(V, Z)
