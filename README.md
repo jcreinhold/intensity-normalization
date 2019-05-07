@@ -73,7 +73,7 @@ Note the package [antspy](https://github.com/ANTsX/ANTsPy) is required for the R
 tool as well as the co-registration tool, but all other normalization and processing tools work without it. To also install 
 the antspy package either append `--antspy` to your call to `setup.py` or `create_env.sh`. The installation of antspy may not 
 work, in which case you can either (if you are on linux) append `--1.4` to your list of input arguments to `setup.py` 
-(which installs a previous version of the binaries of antspy or you can just build antspy from source.
+(which installs a previous version of the binaries of antspy or you can just build antspy from source).
 
 The command line interface is standard across all normalization routines (i.e., you should be able to 
 run all normalization routines with the same call as in the above example), however each has unique options.
