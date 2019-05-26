@@ -109,14 +109,16 @@ Citation
 
 If you use the `intensity-normalization` package in an academic paper, please cite the corresponding [paper](https://arxiv.org/abs/1812.04652):
 
-    @article{reinhold2018,
-        author  = {Jacob C. Reinhold and Blake E. Dewey and Aaron Carass and Jerry L. Prince},
-        title   = {Evaluating the Impact of Intensity Normalization on MR Image Synthesis},
-        journal = {CoRR}
-        volume  = {abs/1812.04652},     
-        year    = {2018},
+    @inproceedings{reinhold2019evaluating,
+      title={Evaluating the impact of intensity normalization on {MR} image synthesis},
+      author={Reinhold, Jacob C and Dewey, Blake E and Carass, Aaron and Prince, Jerry L},
+      booktitle={Medical Imaging 2019: Image Processing},
+      volume={10949},
+      pages={109493H},
+      year={2019},
+      organization={International Society for Optics and Photonics}
     }
-         
+        
 References
 ----------
 
