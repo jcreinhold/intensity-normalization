@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=False,
                     do_whitestripe=True, b=1, membership_thresh=0.99, segmentation_smoothness=0.25,
-                    do_registration=False, use_fcm=True, sparse_svd=False):
+                    do_registration=False, use_fcm=True, sparse_svd=False, csf_masks=False):
     """
     Use RAVEL [1] to normalize the intensities of a set of MR images to eliminate
     unwanted technical variation in images (but, hopefully, preserve biological variation)
@@ -49,7 +49,7 @@ def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=
 
     Args:
         img_dir (str): directory containing MR images to be normalized
-        mask_dir (str): brain masks for imgs
+        mask_dir (str): brain masks for imgs (or csf masks if csf_masks is True)
         contrast (str): contrast of MR images to be normalized (T1, T2, or FLAIR)
         output_dir (str): directory to save images if you do not want them saved in
             same directory as data_dir
@@ -63,6 +63,8 @@ def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=
         use_fcm (bool): use FCM for segmentation instead of atropos (may be less accurate)
         sparse_svd (bool): use traditional SVD (LAPACK) to calculate right singular vectors
             else use ARPACK
+        csf_masks (bool): provided masks are the control masks (not brain masks)
+            assumes that images are deformably co-registered
 
     Returns:
         Z (np.ndarray): unwanted factors (used in ravel correction)
@@ -91,7 +93,7 @@ def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=
     V, Vc = image_matrix(img_fns, contrast, masks=mask_fns, do_whitestripe=do_whitestripe,
                          return_ctrl_matrix=True, membership_thresh=membership_thresh,
                          do_registration=do_registration, smoothness=segmentation_smoothness,
-                         use_fcm=use_fcm)
+                         use_fcm=use_fcm, csf_masks=csf_masks)
 
     # estimate the unwanted factors Z
     _, _, vh = np.linalg.svd(Vc, full_matrices=False) if not sparse_svd else \
@@ -133,7 +135,7 @@ def ravel_correction(V, Z):
 
 def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_matrix=False,
                  membership_thresh=0.99, smoothness=0.25, max_ctrl_vox=10000, do_registration=False,
-                 ctrl_prob=1, use_fcm=False):
+                 ctrl_prob=1, use_fcm=False, csf_masks=False):
     """
     creates an matrix of images where the rows correspond the the voxels of
     each image and the columns are the images
@@ -155,6 +157,8 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
         ctrl_prob (float): given all data, proportion of data labeled as csf to be
             used for intersection (i.e., when do_registration is true)
         use_fcm (bool): use FCM for segmentation instead of atropos (may be less accurate)
+        csf_masks (bool): provided masks are the control masks (not brain masks)
+            assumes that images are deformably co-registered
 
     Returns:
         V (np.ndarray): image matrix (rows are voxels, columns are images)
@@ -171,6 +175,8 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
         raise NormalizationError('Brain masks must be provided if returning control memberships')
     if masks is None:
         masks = [None] * len(imgs)
+
+    do_registration = do_registration and not csf_masks
 
     for i, (img_fn, mask_fn) in enumerate(zip(imgs, masks)):
         _, base, _ = io.split_filename(img_fn)
@@ -207,10 +213,10 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
                 logger.info('Creating control mask for image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
                 ctrl_masks.append(csf.csf_mask(img, mask, contrast=contrast, csf_thresh=membership_thresh,
                                                mrf=smoothness, use_fcm=use_fcm))
-            else:
+            else:  # assume pre-registered
                 logger.info('Finding control voxels for image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
                 ctrl_mask = csf.csf_mask(img, mask, contrast=contrast, csf_thresh=membership_thresh,
-                                         mrf=smoothness, use_fcm=use_fcm)
+                                         mrf=smoothness, use_fcm=use_fcm) if csf_masks else mask.get_data()
                 if np.sum(ctrl_mask) == 0:
                     raise NormalizationError('No control voxels found for image ({}) at threshold ({})'
                                              .format(base, membership_thresh))

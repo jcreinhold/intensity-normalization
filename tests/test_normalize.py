@@ -69,6 +69,11 @@ class TestNormalization(unittest.TestCase):
         from intensity_normalization.normalize.ravel import ravel_normalize
         normalized = ravel_normalize(self.data_dir, self.mask_dir, 'T1', write_to_disk=False)
 
+    @unittest.skipIf(ants is None, "ANTsPy is not installed on this system")
+    def test_ravel_normalization_csf_masks(self):
+        from intensity_normalization.normalize.ravel import ravel_normalize
+        normalized = ravel_normalize(self.data_dir, self.mask_dir, 'T1', write_to_disk=False, csf_masks=True)
+
     def tearDown(self):
         del self.img, self.brain_mask
 
