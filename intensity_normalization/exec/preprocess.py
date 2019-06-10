@@ -30,8 +30,7 @@ def arg_parser():
                                                  '(i.e., resampling, reorientation, and bias field correction)')
     required = parser.add_argument_group('Required')
     required.add_argument('-i', '--img-dir', type=str, required=True,
-                          help='path to directory with images to be processed '
-                               '(should all be T1w contrast)')
+                          help='path to directory with images to be processed')
     required.add_argument('-m', '--mask-dir', type=str, required=True,
                           help='directory to output the corresponding img files')
     required.add_argument('-o', '--out-dir', type=str, required=True,

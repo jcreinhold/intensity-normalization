@@ -37,7 +37,8 @@ def arg_parser():
 
     options = parser.add_argument_group('Options')
     options.add_argument('-m', '--brain-mask', type=str, default=None,
-                         help='path to a directory of/single nifti brain mask for the image')
+                         help='path to a directory of/single nifti brain mask for the image. '
+                              'use `none` for whole image z-score normalization.')
     options.add_argument('-s', '--single-img', action='store_true', default=False,
                          help='image and mask are individual images, not directories')
     options.add_argument('-p', '--plot-hist', action='store_true', default=False,

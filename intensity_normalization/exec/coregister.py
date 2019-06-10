@@ -27,8 +27,7 @@ def arg_parser():
     parser = argparse.ArgumentParser(description='coregister a set of MR images (e.g., to MNI or to the T1 image)')
     required = parser.add_argument_group('Required')
     required.add_argument('-i', '--img-dir', type=str, required=True,
-                        help='path to directory with images to be processed '
-                             '(should all be T1w contrast)')
+                        help='path to directory with images to be processed')
     required.add_argument('-o', '--output-dir', type=str, required=True,
                         help='directory to output the corresponding registered img files')
 
