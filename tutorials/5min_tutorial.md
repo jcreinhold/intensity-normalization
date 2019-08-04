@@ -29,20 +29,21 @@ or
 
 Once the package is installed, if you just want to do some sort of normalization and not think too much about it, a reasonable choice is Fuzzy C-means (FCM)-based
 normalization. Note that FCM requires access to a (_non-gadolinium-enhanced_) T1-w image, if this is not possible then I would recommend doing either z-score or KDE normalization
-for simple normalization tasks.
+for simple normalization tasks. The FCM method also requires a brain mask for the image, although the brain mask need not be perfect 
+([ROBEX](https://sites.google.com/site/jeiglesias/ROBEX) works fine for this purpose).
 
 Note that FCM-based normalization acts on the image by calculating the white matter (WM) mean and setting that to a specified value
 (the default is 1 in the code base although that is a tunable parameter). Our FCM-based normalization method requires that
-a set of scans contain a T1-w image. We use the T1-w image to create a mask of the WM over which we calculate the mean and normalize 
-as previously stated (see [here](https://intensity-normalization.readthedocs.io/en/latest/algorithm.html#fuzzy-c-means) for more detail).
-This mask can then be used to normalize the remaining contrasts in the set of images for a specific patient assuming that the
+a set of scans contain a T1-w image. We use the T1-w image and the brain mask to create a WM mask over which we calculate the WM mean. 
+We then normalize as previously stated (see [here](https://intensity-normalization.readthedocs.io/en/latest/algorithm.html#fuzzy-c-means) for more detail).
+This WM mask can then be used to normalize the remaining contrasts in the set of images for a specific patient assuming that the
 remaining contrast images are registered to the T1-w image.
 
 Since all the command line interfaces (CLIs) are installed along with the package, we can run `fcm-normalize`
 in the terminal to normalize a T1-w image and create a WM mask by running the following command (replacing paths as necessary):
 
 ```bash
-fcm-normalize -i t1_w_image_path.nii.gz -m mask_path.nii.gz -o t1_norm_path.nii.gz -v -c t1 -s
+fcm-normalize -i t1_w_image_path.nii.gz -m brain_mask_path.nii.gz -o t1_norm_path.nii.gz -v -c t1 -s
 ```
  
 This will output the normalized T1-w image to `t1_norm_path.nii.gz` and will create a directory 
