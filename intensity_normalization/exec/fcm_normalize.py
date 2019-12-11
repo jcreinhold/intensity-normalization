@@ -109,7 +109,10 @@ def main(args=None):
                     logger.info('Creating WM Mask directory: {}'.format(wm_mask_dir))
                     os.mkdir(wm_mask_dir)
                 for i, (img, mask) in enumerate(zip(img_fns, mask_fns), 1):
-                    logger.info('Creating WM Mask for {} ({:d}/{:d})'.format(img, i, len(img_fns)))
+                    _, base, _ = io.split_filename(img)
+                    _, mask_base, _ = io.split_filename(mask)
+                    logger.info('Creating WM Mask for {} ({:d}/{:d})'.format(base, i, len(img_fns)))
+                    logger.debug('WM Mask {} ({:d}/{:d})'.format(mask_base, i, len(img_fns)))
                     process(img, mask, None, wm_mask_dir, args, logger)
             elif os.path.exists(args.wm_mask):
                 wm_mask_dir = args.wm_mask
@@ -120,7 +123,9 @@ def main(args=None):
             wm_masks = io.glob_nii(wm_mask_dir)
             for i, (img, wm_mask) in enumerate(zip(img_fns, wm_masks), 1):
                 dirname, base, _ = io.split_filename(img)
+                _, wm_base, _ = io.split_filename(img)
                 logger.info('Normalizing image {} ({:d}/{:d})'.format(base, i, len(img_fns)))
+                logger.debug('WM Mask {} ({:d}/{:d})'.format(wm_base, i, len(img_fns)))
                 if args.output_dir is not None:
                     dirname = args.output_dir
                 process(img, None, wm_mask, dirname, args, logger)
