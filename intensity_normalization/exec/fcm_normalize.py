@@ -123,7 +123,7 @@ def main(args=None):
             wm_masks = io.glob_nii(wm_mask_dir)
             for i, (img, wm_mask) in enumerate(zip(img_fns, wm_masks), 1):
                 dirname, base, _ = io.split_filename(img)
-                _, wm_base, _ = io.split_filename(img)
+                _, wm_base, _ = io.split_filename(wm_mask)
                 logger.info('Normalizing image {} ({:d}/{:d})'.format(base, i, len(img_fns)))
                 logger.debug('WM Mask {} ({:d}/{:d})'.format(wm_base, i, len(img_fns)))
                 if args.output_dir is not None:
