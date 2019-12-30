@@ -31,12 +31,12 @@ def arg_parser():
     required = parser.add_argument_group('Required')
     required.add_argument('-i', '--img-dir', type=str, required=True,
                           help='path to directory with images to be processed')
-    required.add_argument('-m', '--mask-dir', type=str, required=True,
-                          help='directory to output the corresponding img files')
     required.add_argument('-o', '--out-dir', type=str, required=True,
                           help='output directory for preprocessed files')
 
     options = parser.add_argument_group('Options')
+    required.add_argument('-m', '--mask-dir', type=str,
+                          help='directory to output the corresponding img files')
     options.add_argument('-r', '--resolution', nargs=3, type=int, default=(1,1,1),
                          help='resolution for resampled images')
     options.add_argument('--orientation', type=str, default='RAI',
