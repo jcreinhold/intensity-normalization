@@ -34,7 +34,7 @@ def arg_parser():
                           help='output directory for preprocessed files')
 
     options = parser.add_argument_group('Options')
-    required.add_argument('-m', '--mask-dir', type=str,
+    options.add_argument('-m', '--mask-dir', type=str,
                           help='directory to output the corresponding img files')
     options.add_argument('-r', '--resolution', nargs=3, type=int, default=(1,1,1),
                          help='resolution for resampled images')
