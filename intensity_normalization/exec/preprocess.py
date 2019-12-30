@@ -44,8 +44,6 @@ def arg_parser():
     options.add_argument('--n4-opts', type=str, default=None,
                          help='n4 convergence options (add arguments to json file or corrected formatted string), '
                               'see ants.n4_bias_field_correction')
-    options.add_argument('--n4-once', action='store_true', default=False,
-                         help='do n4 only once vs twice (twice often works better, and is default)')
     options.add_argument('-v', '--verbosity', action="count", default=0,
                          help="increase output verbosity (e.g., -vv is more than -v)")
     return parser
@@ -67,7 +65,7 @@ def main(args=None):
         else:
             import json
             n4_opts = json.loads(args.n4_opts)
-        preprocess(args.img_dir, args.mask_dir, args.out_dir, args.resolution, args.orientation, n4_opts, args.n4_once)
+        preprocess(args.img_dir, args.out_dir, args.mask_dir, args.resolution, args.orientation, n4_opts)
         return 0
     except Exception as e:
         logger.exception(e)
