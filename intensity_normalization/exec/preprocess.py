@@ -8,7 +8,6 @@ that is:
     1) N4 bias field correction
     2) resample to 1mm x 1mm x 1mm
     3) reorient images to RAI
-this process requires brain masks for all images
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 
