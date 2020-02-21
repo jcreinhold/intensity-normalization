@@ -39,13 +39,13 @@ sys.path.insert(0, local_path)
 # -- Project information -----------------------------------------------------
 
 project = 'intensity-normalization'
-copyright = '2018, Jacob Reinhold'
+copyright = '2020, Jacob Reinhold'
 author = 'Jacob Reinhold'
 
 # The short X.Y version
-version = '1.3'
+version = '1.4'
 # The full version, including alpha/beta/rc tags
-release = '1.3.0'
+release = '1.4.0'
 
 
 # -- General configuration ---------------------------------------------------

@@ -41,16 +41,16 @@ $$ I_{\\text{z-score}}(\\mathbf x) = \\frac{I(\\mathbf x) - \\mu}{\\sigma}. $$
 Fuzzy C-Means
 ~~~~~~~~~~~~~
 
-Fuzzy C-means normalization uses a segmentation of the white matter (WM) to
-normalize the entire image to the mean of the WM. The procedure is as follows.
-Let $W\\subset B$ be the WM mask for the image $I$, i.e., $W$ is the set of indices
-corresponding to the location of the WM in the image $I$. Then the WM mean is
-$$ \\mu = \\frac{1}{\|W\|} \\sum_{\\mathbf w \\in W} I(\\mathbf w) $$
+Fuzzy C-means normalization uses a segmentation of a specified tissue (i.e., CSF, GM, or WM) to
+normalize the entire image to the mean of the tissue. The procedure is as follows.
+Let $T\\subset B$ be the tissue mask for the image $I$, i.e., $T$ is the set of indices
+corresponding to the location of the tissue in the image $I$. Then the tissue mean is
+$$ \\mu = \\frac{1}{\|T\|} \\sum_{\\mathbf t \\in T} I(\\mathbf t) $$
 and the segmentation-based normalized image is
 $$ I_{\\text{seg}}(\\mathbf x) = \\frac{c\\cdot I(\\mathbf x)}{\\mu} $$
 where $c \\in \\mathbb{R}_{>0}$ is some constant. In this function, we use
-three-class fuzzy c-means to get a segmentation of the WM over the brain mask
-$B$ for the T1-w image and we arbitrarily set $c = 1000$.
+three-class fuzzy c-means to get a segmentation of the tissue over the brain mask
+$B$ for the T1-w image and we arbitrarily set $c = 1$.
 
 Kernel Density Estimation
 ~~~~~~~~~~~~~~~~~~~~~~~~~
