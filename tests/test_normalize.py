@@ -33,7 +33,7 @@ class TestNormalization(unittest.TestCase):
         self.img = io.open_nii(os.path.join(self.data_dir, 'test.nii.gz'))
         self.brain_mask = io.open_nii(os.path.join(self.mask_dir, 'mask.nii.gz'))
         self.template_mask = os.path.join(self.mask_dir, 'mask.nii.gz')
-        self.wm_mask = fcm.find_wm_mask(self.img, self.brain_mask)
+        self.wm_mask = fcm.find_tissue_mask(self.img, self.brain_mask)
         self.norm_val = 1000
 
     def test_zscore_normalization(self):
