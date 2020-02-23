@@ -59,6 +59,10 @@ class TestNormalization(unittest.TestCase):
         from intensity_normalization.normalize import nyul
         normalized = nyul.nyul_normalize(self.data_dir, write_to_disk=False)
 
+    def test_lsq_normalization(self):
+        from intensity_normalization.normalize import lsq
+        normalized = lsq.lsq_normalize(self.data_dir, write_to_disk=False)
+
     def test_ws_normalization(self):
         from intensity_normalization.normalize import whitestripe
         normalized = whitestripe.ws_normalize(self.data_dir, 'T1', mask_dir=self.mask_dir, write_to_disk=False)

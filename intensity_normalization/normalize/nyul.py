@@ -41,7 +41,7 @@ def nyul_normalize(img_dir, mask_dir=None, output_dir=None, standard_hist=None, 
 
     Args:
         img_dir (str): directory containing MR images
-        img_dir (str): directory containing masks for MR images
+        mask_dir (str): directory containing masks for MR images
         output_dir (str): directory to save images if you do not want them saved in
             same directory as data_dir
         standard_hist (str): path to output or use standard histogram landmarks

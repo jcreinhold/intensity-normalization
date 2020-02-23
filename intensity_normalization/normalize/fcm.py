@@ -56,6 +56,7 @@ def find_tissue_mask(img, brain_mask, threshold=0.8, tissue_type='wm'):
         img (nibabel.nifti1.Nifti1Image): target img
         brain_mask (nibabel.nifti1.Nifti1Image): brain mask for img
         threshold (float): membership threshold
+        tissue_type (str): find the mask of this tissue type (wm, gm, or csf)
 
     Returns:
         tissue_mask_nifti (nibabel.nifti1.Nifti1Image): tissue mask for img

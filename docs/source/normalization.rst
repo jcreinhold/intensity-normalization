@@ -45,3 +45,9 @@ RAVEL
 
 .. automodule:: intensity_normalization.normalize.ravel
    :members:
+
+Least Squares
+~~~~~~~~~~~~~
+
+.. automodule:: intensity_normalization.normalize.lsq
+   :members:

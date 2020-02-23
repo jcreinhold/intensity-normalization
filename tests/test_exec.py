@@ -60,6 +60,12 @@ class TestCLI(unittest.TestCase):
         retval = kde(args)
         self.assertEqual(retval, 0)
 
+    def test_lsq_normalization_cli(self):
+        from intensity_normalization.exec.lsq_normalize import main as lsq
+        args = self.args
+        retval = lsq(args)
+        self.assertEqual(retval, 0)
+
     def test_hm_normalization_cli(self):
         from intensity_normalization.exec.nyul_normalize import main as nyul
         args = self.args

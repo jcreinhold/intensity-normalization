@@ -30,6 +30,7 @@ console_scripts = ['fcm-normalize=intensity_normalization.exec.fcm_normalize:mai
                    'ws-normalize=intensity_normalization.exec.ws_normalize:main',
                    'zscore-normalize=intensity_normalization.exec.zscore_normalize:main',
                    'ravel-normalize=intensity_normalization.exec.ravel_normalize:main',
+                   'lsq-normalize=intensity_normalization.exec.lsq_normalize:main',
                    'plot-hists=intensity_normalization.exec.plot_hists:main']
 
 if link_preprocess: console_scripts.extend(['preprocess=intensity_normalization.exec.preprocess:main',
@@ -59,7 +60,7 @@ else:
 
 args = dict(
     name='intensity-normalization',
-    version='1.3.1',
+    version='1.4.1',
     description="Normalize the intensity values of MR images",
     long_description=readme,
     author='Jacob Reinhold',

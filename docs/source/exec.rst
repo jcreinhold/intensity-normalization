@@ -57,6 +57,14 @@ RAVEL Normalization
    :func: arg_parser
    :prog: ravel-normalize
 
+Least Squares Normalization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. argparse::
+   :module: intensity_normalization.exec.lsq_normalize
+   :func: arg_parser
+   :prog: lsq-normalize
+
 Plot Histograms
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
