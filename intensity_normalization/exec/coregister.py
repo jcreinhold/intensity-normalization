@@ -42,6 +42,8 @@ def arg_parser():
                         help='output orientation of imgs')
     options.add_argument('-r', '--registration', type=str, default='Affine',
                         help='Use this type of registration (see ANTsPy for details) [Default: Affine]')
+    options.add_argument('-itp', '--interpolator', type=str, default='bSpline',
+                         help='Use this type of interpolation (see ANTsPy for details) [Default: bSpline]')
     options.add_argument('--no-rigid', action='store_true', default=False,
                         help='do not do rigid registration first')
     options.add_argument('-v', '--verbosity', action="count", default=0,
@@ -102,7 +104,7 @@ def main(args=None):
                 logger.info('Loading transform: {} ({:d}/{:d})'.format(tfm_fns[i], i+1, len(img_fns)))
                 mytx = {'fwdtransforms': [tfm_fns[i]]}
             logger.debug(mytx)
-            moved = ants.apply_transforms(template, input_img, mytx['fwdtransforms'], interpolator='bSpline')
+            moved = ants.apply_transforms(template, input_img, mytx['fwdtransforms'], interpolator=args.interpolator)
             registered = os.path.join(args.output_dir, base + '_reg.nii.gz')
             ants.image_write(moved, registered)
             if args.tfm_dir is None:
