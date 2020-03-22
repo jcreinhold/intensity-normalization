@@ -64,7 +64,9 @@ def main(args=None):
         if not os.path.exists(args.output_dir):
             logger.info('Making Output Directory: {}'.format(args.output_dir))
             os.mkdir(args.output_dir)
-            if args.tfm_dir is None: os.mkdir(os.path.join(args.output_dir, 'tfms'))
+        if not os.path.exists(os.path.join(args.output_dir, 'tfms')) and args.tfm_dir is None:
+            logger.info('Making Transform Directory: {}'.format(args.output_dir))
+            os.mkdir(os.path.join(args.output_dir, 'tfms'))
         if args.template_dir is None:
             logger.info('Registering image to MNI template')
             template = ants.image_read(ants.get_ants_data('mni')).reorient_image2(args.orientation)
