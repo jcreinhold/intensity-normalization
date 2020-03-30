@@ -106,7 +106,7 @@ def get_landmarks(img, percs):
     Returns:
         landmarks (np.ndarray): intensity values corresponding to percs in img
     """
-    landmarks = np.percentile(img, percs)
+    landmarks = np.percentile(img.get_data(), percs)
     return landmarks
 
 
