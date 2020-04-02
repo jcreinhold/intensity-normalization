@@ -100,7 +100,7 @@ def get_landmarks(img, percs):
     get the landmarks for the Nyul and Udupa norm method for a specific image
 
     Args:
-        img (nibabel.nifti1.Nifti1Image): image on which to find landmarks
+        img (np.ndarray): image on which to find landmarks
         percs (np.ndarray): corresponding landmark percentiles to extract
 
     Returns:

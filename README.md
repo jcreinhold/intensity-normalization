@@ -13,10 +13,19 @@ in many image processing applications regarding MR images since MR images do not
 image-based and sample-based (i.e., a set of images of the same contrast taken from the same scanner) 
 intensity normalization routines to help alleviate this issue.
 
+Note that this package was developed to process *adult human* MR images; neonatal, pediatric, and animal MR images should 
+also work (at least with some of the normalization schemes). But if there is a substantial difference in the contrast 
+you are processing compared with the same contrast in an adult human, the normalization scheme may not work as expected.
+Please open an issue if you encounter such a problem.
+
+Also note that when the package refers to any specific contrast image, it is referring to a *non-contrast* version unless 
+otherwise stated. Using a contrast image as input to a method that assumes non-contrast will produce suboptimal results.
+
 We implement the following normalization methods:
 
 - Z-score normalization
 - Fuzzy C-means (FCM)-segmentation-based white matter (WM) mean normalization
+- Least squares (LSQ) tissue mean normalization
 - Gaussian Mixture Model (GMM)-based WM mean normalization
 - Kernel Density Estimate WM Peak normalization
 - Piecewise Linear Histogram Matching [1,2]
