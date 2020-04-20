@@ -32,26 +32,26 @@ normalization. Note that FCM requires access to a (_non-gadolinium-enhanced_) T1
 for simple normalization tasks. The FCM method also requires a brain mask for the image, although the brain mask need not be perfect 
 ([ROBEX](https://sites.google.com/site/jeiglesias/ROBEX) works fine for this purpose).
 
-Note that FCM-based normalization acts on the image by calculating the white matter (WM) mean and setting that to a specified value
-(the default is 1 in the code base although that is a tunable parameter). Our FCM-based normalization method requires that
-a set of scans contain a T1-w image. We use the T1-w image and the brain mask to create a WM mask over which we calculate the WM mean. 
+Note that FCM-based normalization acts on the image by calculating the specified tissue mean, e.g., white matter (WM) mean 
+and setting that to a specified value (the default is 1 in the code base although that is a tunable parameter). Our FCM-based normalization method requires that
+a set of scans contain a T1-w image. We use the T1-w image and the brain mask to create a tissue mask over which we calculate the tissue mean. 
 We then normalize as previously stated (see [here](https://intensity-normalization.readthedocs.io/en/latest/algorithm.html#fuzzy-c-means) for more detail).
-This WM mask can then be used to normalize the remaining contrasts in the set of images for a specific patient assuming that the
+This tissue mask can then be used to normalize the remaining contrasts in the set of images for a specific patient assuming that the
 remaining contrast images are registered to the T1-w image.
 
 Since all the command line interfaces (CLIs) are installed along with the package, we can run `fcm-normalize`
 in the terminal to normalize a T1-w image and create a WM mask by running the following command (replacing paths as necessary):
 
 ```bash
-fcm-normalize -i t1_w_image_path.nii.gz -m brain_mask_path.nii.gz -o t1_norm_path.nii.gz -v -c t1 -s
+fcm-normalize -i t1_w_image_path.nii.gz -m brain_mask_path.nii.gz -o t1_norm_path.nii.gz -v -c t1 -s -tt wm
 ```
  
 This will output the normalized T1-w image to `t1_norm_path.nii.gz` and will create a directory 
-called `wm_masks` in which the WM mask will be saved. You can then input the WM mask back in to 
+called `tissue_masks` in which the WM mask will be saved. You can then input the WM mask back in to 
 the program to normalize an image of a different contrast, e.g. for T2,
 
 ```bash
-fcm-normalize -i t2_image_path.nii.gz -w wm_masks/wm_mask.nii.gz -o t2_norm_path.nii.gz -v -c t2
+fcm-normalize -i t2_image_path.nii.gz -tm wm_masks/wm_mask.nii.gz -o t2_norm_path.nii.gz -v -c t2
 ``` 
  
 You can run `fcm-normalize -h` to see more options, but the above covers most of the details necessary to 
@@ -82,6 +82,7 @@ The other methods not listed above are accessible via:
 4) `kde-normalize` - Kernel Density Estimate WM peak normalization
 5) `nyul-normalize` - Nyul & Udupa Piecewise linear affine normalization based on learned histogram features
 6) `gmm-normalize` - use a GMM to normalize the WM mean over the brain mask, like FCM (do not recommend using this method!)
+7) `lsq-normalize` - minimize the least-squares distance between the means of CSF, GM, and WM in a set of images
 
 Note that these all have approximately the same interface with the `-i`, `-m` and `-o` options, but each 
 individual method *may* need some additional input. To determine if this is the case you can either view the 
