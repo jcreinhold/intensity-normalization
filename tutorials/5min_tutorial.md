@@ -107,6 +107,6 @@ which you can import, e.g.,
 
 ```python
 from intensity_normalization.normalize import fcm
-wm_mask = fcm.find_wm_mask(img, brain_mask)
+wm_mask = fcm.find_tissue_mask(img, brain_mask, tissue_type="wm")
 normalized = fcm.fcm_normalize(img, wm_mask)
 ```
