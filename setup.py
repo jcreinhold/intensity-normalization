@@ -38,10 +38,10 @@ if link_preprocess: console_scripts.extend(['preprocess=intensity_normalization.
                                             'tissue-mask=intensity_normalization.exec.tissue_mask:main'])
 if link_quality: console_scripts.append('norm-quality=intensity_normalization.exec.norm_quality:main')
 
-with open('README.md') as f:
+with open('README.md', encoding="utf-8") as f:
     readme = f.read()
 
-with open('LICENSE') as f:
+with open('LICENSE', encoding="utf-8") as f:
     license = f.read()
 
 if install_antspy:
