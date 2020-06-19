@@ -14,7 +14,6 @@ Created on: Apr 24, 2018
 from setuptools import setup, find_packages
 from sys import platform
 import sys
-import warnings
 
 custom_args = sys.argv[2:].copy()
 del sys.argv[2:]
@@ -44,23 +43,12 @@ with open('README.md', encoding="utf-8") as f:
 with open('LICENSE', encoding="utf-8") as f:
     license = f.read()
 
-if install_antspy:
-    warnings.warn('Will try to install antspy. There is a reasonable chance that this will not work. Build antspy from source if that is the case.')
-    if platform == "linux" or platform == "linux32":
-        if '--1.4' in custom_args:
-            antspy = "https://github.com/ANTsX/ANTsPy/releases/download/v0.1.4/antspy-0.1.4-cp36-cp36m-linux_x86_64.whl"
-        else:
-            antspy = "https://github.com/ANTsX/ANTsPy/releases/download/v0.1.6/antspy-0.1.6-cp36-cp36m-linux_x86_64.whl"
-    elif platform == "darwin":
-        antspy = "https://github.com/ANTsX/ANTsPy/releases/download/v0.1.6/antspy-0.1.6-cp36-cp36m-macosx_10_13_x86_64.whl"
-    else:
-        raise Exception('antspy package only supports linux and OS X, must install without antspy option')
-else:
-    antspy = ""
+if platform not in ["linux", "linux32", "darwin"] and install_antspy:
+    raise Exception('antspy package only supports linux and OS X, must install without antspy option')
 
 args = dict(
     name='intensity-normalization',
-    version='1.4.1',
+    version='1.4.2',
     description="Normalize the intensity values of MR images",
     long_description=readme,
     author='Jacob Reinhold',
@@ -72,7 +60,6 @@ args = dict(
         'console_scripts': console_scripts
     },
     keywords="mr intensity normalization",
-    dependency_links=[antspy]
 )
 
 setup(install_requires=['matplotlib',
