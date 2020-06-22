@@ -39,7 +39,7 @@ We use this package to explore the impact of intensity normalization on a synthe
 This package was developed by [Jacob Reinhold](https://jcreinhold.github.io) and the other students and researchers of the 
 [Image Analysis and Communication Lab (IACL)](http://iacl.ece.jhu.edu/index.php/Main_Page).
 
-[Link to main Gitlab Repository](https://gitlab.com/jcreinhold/intensity-normalization)
+[Link to main Gitlab Repository](https://gitlab.com/jcreinhold/intensity-normalization) (The Github repo is a mirror of this Gitlab repo.)
 
 Requirements
 ------------
