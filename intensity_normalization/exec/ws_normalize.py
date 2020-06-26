@@ -71,7 +71,6 @@ def main(args=None):
                 warnings.filterwarnings('ignore', category=FutureWarning)
                 from intensity_normalization.plot.hist import all_hists
                 import matplotlib.pyplot as plt
-                import os
             ax = all_hists(args.output_dir, args.mask_dir)
             ax.set_title('WhiteStripe')
             plt.savefig(os.path.join(args.output_dir, 'hist.png'))
