@@ -108,6 +108,8 @@ def main(args=None):
                 raise NormalizationError('if single-img option on, then image must be a file')
             logger.info('Normalizing image {}'.format(args.image))
             dirname, base, _ = io.split_filename(args.image)
+            if args.output_dir is not None:
+                dirname = args.output_dir
             process(args.image, args.brain_mask, dirname, logger)
 
         if args.plot_hist:
