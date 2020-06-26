@@ -54,6 +54,7 @@ def lsq_normalize(img_dir, mask_dir=None, output_dir=None, write_to_disk=True):
     mask_files = [None] * len(input_files) if mask_dir is None else io.glob_nii(mask_dir)
 
     standard_tissue_means = None
+    normalized = None
     for i, (img_fn, mask_fn, out_fn) in enumerate(zip(input_files, mask_files, out_fns)):
         _, base, _ = io.split_filename(img_fn)
         logger.info('Transforming image {} to standard scale ({:d}/{:d})'.format(base, i+1, len(input_files)))

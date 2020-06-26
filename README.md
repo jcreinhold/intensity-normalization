@@ -69,7 +69,7 @@ To install from the source directory, use
 or (if you actively want to make changes to the package)
 
     python setup.py develop
-
+    
 and use the several provided command line scripts to interface with the package,
 e.g., 
 
@@ -78,12 +78,22 @@ e.g.,
 where `t1/` is a directory full of N T1-w images and `masks/` is a directory full of N corresponding brain masks,
 `test_fcm` is the output directory for the normalized images, and `-v` controls the verbosity of the output.
 
-Note the package [antspy](https://github.com/ANTsX/ANTsPy) is required for the RAVEL normalization routine, the preprocessing
-tool as well as the co-registration tool, but all other normalization and processing tools work without it. To also install 
-the antspy package either append `--antspy` to your call to `setup.py` or `create_env.sh`. 
+Note the package [antspy](https://github.com/ANTsX/ANTsPy) is required for the RAVEL normalization routine, the 
+preprocessing tool as well as the co-registration tool, but all other normalization and processing tools work without it. 
+To also install the antspy package either append `--antspy` to your call to `setup.py` or `create_env.sh`. 
 
+To use the convenience pre-processing scripts, install the package with the following command:
+
+    python setup.py install --antspy --preprocess
+    
+or 
+
+    python setup.py develop --antspy --preprocess
+ 
 The command line interface is standard across all normalization routines (i.e., you should be able to 
-run all normalization routines with the same call as in the above example), however each has unique options.
+run all normalization routines with the same call as in the above example); however, each has unique options
+and not all methods support single image processing.
+
 Call any executable script with the `-h` flag to see more detailed instructions about the proper call.
 
 Tutorial

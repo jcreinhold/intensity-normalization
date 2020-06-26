@@ -13,6 +13,7 @@ Created on: Oct 04, 2018
 
 import argparse
 import logging
+import os
 import sys
 import warnings
 
@@ -55,6 +56,12 @@ def main(args=None):
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
     logger = logging.getLogger(__name__)
     try:
+        if not os.path.isdir(args.img_dir):
+            raise ValueError('(-i / --img-dir) argument needs to be a directory of NIfTI images.')
+        if args.mask_dir is not None:
+            if not os.path.isdir(args.mask_dir):
+                raise ValueError('(-m / --mask-dir) argument needs to be a directory of NIfTI images.')
+
         _ = plot_pairwise_jsd(args.img_dir, args.mask_dir, args.out_name, args.nbins, args.fit_chi2)
         return 0
     except Exception as e:

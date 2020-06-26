@@ -48,7 +48,7 @@ if platform not in ["linux", "linux32", "darwin"] and install_antspy:
 
 args = dict(
     name='intensity-normalization',
-    version='1.4.2',
+    version='1.4.3',
     description="Normalize the intensity values of MR images",
     long_description=readme,
     author='Jacob Reinhold',
@@ -69,4 +69,4 @@ setup(install_requires=['matplotlib',
                         'scikit-learn',
                         'scikit-fuzzy',
                         'scipy',
-                        'statsmodels'] + ['antspy'] if install_antspy else [], **args)
+                        'statsmodels'] + ['antspyx'] if install_antspy else [], **args)

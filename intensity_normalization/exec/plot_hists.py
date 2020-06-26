@@ -13,6 +13,7 @@ Created on: May 21, 2018
 
 import argparse
 import logging
+import os
 import sys
 import warnings
 
@@ -58,6 +59,12 @@ def main(args=None):
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
     logger = logging.getLogger(__name__)
     try:
+        if not os.path.isdir(args.img_dir):
+            raise ValueError('(-i / --img-dir) argument needs to be a directory of NIfTI images.')
+        if args.mask_dir is not None:
+            if not os.path.isdir(args.mask_dir):
+                raise ValueError('(-m / --mask-dir) argument needs to be a directory of NIfTI images.')
+
         ax = all_hists(args.img_dir, args.mask_dir, alpha=args.alpha, figsize=args.figsize, lw=args.linewidth)
         if args.plot_title is not None:
             ax.set_title(args.plot_title)

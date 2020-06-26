@@ -58,6 +58,12 @@ def main(args=None):
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
     logger = logging.getLogger(__name__)
     try:
+        if not os.path.isdir(args.img_dir):
+            raise ValueError('(-i / --img-dir) argument needs to be a directory of NIfTI images.')
+        if args.mask_dir is not None:
+            if not os.path.isdir(args.mask_dir):
+                raise ValueError('(-m / --mask-dir) argument needs to be a directory of NIfTI images.')
+
         _ = nyul.nyul_normalize(args.img_dir, args.mask_dir, args.output_dir, args.standard_hist)
 
         if args.plot_hist:

@@ -83,6 +83,7 @@ def nyul_normalize(img_dir, mask_dir=None, output_dir=None, standard_hist=None, 
         logger.info('Loading standard scale ({}) for the set of images'.format(standard_hist))
         standard_scale, percs = np.load(standard_hist)
 
+    normalized = None
     for i, (img_fn, mask_fn, out_fn) in enumerate(zip(input_files, mask_files, out_fns)):
         _, base, _ = io.split_filename(img_fn)
         logger.info('Transforming image {} to standard scale ({:d}/{:d})'.format(base, i+1, len(input_files)))

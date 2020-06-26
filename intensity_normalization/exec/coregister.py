@@ -62,6 +62,9 @@ def main(args=None):
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
     logger = logging.getLogger(__name__)
     try:
+        if not os.path.isdir(args.img_dir):
+            raise ValueError('(-i / --img-dir) argument needs to be a directory of NIfTI images.')
+
         img_fns = glob_nii(args.img_dir)
         if not os.path.exists(args.output_dir):
             logger.info('Making Output Directory: {}'.format(args.output_dir))

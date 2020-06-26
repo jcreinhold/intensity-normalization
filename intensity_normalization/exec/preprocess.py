@@ -16,6 +16,7 @@ Created on: May 21, 2018
 
 import argparse
 import logging
+import os
 import sys
 import warnings
 
@@ -34,8 +35,8 @@ def arg_parser():
                           help='output directory for preprocessed files')
 
     options = parser.add_argument_group('Options')
-    options.add_argument('-m', '--mask-dir', type=str,
-                          help='directory to output the corresponding img files')
+    options.add_argument('-m', '--mask-dir', type=str, default=None,
+                          help='directory to output the corresponding mask files')
     options.add_argument('-r', '--resolution', nargs=3, type=int, default=(1,1,1),
                          help='resolution for resampled images')
     options.add_argument('--orientation', type=str, default='RAI',
@@ -59,6 +60,12 @@ def main(args=None):
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
     logger = logging.getLogger(__name__)
     try:
+        if not os.path.isdir(args.img_dir):
+            raise ValueError('(-i / --img-dir) argument needs to be a directory of NIfTI images.')
+        if args.mask_dir is not None:
+            if not os.path.isdir(args.mask_dir):
+                raise ValueError('(-m / --mask-dir) argument needs to be a directory of NIfTI images.')
+
         if args.n4_opts is None:
             n4_opts = None
         else:

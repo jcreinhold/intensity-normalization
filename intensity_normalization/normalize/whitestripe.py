@@ -80,6 +80,7 @@ def ws_normalize(img_dir, contrast, mask_dir=None, output_dir=None, write_to_dis
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
 
+    normalized = None
     # do whitestripe normalization and save the results
     for i, (img_fn, mask_fn, output_fn) in enumerate(zip(data, masks, output_files), 1):
         logger.info('Normalizing image: {} ({:d}/{:d})'.format(img_fn, i, len(data)))
