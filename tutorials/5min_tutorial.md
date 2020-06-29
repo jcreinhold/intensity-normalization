@@ -24,7 +24,6 @@ or
 
     singularity pull docker://jcreinhold/intensity-normalization
 
-
 ## Fuzzy C-means-based Normalization
 
 Once the package is installed, if you just want to do some sort of normalization and not think too much about it, a reasonable choice is Fuzzy C-means (FCM)-based
@@ -71,6 +70,44 @@ You can also use the `plot-hists` CLI which is also installed (see [here](https:
 for documentation). A use case of the `plot-hists` command would be to inspect the histograms of a set of images *before* normalization
 to compare with the results of normalization.
 
+## Example usage on a directory
+
+All CLIs for normalization (and preprocessing) can operate on a directory of NIfTI images (either 2D or 3D). That is,
+if you have a directory of images `img_dir` that contains NIfTI (.nii.gz or .nii) images, like so:
+
+```none
+├── img_dir
+│   ├── img1.nii.gz
+│   ├── img2.nii.gz
+│   ├── img3.nii.gz
+│   ├── ...
+│   ├── imgN.nii.gz
+```
+
+All normalization CLIs also can take brain masks as input; the masks (or absence of masks) can affect normalization quality.
+If you have brain masks for the corresponding images (for example, the images in `img_dir`), they should be setup 
+like so:
+
+```none
+├── mask_dir
+│   ├── mask1.nii.gz
+│   ├── mask2.nii.gz
+│   ├── mask3.nii.gz
+│   ├── ...
+│   ├── maskN.nii.gz
+```
+
+Note that when both `img_dir` and `mask_dir` are sorted alphabetically, each mask should correspond to the correct image.
+Other than that, the name of the image or mask is not important.
+
+If you have a setup as shown above (with `img_dir` and `mask_dir`), you can call any 
+normalization CLI on `img_dir` to normalize all images in that directory. For example,
+with `fcm-normalize` (assuming that `img_dir` contains T1-w images, in this example) the 
+call would be something like:
+
+```bash
+fcm-normalize -i img_dir -m mask_dir -o out_dir -v -c t1 -tt wm
+```
 
 ## Other Normalization Methods
 
