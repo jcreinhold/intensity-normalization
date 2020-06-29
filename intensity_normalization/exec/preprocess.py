@@ -37,7 +37,7 @@ def arg_parser():
     options = parser.add_argument_group('Options')
     options.add_argument('-m', '--mask-dir', type=str, default=None,
                           help='directory to output the corresponding mask files')
-    options.add_argument('-r', '--resolution', nargs=3, type=int, default=(1,1,1),
+    options.add_argument('-r', '--resolution', nargs=3, type=float, default=(1,1,1),
                          help='resolution for resampled images')
     options.add_argument('--orientation', type=str, default='RAI',
                          help='orientation of preprocessed images')
