@@ -73,7 +73,7 @@ to compare with the results of normalization.
 ## Example usage on a directory
 
 All CLIs for normalization (and preprocessing) can operate on a directory of NIfTI images (either 2D or 3D). That is,
-if you have a directory of images `img_dir` that contains NIfTI (.nii.gz or .nii) images, like so:
+suppose you have a directory of images `img_dir` that contains NIfTI (.nii.gz or .nii) images, like so:
 
 ```none
 ├── img_dir
@@ -84,7 +84,7 @@ if you have a directory of images `img_dir` that contains NIfTI (.nii.gz or .nii
 │   ├── imgN.nii.gz
 ```
 
-All normalization CLIs also can take brain masks as input; the masks (or absence of masks) can affect normalization quality.
+In addition to the images, all normalization CLIs also can take brain masks as input; the masks (or absence of masks) can affect normalization quality.
 If you have brain masks for the corresponding images (for example, the images in `img_dir`), they should be setup 
 like so:
 
