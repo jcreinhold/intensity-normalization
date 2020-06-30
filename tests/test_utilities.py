@@ -33,7 +33,7 @@ class TestUtilities(unittest.TestCase):
 
     def test_gmm_mask(self):
         wm_peak = mask.gmm_class_mask(self.img, self.brain_mask, return_wm_peak=True)
-        self.assertAlmostEqual(wm_peak, 673952.0553833192)
+        self.assertAlmostEqual(wm_peak, 673952, delta=1e3)
         m = mask.gmm_class_mask(self.img, self.brain_mask, return_wm_peak=False, hard_seg=True)
         self.assertEqual(len(np.unique(m)), 4)
         m = mask.gmm_class_mask(self.img, self.brain_mask, return_wm_peak=False, hard_seg=False)

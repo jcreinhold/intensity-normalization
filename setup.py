@@ -20,7 +20,6 @@ del sys.argv[2:]
 
 install_antspy = '--antspy' in custom_args
 link_preprocess = '--preprocess' in custom_args
-link_quality = '--quality' in custom_args
 
 console_scripts = ['fcm-normalize=intensity_normalization.exec.fcm_normalize:main',
                    'gmm-normalize=intensity_normalization.exec.gmm_normalize:main',
@@ -34,8 +33,8 @@ console_scripts = ['fcm-normalize=intensity_normalization.exec.fcm_normalize:mai
 
 if link_preprocess: console_scripts.extend(['preprocess=intensity_normalization.exec.preprocess:main',
                                             'coregister=intensity_normalization.exec.coregister:main',
-                                            'tissue-mask=intensity_normalization.exec.tissue_mask:main'])
-if link_quality: console_scripts.append('norm-quality=intensity_normalization.exec.norm_quality:main')
+                                            'tissue-mask=intensity_normalization.exec.tissue_mask:main',
+                                            'norm-quality=intensity_normalization.exec.norm_quality:main'])
 
 with open('README.md', encoding="utf-8") as f:
     readme = f.read()

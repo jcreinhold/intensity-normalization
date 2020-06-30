@@ -73,7 +73,7 @@ Plot Histograms
    :func: arg_parser
    :prog: plot-hists
 
-The following three scripts are only installed if the `--preprocess` flag is used during installation
+The following four scripts are only installed if the `--preprocess` flag is used during installation
 
 Preprocessing
 ~~~~~~~~~~~~~
@@ -98,8 +98,6 @@ Co-register
    :module: intensity_normalization.exec.coregister
    :func: arg_parser
    :prog: coregister
-
-The `norm_quality` script is only installed if the `--quality` flag was provided during installation
 
 Plot Quality Metric
 ~~~~~~~~~~~~~~~~~~~~~~~~~

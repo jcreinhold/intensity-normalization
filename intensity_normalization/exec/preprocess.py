@@ -37,13 +37,14 @@ def arg_parser():
     options = parser.add_argument_group('Options')
     options.add_argument('-m', '--mask-dir', type=str, default=None,
                           help='directory to output the corresponding mask files')
-    options.add_argument('-r', '--resolution', nargs=3, type=float, default=(1,1,1),
-                         help='resolution for resampled images')
+    options.add_argument('-r', '--resolution', nargs=3, type=float, default=None,
+                         help='resolution for resampled images (if not set, then keep image resolution)')
     options.add_argument('--orientation', type=str, default='RAI',
                          help='orientation of preprocessed images')
     options.add_argument('--n4-opts', type=str, default=None,
-                         help='n4 convergence options (add arguments to json file or corrected formatted string), '
-                              'see ants.n4_bias_field_correction')
+                         help='n4 convergence options. Add arguments to json file or formatted string, e.g., '
+                              "'{\"iters\": [200, 200, 200, 200], \"tol\": 0.0005}', "
+                              'see ants.n4_bias_field_correction for details about options.')
     options.add_argument('-v', '--verbosity', action="count", default=0,
                          help="increase output verbosity (e.g., -vv is more than -v)")
     return parser

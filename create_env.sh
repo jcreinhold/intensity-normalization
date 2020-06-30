@@ -44,18 +44,18 @@ conda_forge_packages=(
     sphinx-argparse
     statsmodels=0.10.1
     webcolors=1.9.1
+    scikit-fuzzy==0.4.2
 )
 
 conda create --override-channels -c defaults -n intensity_normalization python=3.7 ${packages[@]} -y
 source activate intensity_normalization
 conda install -c conda-forge ${conda_forge_packages[@]} -y
-pip install -U scikit-fuzzy==0.4.1
 
 if $ANTSPY; then
     pip install antspyx
-    python setup.py install --antspy --preprocess --quality
+    python setup.py install --antspy --preprocess
 else
-    python setup.py install --preprocess --quality
+    python setup.py install --preprocess
 fi
 
 # now finally install the intensity-normalization package

@@ -14,6 +14,7 @@ import os
 import shutil
 import tempfile
 import unittest
+import warnings
 
 try:
     import ants
@@ -117,7 +118,9 @@ class TestCLI(unittest.TestCase):
     def test_norm_quality_cli(self):
         from intensity_normalization.exec.norm_quality import main as norm_quality
         args = f'-i {self.data_dir} -m {self.mask_dir} -o {self.out_dir}/pairwisejsd.png'.split()
-        retval = norm_quality(args)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            retval = norm_quality(args)
         self.assertEqual(retval, 0)
 
     def test_plot_hists_cli(self):
@@ -129,7 +132,7 @@ class TestCLI(unittest.TestCase):
     @unittest.skipIf(ants is None, "ANTsPy is not installed on this system")
     def test_preprocess_cli(self):
         from intensity_normalization.exec.preprocess import main as preprocess
-        args = self.args
+        args = self.args + ['-r', '1.', '1.', '1.']
         retval = preprocess(args)
         self.assertEqual(retval, 0)
 
