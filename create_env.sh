@@ -20,7 +20,7 @@ else
     return 1
 fi
 
-command -v conda >/dev/null 2>&1 || { echo >&2 "I require anaconda but it's not installed.  Aborting."; return 1; }
+command -v conda >/dev/null 2>&1 || { echo >&2 "I require anaconda but it's not installed. Aborting."; return 1; }
 
 # first make sure conda is up-to-date
 conda update -n base conda --yes
@@ -28,35 +28,37 @@ conda update -n base conda --yes
 packages=(
     coverage
     libiconv
-    matplotlib=3.1.1
+    matplotlib=3.2.2
     nose
-    numpy=1.16.5
-    pandas=0.25.1
-    pillow=6.1.0
-    scikit-learn=0.21.2
-    scikit-image=0.15.0
-    scipy=1.3.1
+    numpy=1.18.5
+    pandas=1.0.5
+    pillow=7.2.0
+    retrying
+    scikit-image=0.16.2
+    scikit-learn=0.23.1
+    scipy=1.5.0
     sphinx
 )
 
 conda_forge_packages=(
-    nibabel=2.5.1
+    chart-studio
+    nibabel=3.1.1
+    plotly
     sphinx-argparse
-    statsmodels=0.10.1
-    webcolors=1.9.1
-    scikit-fuzzy==0.4.2
+    statsmodels=0.11.1
+    webcolors
+    scikit-fuzzy=0.4.2
 )
 
-conda create --override-channels -c defaults -n intensity_normalization python=3.7 ${packages[@]} -y
+conda create --override-channels -c defaults -n intensity_normalization python=3.8 ${packages[@]} -y
 source activate intensity_normalization
 conda install -c conda-forge ${conda_forge_packages[@]} -y
 
 if $ANTSPY; then
-    pip install antspyx
+    pip install antspyx=0.2.4
     python setup.py install --antspy --preprocess
 else
     python setup.py install --preprocess
 fi
 
-# now finally install the intensity-normalization package
-echo "intensity_normalization conda env script finished (verify yourself if everything installed correctly)"
+echo "intensity_normalization conda env script finished"
