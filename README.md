@@ -58,7 +58,7 @@ Basic Usage
 
 The easiest way to install the package is through the following command:
 
-    pip install git+git://github.com/jcreinhold/intensity-normalization.git
+    pip install intensity-normalization
     
 To install from the source directory, use
 
@@ -76,11 +76,8 @@ e.g.,
 where `t1/` is a directory full of N T1-w images and `masks/` is a directory full of N corresponding brain masks,
 `test_fcm` is the output directory for the normalized images, and `-v` controls the verbosity of the output.
 
-Note the package [antspy](https://github.com/ANTsX/ANTsPy) is required for the RAVEL normalization routine, the 
-preprocessing tool as well as the co-registration tool, but all other normalization and processing tools work without it. 
-To also install the antspy package either append `--antspy` to your call to `setup.py` or `create_env.sh`. 
-
-To use the convenience pre-processing scripts, install the package with the following command:
+Basic Usage
+-----------
 
     python setup.py install --antspy --preprocess
     
@@ -131,9 +128,8 @@ If you use the `intensity-normalization` package in an academic paper, please ci
       volume={10949},
       pages={109493H},
       year={2019},
-      organization={International Society for Optics and Photonics}
-    }
-        
+      organization={International Society for Optics and Photonics}} 
+
 References
 ----------
 
