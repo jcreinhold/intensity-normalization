@@ -1,10 +1,10 @@
 intensity-normalization
 =======================
 
-[![Build Status](https://travis-ci.org/jcreinhold/intensity-normalization.svg?branch=master)](https://travis-ci.org/jcreinhold/intensity-normalization)
+[![Build Status](https://api.travis-ci.com/jcreinhold/intensity-normalization.svg?branch=master&status=created)](https://travis-ci.com/jcreinhold/intensity-normalization)
 [![Coverage Status](https://coveralls.io/repos/github/jcreinhold/intensity-normalization/badge.svg?branch=master)](https://coveralls.io/github/jcreinhold/intensity-normalization?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/intensity-normalization/badge/?version=latest)](http://intensity-normalization.readthedocs.io/en/latest/)
-[![Docker Automated Build](https://img.shields.io/docker/build/jcreinhold/intensity-normalization.svg)](https://hub.docker.com/r/jcreinhold/intensity-normalization/)
+[![Docker Automated Build](https://img.shields.io/docker/cloud/build/jcreinhold/intensity-normalization.svg)](https://hub.docker.com/r/jcreinhold/intensity-normalization/)
 [![Python Versions](https://img.shields.io/badge/python-3.6%20%7C%203.7-blue.svg)](https://www.python.org/downloads/release/python-360/)
 
 This package contains various routines to normalize the intensity of various contrasts of magnetic resonance (MR) brain images; specifically, 
