@@ -24,7 +24,7 @@ install:
   - python --version
   - which python
   - pip --version
-  - travis_retry pip install coverage nose pytest-pep8 pytest-cov python-coveralls
+  - travis_retry pip install coverage nose pytest-pep8 pytest-cov coveralls
   - travis_retry python setup.py install
 script:
   - nosetests -v --with-coverage --cover-tests --cover-package=intensity_normalization tests
