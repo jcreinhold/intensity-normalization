@@ -47,7 +47,7 @@ if platform not in ["linux", "linux32", "darwin"] and install_antspy:
 
 args = dict(
     name='intensity-normalization',
-    version='1.4.3',
+    version='1.4.4',
     description="Normalize the intensity values of MR images",
     long_description=readme,
     author='Jacob Reinhold',
@@ -55,7 +55,7 @@ args = dict(
     url='https://gitlab.com/jcreinhold/intensity-normalization',
     license=license,
     packages=find_packages(exclude=('tests', 'docs', 'tutorials')),
-    entry_points = {
+    entry_points={
         'console_scripts': console_scripts
     },
     keywords="mr intensity normalization",

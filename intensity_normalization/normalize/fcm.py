@@ -16,8 +16,6 @@ Author: Blake Dewey (blake.dewey@jhu.edu),
 Created on: Apr 24, 2018
 """
 
-from __future__ import print_function, division
-
 import logging
 
 import nibabel as nib
@@ -40,9 +38,9 @@ def fcm_normalize(img, tissue_mask, norm_value=1):
         normalized (nibabel.nifti1.Nifti1Image): img with specified tissue mean at norm_value
     """
 
-    img_data = img.get_data()
-    tissue_mask_data = tissue_mask.get_data()
-    tissue_mean = img_data[tissue_mask_data > 0].mean()
+    img_data = img.get_fdata()
+    tissue_mask_data = tissue_mask.get_fdata() > 0.
+    tissue_mean = img_data[tissue_mask_data].mean()
     normalized = nib.Nifti1Image((img_data / tissue_mean) * norm_value,
                                  img.affine, img.header)
     return normalized

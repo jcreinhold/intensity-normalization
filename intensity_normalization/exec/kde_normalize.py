@@ -10,8 +10,6 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: May 08, 2018
 """
 
-from __future__ import print_function, division
-
 import argparse
 import logging
 import os
@@ -30,20 +28,21 @@ def arg_parser():
                                                  'normalize a set of NIfTI MR images.')
     required = parser.add_argument_group('Required')
     required.add_argument('-i', '--image', type=str, required=True,
-                        help='path to a nifti MR image of the brain')
+                          help='path to a nifti MR image of the brain')
     required.add_argument('-m', '--brain-mask', type=str, default=None,
-                        help='path to a nifti brain mask for the image,'
-                             'if image is not skull-stripped')
+                          help='path to a nifti brain mask for the image,'
+                               'if image is not skull-stripped')
 
     options = parser.add_argument_group('Options')
-    options.add_argument('-c', '--contrast', type=str, default='t1', choices=('t1','t2','flair','md','largest','first','last'),
+    options.add_argument('-c', '--contrast', type=str, default='t1',
+                         choices=('t1', 't2', 'flair', 'md', 'largest', 'first', 'last'),
                          help='contrast of the image (e.g., `t1`, `t2`, etc.)')
     options.add_argument('-o', '--output-dir', type=str, default=None,
                          help='path to output normalized images '
                               '(default: to directory containing images')
     options.add_argument('-n', '--norm-value', type=float, default=1,
                          help='value by which to normalize the WM peak, default 1')
-    options.add_argument('-s','--single-img', action='store_true', default=False,
+    options.add_argument('-s', '--single-img', action='store_true', default=False,
                          help='image and mask are individual images, not directories')
     options.add_argument('-p', '--plot-hist', action='store_true', default=False,
                          help='plot the histograms of the normalized images, save it in the output directory')

@@ -10,8 +10,6 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: May 08, 2018
 """
 
-from __future__ import print_function, division
-
 import argparse
 import logging
 import os

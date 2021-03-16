@@ -26,8 +26,9 @@ with warnings.catch_warnings():
 
 
 def arg_parser():
-    parser = argparse.ArgumentParser(description='Do some basic preprocessing on a set of NIfTI MR images of the brain. '
-                                                 '(i.e., resampling, reorientation, and bias field correction)')
+    parser = argparse.ArgumentParser(
+        description='Do some basic preprocessing on a set of NIfTI MR images of the brain. '
+                    '(i.e., resampling, reorientation, and bias field correction)')
     required = parser.add_argument_group('Required')
     required.add_argument('-i', '--img-dir', type=str, required=True,
                           help='path to directory with images to be processed')
@@ -36,7 +37,7 @@ def arg_parser():
 
     options = parser.add_argument_group('Options')
     options.add_argument('-m', '--mask-dir', type=str, default=None,
-                          help='directory to output the corresponding mask files')
+                         help='directory to output the corresponding mask files')
     options.add_argument('-r', '--resolution', nargs=3, type=float, default=None,
                          help='resolution for resampled images (if not set, then keep image resolution)')
     options.add_argument('--orientation', type=str, default='RAI',

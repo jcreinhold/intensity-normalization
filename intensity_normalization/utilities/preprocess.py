@@ -25,7 +25,7 @@ from intensity_normalization.utilities.io import split_filename, glob_nii
 logger = logging.getLogger(__name__)
 
 
-def preprocess(img_dir, out_dir, mask_dir=None, res=(1.,1.,1.), orientation='RAI', n4_opts=None):
+def preprocess(img_dir, out_dir, mask_dir=None, res=(1., 1., 1.), orientation='RAI', n4_opts=None):
     """
     preprocess.py MR images according to a simple scheme,
     that is:
@@ -51,7 +51,7 @@ def preprocess(img_dir, out_dir, mask_dir=None, res=(1.,1.,1.), orientation='RAI
     # get and check the images and masks
     img_fns = glob_nii(img_dir)
     mask_fns = glob_nii(mask_dir) if mask_dir is not None else [None] * len(img_fns)
-    assert len(img_fns) == len(mask_fns), 'Number of images and masks must be equal ({:d} != {:d})'\
+    assert len(img_fns) == len(mask_fns), 'Number of images and masks must be equal ({:d} != {:d})' \
         .format(len(img_fns), len(mask_fns))
 
     # create the output directory structure
@@ -82,7 +82,7 @@ def preprocess(img_dir, out_dir, mask_dir=None, res=(1.,1.,1.), orientation='RAI
                 if res != img.spacing:
                     mask = ants.resample_image(mask, res, False, 1)
             mask = mask.reorient_image2(orientation) if hasattr(img, 'reorient_image2') else \
-                   mask.reorient_image((1, 0, 0))['reoimage']
+                mask.reorient_image((1, 0, 0))['reoimage']
             out_mask = os.path.join(out_mask_dir, mask_base + mask_ext)
             ants.image_write(mask, out_mask)
         else:
@@ -94,7 +94,7 @@ def preprocess(img_dir, out_dir, mask_dir=None, res=(1.,1.,1.), orientation='RAI
             img = img.reorient_image2(orientation)
         else:
             logger.info('Cannot reorient image to a custom orientation. Update ANTsPy to a version >= 0.1.5.')
-            img = img.reorient_image((1,0,0))['reoimage']
+            img = img.reorient_image((1, 0, 0))['reoimage']
         logger.info('Writing preprocessed image: {} ({:d}/{:d})'.format(img_base, i, len(img_fns)))
         out_img = os.path.join(out_img_dir, img_base + img_ext)
         ants.image_write(img, out_img)

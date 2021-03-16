@@ -41,7 +41,7 @@ class TestUtilities(unittest.TestCase):
 
     def test_bg_mask(self):
         bkgd = mask.background_mask(self.img, seed=0)
-        self.assertEqual(sum(bkgd.get_data().shape), sum(self.img.get_data().shape))
+        self.assertEqual(sum(bkgd.get_fdata().shape), sum(self.img.get_fdata().shape))
 
     def tearDown(self):
         del self.img, self.brain_mask

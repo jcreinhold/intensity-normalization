@@ -60,7 +60,7 @@ def csf_mask(img, brain_mask, contrast='t1', csf_thresh=0.9, return_prob=False, 
             img = to_nibabel(img)
             brain_mask = to_nibabel(brain_mask)
         seg = mask.fcm_class_mask(img, brain_mask, hard_seg=True)
-        avg_intensity = [np.mean(img.get_data()[seg == i]) for i in range(1, 4)]
+        avg_intensity = [np.mean(img.get_fdata()[seg == i]) for i in range(1, 4)]
         csf_arg = np.argmin(avg_intensity) if contrast.lower() in ('t1', 'flair') else np.argmax(avg_intensity)
         csf = (seg == (csf_arg + 1)).astype(np.float32)
     return csf
@@ -87,7 +87,7 @@ def csf_mask_intersection(img_dir, masks=None, prob=1):
     csf = []
     for i, (img, mask) in enumerate(zip(data, masks)):
         _, base, _ = io.split_filename(img)
-        logger.info('Creating CSF mask for image {} ({:d}/{:d})'.format(base, i+1, len(data)))
+        logger.info('Creating CSF mask for image {} ({:d}/{:d})'.format(base, i + 1, len(data)))
         imgn = ants.image_read(img)
         maskn = ants.image_read(mask) if isinstance(mask, str) else mask
         csf.append(csf_mask(imgn, maskn))
@@ -114,7 +114,7 @@ def to_nibabel(image):
         raise ValueError('Only 3D images currently supported')
     import nibabel as nib
     array_data = image.numpy()
-    affine = np.hstack([image.direction*np.diag(image.spacing),np.array(image.origin).reshape(3,1)])
-    affine = np.vstack([affine, np.array([0,0,0,1.])])
+    affine = np.hstack([image.direction * np.diag(image.spacing), np.array(image.origin).reshape(3, 1)])
+    affine = np.vstack([affine, np.array([0, 0, 0, 1.])])
     new_img = nib.Nifti1Image(array_data, affine)
     return new_img

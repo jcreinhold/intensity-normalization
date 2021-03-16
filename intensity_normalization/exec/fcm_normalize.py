@@ -10,8 +10,6 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: May 08, 2018
 """
 
-from __future__ import print_function, division
-
 import argparse
 import logging
 import os
@@ -95,7 +93,8 @@ def main(args=None):
     logger = logging.getLogger(__name__)
     try:
         if not args.single_img:
-            if not os.path.isdir(args.image) or (False if args.brain_mask is None else not os.path.isdir(args.brain_mask)):
+            if not os.path.isdir(args.image) or (
+            False if args.brain_mask is None else not os.path.isdir(args.brain_mask)):
                 raise NormalizationError('if single-img option off, then image and brain-mask must be directories')
             img_fns = io.glob_nii(args.image)
             mask_fns = io.glob_nii(args.brain_mask) if args.brain_mask is not None else [None] * len(img_fns)

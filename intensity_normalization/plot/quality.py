@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 try:
     import seaborn as sns
+
     sns.set(style='white', font_scale=2, rc={'figure.figsize': (12, 10)})
 except ImportError:
     logger.debug("Seaborn not installed, so plots won't look as pretty :-(")

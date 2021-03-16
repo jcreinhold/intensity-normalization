@@ -10,8 +10,6 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: May 30, 2018
 """
 
-from __future__ import print_function, division
-
 import argparse
 import logging
 import os
@@ -118,7 +116,7 @@ def main(args=None):
                 from intensity_normalization.plot.hist import all_hists
                 import matplotlib.pyplot as plt
             bm = args.brain_mask if args.brain_mask is None else \
-                 args.brain_mask if os.path.isdir(args.brain_mask) else None
+                args.brain_mask if os.path.isdir(args.brain_mask) else None
             ax = all_hists(args.output_dir, bm)
             ax.set_title('Z-Score')
             plt.savefig(os.path.join(args.output_dir, 'hist.png'))

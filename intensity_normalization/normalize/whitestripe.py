@@ -18,8 +18,6 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: Apr 27, 2018
 """
 
-from __future__ import print_function, division
-
 import logging
 import os
 
@@ -115,11 +113,11 @@ def whitestripe(img, contrast, mask=None, width=0.05, width_l=None, width_u=None
     if width_l is None and width_u is None:
         width_l = width
         width_u = width
-    img_data = img.get_data()
+    img_data = img.get_fdata()
     if mask is not None:
-        mask_data = mask.get_data()
+        mask_data = mask.get_fdata()
         masked = img_data * mask_data
-        voi = img_data[mask_data == 1]
+        voi = img_data[mask_data > 0.]
     else:
         masked = img_data
         voi = img_data[img_data > img_data.mean()]
@@ -130,7 +128,8 @@ def whitestripe(img, contrast, mask=None, width=0.05, width_l=None, width_u=None
     elif contrast.lower() in ['md', 'first']:
         mode = hist.get_first_mode(voi)
     else:
-        raise NormalizationError('Contrast {} not valid, needs to be `t1`,`t2`,`flair`,`md`,`first`,`largest`,`last`'.format(contrast))
+        raise NormalizationError(
+            'Contrast {} not valid, needs to be `t1`,`t2`,`flair`,`md`,`first`,`largest`,`last`'.format(contrast))
     img_mode_q = np.mean(voi < mode)
     ws = np.percentile(voi, (max(img_mode_q - width_l, 0) * 100, min(img_mode_q + width_u, 1) * 100))
     ws_ind = np.logical_and(masked > ws[0], masked < ws[1])
@@ -151,9 +150,9 @@ def whitestripe_norm(img, indices):
     Returns:
         norm_img (nibabel.nifti1.Nifti1Image): normalized image in nifti format
     """
-    img_data = img.get_data()
+    img_data = img.get_fdata()
     mu = np.mean(img_data[indices])
     sig = np.std(img_data[indices])
-    norm_img_data = (img_data - mu)/sig
+    norm_img_data = (img_data - mu) / sig
     norm_img = nib.Nifti1Image(norm_img_data, img.affine, img.header)
     return norm_img

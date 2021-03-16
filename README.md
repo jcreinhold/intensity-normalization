@@ -34,12 +34,10 @@ We implement the following normalization methods:
 
 We use this package to explore the impact of intensity normalization on a synthesis task (pre-print available [here](https://arxiv.org/abs/1812.04652)).
 
-** Note that while this release was carefully inspected, there may be bugs. Please submit an issue if you encounter a problem. **
+*Note that while this release was carefully inspected, there may be bugs. Please submit an issue if you encounter a problem.*
 
 This package was developed by [Jacob Reinhold](https://jcreinhold.github.io) and the other students and researchers of the 
 [Image Analysis and Communication Lab (IACL)](http://iacl.ece.jhu.edu/index.php/Main_Page).
-
-[Link to main Gitlab Repository](https://gitlab.com/jcreinhold/intensity-normalization) (The Github repo is a mirror of this Gitlab repo.)
 
 Requirements
 ------------

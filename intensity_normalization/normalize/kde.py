@@ -12,8 +12,6 @@ Author: Blake Dewey (blake.dewey@jhu.edu),
 Created on: Apr 24, 2018
 """
 
-from __future__ import print_function, division
-
 import logging
 
 import nibabel as nib
@@ -40,9 +38,9 @@ def kde_normalize(img, mask=None, contrast='t1', norm_value=1):
         normalized (nibabel.nifti1.Nifti1Image): WM normalized img
     """
     if mask is not None:
-        voi = img.get_data()[mask.get_data() == 1].flatten()
+        voi = img.get_fdata()[mask.get_fdata() == 1].flatten()
     else:
-        voi = img.get_data()[img.get_data() > img.get_data().mean()].flatten()
+        voi = img.get_fdata()[img.get_fdata() > img.get_fdata().mean()].flatten()
     if contrast.lower() in ['t1', 'flair', 'last']:
         wm_peak = hist.get_last_mode(voi)
     elif contrast.lower() in ['t2', 'largest']:
@@ -50,7 +48,8 @@ def kde_normalize(img, mask=None, contrast='t1', norm_value=1):
     elif contrast.lower() in ['md', 'first']:
         wm_peak = hist.get_first_mode(voi)
     else:
-        raise NormalizationError('Contrast {} not valid, needs to be `t1`,`t2`,`flair`,`md`,`first`,`largest`,`last`'.format(contrast))
-    normalized = nib.Nifti1Image((img.get_data() / wm_peak) * norm_value,
+        raise NormalizationError(
+            'Contrast {} not valid, needs to be `t1`,`t2`,`flair`,`md`,`first`,`largest`,`last`'.format(contrast))
+    normalized = nib.Nifti1Image((img.get_fdata() / wm_peak) * norm_value,
                                  img.affine, img.header)
     return normalized

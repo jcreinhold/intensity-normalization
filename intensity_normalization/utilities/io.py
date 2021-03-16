@@ -10,8 +10,6 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: Apr 24, 2018
 """
 
-from __future__ import print_function, division
-
 from glob import glob
 import os
 
@@ -40,8 +38,8 @@ def save_nii(obj, outfile, data=None, is_nii=False):
     """ save a nifti object """
     if not is_nii:
         if data is None:
-            data = obj.get_data()
-        nib.Nifti1Image(data, obj.affine, obj.header)\
+            data = obj.get_fdata()
+        nib.Nifti1Image(data, obj.affine, obj.header) \
             .to_filename(outfile)
     else:
         obj.to_filename(outfile)

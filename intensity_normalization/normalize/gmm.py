@@ -13,11 +13,10 @@ Author: Blake Dewey (blake.dewey@jhu.edu),
 Created on: Apr 24, 2018
 """
 
-from __future__ import print_function, division
-
 import logging
 
 import nibabel as nib
+
 try:
     from sklearn.mixture import GaussianMixture
 except ImportError:
@@ -47,14 +46,14 @@ def gmm_normalize(img, brain_mask=None, norm_value=1, contrast='t1', bg_mask=Non
     if wm_peak is None:
         wm_peak = gmm_class_mask(img, brain_mask=brain_mask, contrast=contrast)
 
-    img_data = img.get_data()
+    img_data = img.get_fdata()
     logger.info('Normalizing Data...')
-    norm_data = (img_data/wm_peak)*norm_value
+    norm_data = (img_data / wm_peak) * norm_value
     norm_data[norm_data < 0.1] = 0.0
-    
+
     if bg_mask is not None:
         logger.info('Applying background mask...')
-        masked_image = norm_data * bg_mask.get_data()
+        masked_image = norm_data * bg_mask.get_fdata()
     else:
         masked_image = norm_data
 

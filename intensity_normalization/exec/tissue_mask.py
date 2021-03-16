@@ -75,7 +75,8 @@ def main(args=None):
             logger.info('Creating Mask for Image: {}, ({:d}/{:d})'.format(base, i, len(img_fns)))
             img = io.open_nii(img_fn)
             mask = io.open_nii(mask_fn)
-            tm = fcm_class_mask(img, mask, hard_seg) if not args.gmm else gmm_class_mask(img, mask, 't1', False, hard_seg)
+            tm = fcm_class_mask(img, mask, hard_seg) if not args.gmm else gmm_class_mask(img, mask, 't1', False,
+                                                                                         hard_seg)
             tissue_mask = os.path.join(args.output_dir, base + '_tm')
             if args.memberships:
                 classes = ('csf', 'gm', 'wm')

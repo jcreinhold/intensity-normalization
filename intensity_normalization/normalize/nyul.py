@@ -21,8 +21,6 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: May 01, 2018
 """
 
-from __future__ import print_function, division
-
 import logging
 import os
 
@@ -86,7 +84,7 @@ def nyul_normalize(img_dir, mask_dir=None, output_dir=None, standard_hist=None, 
     normalized = None
     for i, (img_fn, mask_fn, out_fn) in enumerate(zip(input_files, mask_files, out_fns)):
         _, base, _ = io.split_filename(img_fn)
-        logger.info('Transforming image {} to standard scale ({:d}/{:d})'.format(base, i+1, len(input_files)))
+        logger.info('Transforming image {} to standard scale ({:d}/{:d})'.format(base, i + 1, len(input_files)))
         img = io.open_nii(img_fn)
         mask = io.open_nii(mask_fn) if mask_fn is not None else None
         normalized = do_hist_norm(img, percs, standard_scale, mask)
@@ -131,12 +129,12 @@ def train(img_fns, mask_fns=None, i_min=1, i_max=99, i_s_min=1, i_s_max=100, l_p
         percs (np.ndarray): array of all percentiles used
     """
     mask_fns = [None] * len(img_fns) if mask_fns is None else mask_fns
-    percs = np.concatenate(([i_min], np.arange(l_percentile, u_percentile+1, step), [i_max]))
+    percs = np.concatenate(([i_min], np.arange(l_percentile, u_percentile + 1, step), [i_max]))
     standard_scale = np.zeros(len(percs))
     for i, (img_fn, mask_fn) in enumerate(zip(img_fns, mask_fns)):
-        img_data = io.open_nii(img_fn).get_data()
+        img_data = io.open_nii(img_fn).get_fdata()
         mask = io.open_nii(mask_fn) if mask_fn is not None else None
-        mask_data = img_data > img_data.mean() if mask is None else mask.get_data()
+        mask_data = img_data > img_data.mean() if mask is None else mask.get_fdata()
         masked = img_data[mask_data > 0]
         landmarks = get_landmarks(masked, percs)
         min_p = np.percentile(masked, i_min)
@@ -161,8 +159,8 @@ def do_hist_norm(img, landmark_percs, standard_scale, mask=None):
     Returns:
         normalized (nibabel.nifti1.Nifti1Image): normalized image
     """
-    img_data = img.get_data()
-    mask_data = img_data > img_data.mean() if mask is None else mask.get_data()
+    img_data = img.get_fdata()
+    mask_data = img_data > img_data.mean() if mask is None else mask.get_fdata()
     masked = img_data[mask_data > 0]
     landmarks = get_landmarks(masked, landmark_percs)
     f = interp1d(landmarks, standard_scale, fill_value='extrapolate')

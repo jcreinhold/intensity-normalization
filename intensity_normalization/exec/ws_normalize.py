@@ -10,8 +10,6 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: May 08, 2018
 """
 
-from __future__ import print_function, division
-
 import argparse
 import logging
 import os
@@ -27,8 +25,8 @@ def arg_parser():
     parser = argparse.ArgumentParser(description='Use Whitestripe to normalize a set NIfTI MR images of the brain')
     required = parser.add_argument_group('Required')
     required.add_argument('-i', '--img-dir', type=str, required=True,
-                          help = 'path to directory with images to be processed '
-                                 '(should all be of one contrast)')
+                          help='path to directory with images to be processed '
+                               '(should all be of one contrast)')
     required.add_argument('-m', '--mask-dir', type=str, default=None,
                           help='if images are not skull-stripped, directory for '
                                'corresponding brain masks for img-dir (not intelligently sorted, '

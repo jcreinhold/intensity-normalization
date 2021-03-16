@@ -39,21 +39,21 @@ class TestNormalization(unittest.TestCase):
     def test_zscore_normalization(self):
         from intensity_normalization.normalize import zscore
         normalized = zscore.zscore_normalize(self.img, self.brain_mask)
-        self.assertAlmostEqual(np.mean(normalized.get_data()[self.brain_mask.get_data() == 1]), 0, places=4)
+        self.assertAlmostEqual(np.mean(normalized.get_fdata()[self.brain_mask.get_fdata() > 0]), 0, places=4)
 
     def test_fcm_normalization(self):
         normalized = fcm.fcm_normalize(self.img, self.wm_mask, norm_value=self.norm_val)
-        self.assertAlmostEqual(normalized.get_data()[self.wm_mask.get_data()].mean(), self.norm_val, places=3)
+        self.assertAlmostEqual(normalized.get_fdata()[self.wm_mask.get_fdata() > 0.].mean(), self.norm_val, places=3)
 
     def test_gmm_normalization(self):
         from intensity_normalization.normalize import gmm
         normalized = gmm.gmm_normalize(self.img, self.brain_mask, norm_value=self.norm_val)
-        self.assertAlmostEqual(normalized.get_data()[self.wm_mask.get_data()].mean(), self.norm_val, delta=20)
+        self.assertAlmostEqual(normalized.get_fdata()[self.wm_mask.get_fdata() > 0.].mean(), self.norm_val, delta=20)
 
     def test_kde_normalization(self):
         from intensity_normalization.normalize import kde
         normalized = kde.kde_normalize(self.img, self.brain_mask, contrast='T1', norm_value=self.norm_val)
-        self.assertAlmostEqual(normalized.get_data()[self.wm_mask.get_data()].mean(), self.norm_val, delta=20)
+        self.assertAlmostEqual(normalized.get_fdata()[self.wm_mask.get_fdata() > 0.].mean(), self.norm_val, delta=20)
 
     def test_nyul_normalization(self):
         from intensity_normalization.normalize import nyul
@@ -66,7 +66,7 @@ class TestNormalization(unittest.TestCase):
     def test_ws_normalization(self):
         from intensity_normalization.normalize import whitestripe
         normalized = whitestripe.ws_normalize(self.data_dir, 'T1', mask_dir=self.mask_dir, write_to_disk=False)
-        self.assertEqual(np.sum(normalized.get_data().shape), np.sum(self.img.get_data().shape))
+        self.assertEqual(np.sum(normalized.get_fdata().shape), np.sum(self.img.get_fdata().shape))
 
     @unittest.skipIf(ants is None, "ANTsPy is not installed on this system")
     def test_ravel_normalization(self):

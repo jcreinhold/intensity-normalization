@@ -10,8 +10,6 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: May 01, 2018
 """
 
-from __future__ import print_function, division
-
 import logging
 import warnings
 
@@ -42,9 +40,9 @@ def fcm_class_mask(img, brain_mask=None, hard_seg=False):
         mask (np.ndarray): membership values for each of three classes in the image
             (or class determinations w/ hard_seg)
     """
-    img_data = img.get_data()
+    img_data = img.get_fdata()
     if brain_mask is not None:
-        mask_data = brain_mask.get_data() > 0
+        mask_data = brain_mask.get_fdata() > 0
     else:
         mask_data = img_data > img_data.mean()
     [t1_cntr, t1_mem, _, _, _, _, _] = cmeans(img_data[mask_data].reshape(-1, len(mask_data[mask_data])),
@@ -82,9 +80,9 @@ def gmm_class_mask(img, brain_mask=None, contrast='t1', return_wm_peak=True, har
                 else, mask is the same size as img * 3, where
                 the new dimensions hold the probabilities of tissue class
     """
-    img_data = img.get_data()
+    img_data = img.get_fdata()
     if brain_mask is not None:
-        mask_data = brain_mask.get_data() > 0
+        mask_data = brain_mask.get_fdata() > 0
     else:
         mask_data = img_data > img_data.mean()
 
@@ -149,7 +147,7 @@ def background_mask(img, seed=0):
     """
     np.random.seed(seed)
     logger.info('Finding Background...')
-    img_data = img.get_data()
+    img_data = img.get_fdata()
     km = KMeans(4)
     rand_mask = np.random.rand(*img_data.shape) > 0.75
     logger.info('Fitting KMeans...')

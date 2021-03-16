@@ -17,6 +17,7 @@ Created on: Apr 27, 2018
 """
 
 from functools import reduce
+import gc
 import logging
 from operator import add
 import os
@@ -107,7 +108,7 @@ def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=
     if write_to_disk:
         for i, (img_fn, out_fn) in enumerate(zip(img_fns, out_fns)):
             img = io.open_nii(img_fn)
-            norm = V_norm[:, i].reshape(img.get_data().shape)
+            norm = V_norm[:, i].reshape(img.get_fdata().shape)
             io.save_nii(img, out_fn, data=norm)
 
     return Z, V_norm
@@ -129,7 +130,7 @@ def ravel_correction(V, Z):
     beta = np.matmul(np.matmul(np.linalg.inv(np.matmul(Z.T, Z)), Z.T), V.T)
     fitted = np.matmul(Z, beta).T  # this line (alone) gives slightly diff answer than R ver, otherwise exactly same
     res = V - fitted
-    res = res + means[:,np.newaxis]
+    res = res + means[:, np.newaxis]
     return res
 
 
@@ -165,7 +166,7 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
         Vc (np.ndarray): image matrix of control voxels (rows are voxels, columns are images)
             Vc only returned if return_ctrl_matrix is True
     """
-    img_shape = io.open_nii(imgs[0]).get_data().shape
+    img_shape = io.open_nii(imgs[0]).get_fdata().shape
     V = np.zeros((int(np.prod(img_shape)), len(imgs)))
 
     if return_ctrl_matrix:
@@ -187,11 +188,11 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
             logger.info('Applying WhiteStripe to image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
             inds = whitestripe(img, contrast, mask)
             img = whitestripe_norm(img, inds)
-        img_data = img.get_data()
+        img_data = img.get_fdata()
         if img_data.shape != img_shape:
             raise NormalizationError('Cannot normalize because image {} needs to have same dimension '
                                      'as all other images ({} != {})'.format(base, img_data.shape, img_shape))
-        V[:,i] = img_data.flatten()
+        V[:, i] = img_data.flatten()
         if return_ctrl_matrix:
             if do_registration and i == 0:
                 logger.info('Creating control mask for image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
@@ -216,7 +217,7 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
             else:  # assume pre-registered
                 logger.info('Finding control voxels for image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
                 ctrl_mask = csf.csf_mask(img, mask, contrast=contrast, csf_thresh=membership_thresh,
-                                         mrf=smoothness, use_fcm=use_fcm) if csf_masks else mask.get_data()
+                                         mrf=smoothness, use_fcm=use_fcm) if csf_masks else mask.get_fdata()
                 if np.sum(ctrl_mask) == 0:
                     raise NormalizationError('No control voxels found for image ({}) at threshold ({})'
                                              .format(base, membership_thresh))
@@ -232,8 +233,8 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
         for i in range(len(imgs)):
             ctrl_voxs = ctrl_vox[i][:min_len]
             logger.info('Image {:d} control voxel stats -  mean: {:.3f}, std: {:.3f}'
-                         .format(i+1, np.mean(ctrl_voxs), np.std(ctrl_voxs)))
-            Vc[:,i] = ctrl_voxs
+                        .format(i + 1, np.mean(ctrl_voxs), np.std(ctrl_voxs)))
+            Vc[:, i] = ctrl_voxs
     elif return_ctrl_matrix and do_registration:
         ctrl_sum = reduce(add, ctrl_masks)  # need to use reduce instead of sum b/c data structure
         intersection = np.zeros(ctrl_sum.shape)
@@ -243,10 +244,10 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
         for i, img in enumerate(reg_imgs):
             ctrl_voxs = img.numpy()[intersection == 1]
             logger.info('Image {:d} control voxel stats -  mean: {:.3f}, std: {:.3f}'
-                         .format(i+1, np.mean(ctrl_voxs), np.std(ctrl_voxs)))
-            Vc[:,i] = ctrl_voxs
+                        .format(i + 1, np.mean(ctrl_voxs), np.std(ctrl_voxs)))
+            Vc[:, i] = ctrl_voxs
         del ctrl_masks, reg_imgs
-        import gc; gc.collect()  # force a garbage collection, since we just used the majority of the system memory
+        gc.collect()  # force a garbage collection, since we just used the majority of the system memory
 
     return V if not return_ctrl_matrix else (V, Vc)
 
@@ -265,6 +266,6 @@ def image_matrix_to_images(V, imgs):
     img_list = []
     for i, img_fn in enumerate(imgs):
         img = io.open_nii(img_fn)
-        nimg = nib.Nifti1Image(V[:, i].reshape(img.get_data().shape), img.affine, img.header)
+        nimg = nib.Nifti1Image(V[:, i].reshape(img.get_fdata().shape), img.affine, img.header)
         img_list.append(nimg)
     return img_list

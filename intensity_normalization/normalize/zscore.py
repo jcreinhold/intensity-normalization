@@ -11,8 +11,6 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: May 30, 2018
 """
 
-from __future__ import print_function, division
-
 import logging
 
 import nibabel as nib
@@ -33,14 +31,14 @@ def zscore_normalize(img, mask=None):
         normalized (nibabel.nifti1.Nifti1Image): img with WM mean at norm_value
     """
 
-    img_data = img.get_data()
+    img_data = img.get_fdata()
     if mask is not None and not isinstance(mask, str):
-        mask_data = mask.get_data()
+        mask_data = mask.get_fdata()
     elif mask == 'nomask':
         mask_data = img_data == img_data
     else:
         mask_data = img_data > img_data.mean()
-    logical_mask = mask_data == 1  # force the mask to be logical type
+    logical_mask = mask_data > 0.  # force the mask to be logical type
     mean = img_data[logical_mask].mean()
     std = img_data[logical_mask].std()
     normalized = nib.Nifti1Image((img_data - mean) / std, img.affine, img.header)

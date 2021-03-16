@@ -29,6 +29,7 @@ packages=(
     coverage
     libiconv
     matplotlib=3.2.2
+    mock
     nose
     numpy=1.18.5
     pandas=1.0.5
@@ -50,9 +51,9 @@ conda_forge_packages=(
     scikit-fuzzy=0.4.2
 )
 
-conda create --override-channels -c defaults -n intensity_normalization python=3.8 ${packages[@]} -y
+conda create --override-channels -c defaults -n intensity_normalization python=3.8 "${packages[@]}" -y
 source activate intensity_normalization
-conda install -c conda-forge ${conda_forge_packages[@]} -y
+conda install -c conda-forge "${conda_forge_packages[@]}" -y
 
 if $ANTSPY; then
     pip install antspyx=0.2.4

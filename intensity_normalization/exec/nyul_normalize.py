@@ -10,8 +10,6 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: May 08, 2018
 """
 
-from __future__ import print_function, division
-
 import argparse
 import logging
 import os
@@ -28,16 +26,16 @@ def arg_parser():
                                                  'normalize the intensity of a set of NIfTI MR images')
     required = parser.add_argument_group('Required')
     required.add_argument('-i', '--img-dir', type=str, required=True,
-                        help='path to directory with images to be processed '
-                             '(should all be of one contrast)')
+                          help='path to directory with images to be processed '
+                               '(should all be of one contrast)')
     required.add_argument('-o', '--output-dir', type=str, default=None,
-                         help='save the normalized images to this path [Default = None]')
+                          help='save the normalized images to this path [Default = None]')
 
     options = parser.add_argument_group('Options')
     options.add_argument('-m', '--mask-dir', type=str, default=None,
-                           help='directory for corresponding brain masks for img-dir (not intelligently sorted, '
-                                'so ordering must be consistent in directory). **If masks are provided, the '
-                                'corresponding images should be skull-stripped!** [Default = None]')
+                         help='directory for corresponding brain masks for img-dir (not intelligently sorted, '
+                              'so ordering must be consistent in directory). **If masks are provided, the '
+                              'corresponding images should be skull-stripped!** [Default = None]')
     options.add_argument('-sh', '--standard-hist', default=None, type=str,
                          help='path to output/use standard histogram [Default=None]')
     options.add_argument('-p', '--plot-hist', action='store_true', default=False,

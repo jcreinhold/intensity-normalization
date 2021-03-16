@@ -10,8 +10,6 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: Feb 23, 2020
 """
 
-from __future__ import print_function, division
-
 import logging
 import os
 
@@ -57,7 +55,7 @@ def lsq_normalize(img_dir, mask_dir=None, output_dir=None, write_to_disk=True):
     normalized = None
     for i, (img_fn, mask_fn, out_fn) in enumerate(zip(input_files, mask_files, out_fns)):
         _, base, _ = io.split_filename(img_fn)
-        logger.info('Transforming image {} to standard scale ({:d}/{:d})'.format(base, i+1, len(input_files)))
+        logger.info('Transforming image {} to standard scale ({:d}/{:d})'.format(base, i + 1, len(input_files)))
         img = io.open_nii(img_fn)
         mask = io.open_nii(mask_fn) if mask_fn is not None else None
         tissue_mem = mask_util.fcm_class_mask(img, mask)
@@ -78,8 +76,11 @@ def lsq_normalize(img_dir, mask_dir=None, output_dir=None, write_to_disk=True):
 
 
 def calc_tissue_means(img, tissue_mem):
-    def wavg(w,x): return (w*x).sum() / w.sum()
-    return np.asarray([[wavg(tissue_mem[...,i], img) for i in range(tissue_mem.shape[-1])]]).T
+    def weighted_avg(w, x):
+        return (w * x).sum() / w.sum()
+    tissue_types = tissue_mem.shape[-1]
+    weighted_avgs = [weighted_avg(tissue_mem[..., i], img) for i in range(tissue_types)]
+    return np.asarray([weighted_avgs]).T
 
 
 def find_scaling_factor(tissue_means, standard_tissue_means):

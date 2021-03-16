@@ -39,13 +39,13 @@ sys.path.insert(0, local_path)
 # -- Project information -----------------------------------------------------
 
 project = 'intensity-normalization'
-copyright = '2020, Jacob Reinhold'
+copyright = '2021, Jacob Reinhold'
 author = 'Jacob Reinhold'
 
 # The short X.Y version
 version = '1.4'
 # The full version, including alpha/beta/rc tags
-release = '1.4.1'
+release = '1.4.4'
 
 
 # -- General configuration ---------------------------------------------------
@@ -182,4 +182,4 @@ texinfo_documents = [
 
 
 # -- Extension configuration -------------------------------------------------
-matthjax_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"
+mathjax_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"
