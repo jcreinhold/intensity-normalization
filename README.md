@@ -53,8 +53,8 @@ Requirements
 We have provided a script `create_env.sh` to create a conda environment with the necessary packages 
 (run like: `. ./create_env.sh`, this package will be installed in the created environment)
 
-Basic Usage
------------
+Install
+-------
 
 The easiest way to install the package is through the following command:
 
@@ -67,8 +67,11 @@ To install from the source directory, use
 or (if you actively want to make changes to the package)
 
     python setup.py develop
-    
-and use the several provided command line scripts to interface with the package,
+
+Basic Usage
+-----------
+
+You can use the several provided command line scripts to interface with the package,
 e.g., 
 
     fcm-normalize -i t1/ -m masks/ -o test_fcm -v
@@ -76,15 +79,6 @@ e.g.,
 where `t1/` is a directory full of N T1-w images and `masks/` is a directory full of N corresponding brain masks,
 `test_fcm` is the output directory for the normalized images, and `-v` controls the verbosity of the output.
 
-Basic Usage
------------
-
-    python setup.py install --antspy --preprocess
-    
-or 
-
-    python setup.py develop --antspy --preprocess
- 
 The command line interface is standard across all normalization routines (i.e., you should be able to 
 run all normalization routines with the same call as in the above example); however, each has unique options
 and not all methods support single image processing.
