@@ -57,9 +57,9 @@ conda install -c conda-forge "${conda_forge_packages[@]}" -y
 
 if $ANTSPY; then
     pip install antspyx=0.2.4
-    python setup.py install --antspy --preprocess
+    python setup.py install
 else
-    python setup.py install --preprocess
+    python setup.py install
 fi
 
 echo "intensity_normalization conda env script finished"
