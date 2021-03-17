@@ -68,6 +68,11 @@ or (if you actively want to make changes to the package)
 
     python setup.py develop
 
+Note the package [antspy](https://github.com/ANTsX/ANTsPy) is required for the RAVEL normalization routine, the preprocessing
+tool as well as the co-registration tool, but all other normalization and processing tools work without it. To also install 
+the antspy package, run `pip install antspyx` before installing this package or use the `create_env.sh` script
+with the option `--antspy`. If the pip installation fails, you may need to build antspy from source.
+
 Basic Usage
 -----------
 
