@@ -1,1 +1,1 @@
-from . import io, mask, hist, quality
+from intensity_normalization.utilities import io, mask, hist, quality
