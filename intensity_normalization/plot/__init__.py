@@ -1,1 +1,1 @@
-from . import hist, quality
+from intensity_normalization.plot import hist, quality
