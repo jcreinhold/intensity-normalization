@@ -5,7 +5,8 @@ intensity-normalization
 [![Coverage Status](https://coveralls.io/repos/github/jcreinhold/intensity-normalization/badge.svg?branch=master)](https://coveralls.io/github/jcreinhold/intensity-normalization?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/intensity-normalization/badge/?version=latest)](http://intensity-normalization.readthedocs.io/en/latest/)
 [![Docker Automated Build](https://img.shields.io/docker/cloud/build/jcreinhold/intensity-normalization.svg)](https://hub.docker.com/r/jcreinhold/intensity-normalization/)
-[![Python Versions](https://img.shields.io/badge/python-3.6%20%7C%203.7-blue.svg)](https://www.python.org/downloads/release/python-360/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/intensity-normalization)](https://www.python.org/)
+[![PyPI Version](https://img.shields.io/pypi/v/intensity-normalization.svg)](https://pypi.python.org/pypi/pyrobex)
 
 This package contains various methods to normalize the intensity of various modalities of magnetic resonance (MR)
 images, e.g., T1-weighted (T1-w), T2-weighted (T2-w), FLuid-Attenuated Inversion Recovery (FLAIR), and Proton
@@ -128,10 +129,10 @@ Call any executable script with the `-h` flag to see more detailed instructions 
 Note that **brain masks** (or already skull-stripped images) are required for most of the normalization methods. The
 brain masks do not need to be perfect, but each mask needs to remove most of the tissue outside the brain. Assuming you
 have T1-w images for each subject, an easy and robust method for skull-stripping
-is [ROBEX](https://www.nitrc.org/projects/robex) [5]. 
+is [ROBEX](https://www.nitrc.org/projects/robex) [5].
 
-You can install ROBEX—and get python bindings for it at the same
-time–with the package [pyrobex](https://github.com/jcreinhold/pyrobex) (installable via `pip install pyrobex`).
+You can install ROBEX—and get python bindings for it at the same time–with the
+package [pyrobex](https://github.com/jcreinhold/pyrobex) (installable via `pip install pyrobex`).
 
 Tutorial
 --------
@@ -144,10 +145,11 @@ documentation [here](https://intensity-normalization.readthedocs.io/en/latest/).
 Potential Pitfalls
 ------------------
 
-1) This package was developed to process **adult human** MR images; neonatal, pediatric, and animal MR images should
-   also work (at least with some of the normalization schemes). But if there is a substantial difference in the contrast
-   you are processing compared with the same contrast in an adult human, the normalization scheme may not work as
-   expected. Please open an issue if you encounter such a problem.
+1) This package was developed to process **adult human** MR images; neonatal, pediatric, and animal MR images *should*
+   also work but—if the data has different proportions of tissues or differences in relative intensity among tissue
+   types compared with adults—the normalization may fail. The `nyul-normalize` method, in particular, will fail hard if
+   you train it on adult data and test it on non-adult data (or vice versa). Please open an issue if you encounter a
+   problem with the package when normalizing non-adult human data.
 
 2) When we refer to any specific modality, it is referring to a **non-contrast** version unless otherwise stated. Using
    a contrast image as input to a method that assumes non-contrast will produce suboptimal results. One potential way to
