@@ -125,6 +125,14 @@ support single image processing.
 
 Call any executable script with the `-h` flag to see more detailed instructions about the proper call.
 
+Note that **brain masks** (or already skull-stripped images) are required for most of the normalization methods. The
+brain masks do not need to be perfect, but each mask needs to remove most of the tissue outside the brain. Assuming you
+have T1-w images for each subject, an easy and robust method for skull-stripping
+is [ROBEX](https://www.nitrc.org/projects/robex) [5]. 
+
+You can install ROBEX—and get python bindings for it at the same
+time–with the package [pyrobex](https://github.com/jcreinhold/pyrobex) (installable via `pip install pyrobex`).
+
 Tutorial
 --------
 
@@ -195,3 +203,6 @@ vol. 6, pp. 9–19, 2014.
 
 [4] J. P. Fortin, E. M. Sweeney, J. Muschelli, C. M. Crainiceanu, and R. T. Shinohara, “Removing inter-subject technical
 variability in magnetic resonance imaging studies,” NeuroImage, vol. 132, pp. 198–212, 2016.
+
+[5] Iglesias, Juan Eugenio, Cheng-Yi Liu, Paul M. Thompson, and Zhuowen Tu. "Robust brain extraction across datasets and
+comparison with publicly available methods." IEEE transactions on medical imaging 30, no. 9 (2011): 1617-1634.
