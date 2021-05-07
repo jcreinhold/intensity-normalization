@@ -57,45 +57,50 @@ Kernel Density Estimation
 
 KDE-based normalization estimates the empirical probability density function (pdf) of the
 intensities of $I$ over the brain mask $B$ using the method of kernel density
-estimation. The KDE of the pdf for the intensity of the image is calculated as follows:
+estimation.
+
+The KDE of the pdf for the intensity of the image is calculated as follows:
 $$ \\hat{p}(x) = \\frac{1}{N\\cdot M \\cdot L \\cdot \\delta} \\sum_{i = 1}^{N\\cdot M \\cdot L} K\\left(\\frac{x - x_i}{\\delta}\\right)$$
 where $x$ is an intensity value, $K$ is the kernel (a kernel is
 essentially a non-negative function that integrates to 1), $\\delta$ is the
 bandwidth parameter (that is, a smoothing parameter) which scales the kernel
-$K$. In our experiment, we use a Gaussian kernel and set $\\delta = 80$, which
+$K$.
+
+In our experiment, we use a Gaussian kernel and set $\\delta = 80$, which
 was found to empirically determine a reasonable density estimate across various
-datasets. The kernel density estimate provides a smooth version of the histogram
-which allows us to more robustly pick a the maxima associated with the WM via a
-combinatorial optimization routine. The found WM peak $\\pi$ is then used to
+datasets.
+
+The kernel density estimate provides a smooth version of the histogram
+which allows us to more robustly pick a the **mode** associated with the WM via a
+combinatorial optimization routine. The found WM peak $p$ is then used to
 normalize the entire image, in much the same way as the segmentation-based
-normalization. Namely,
-$$ I_{\\text{kde}}(\\mathbf x) = \\frac{c \\cdot I(\\mathbf x)}{\\pi} $$
-where $c \\in \\mathbb{R}_{>0}$ is some constant. In this experiment, we
-arbitrarily set $c = 1000$.
+normalization. That is,
+$$ I_{\\text{kde}}(\\mathbf x) = \\frac{c \\cdot I(\\mathbf x)}{p} $$
+where $c \\in \\mathbb{R}_{>0}$ is some constant. In this package, we
+arbitrarily set $c = 1$.
 
-Nyul and Udupa
-~~~~~~~~~~~~~~~~~~
+Piecewise Linear Histogram Matching (Nyul & Udupa)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Piecewise affine histogram-based normalization (which we will denote as NU for
-brevity)---proposed by Nyul and Udupa [1]---addresses the
-normalization problem by learning a
+Piecewise (affine) histogram-based normalization (which we will denote as HM for
+brevity)—proposed by Nyul and Udupa [1]—addresses the normalization problem by learning a
 standard histogram for a set of contrast images and mapping the intensities of each
 image to this standard histogram. The standard histogram is learned through the
-demarcation of pre-defined landmarks of interest. For instance, Shah et al.
-[2] demonstrate good results with this method by defining landmarks as
-intensity percentiles at $1,10,20,\\ldots,90,99$ percent (where the intensity
-values below 1% and above 99% are discarded as outliers). We use these
-landmarks in our method. The standard scale must be have a pre-defined range,
-i.e., $[m_{\\text{min}}^s, m_{\\text{max}}^s]$. In our experiment, we arbitrarily set
-$m_{\\text{min}}^s = 0$ and $m_{\\text{max}}^s = 100$. We will now overview the
-learning and normalization procedure.
+demarcation of pre-defined landmarks of interest.
+
+For instance, Shah et al. [2] defined landmarks as intensity percentiles at
+$1,10,20,\\ldots,90,99$ percent (where the intensity values below 1% and above 99% are
+discarded as outliers). We use these landmarks as the default in our implementation. The
+standard scale must be have a pre-defined range, i.e., $[m_{\\text{min}}^s, m_{\\text{max}}^s]$.
+In our experiment, we arbitrarily set $m_{\\text{min}}^s = 0$ and $m_{\\text{max}}^s = 100$.
+
+Learning the standard histogram
+"""""""""""""""""""""""""""""""
 
 Let $\\mathbf I = \\{I_1,I_2,\\ldots,I_K\\}$ be a set of $K$ MR brain images of one contrast.
-We calculate the following set of quantities
-$m_1^i$ and $m_{99}^i$, which are the 1% and 99% intensity values for the
-image $I_i \\in \\mathbf I$. We then map all the intensity values of $I_i$ with
-the following linear map
-$$ \\tilde I_i(\\mathbf x) = \\left(I_i(\\mathbf x) - m_1^i + m_{\\text{min}}^s\\right) \\left(\\frac{m_{\\text{max}}^s}{m_{99}^i}\\right) $$
+We calculate the following set of quantities $m_1^i$ and $m_{99}^i$, which are the 1% and 99%
+intensity values for the image $I_i \\in \\mathbf I$. We then map all the intensity values of
+$I_i$ with the following linear map $$ \\tilde I_i(\\mathbf x) = \\left(I_i(\\mathbf x) - m_1^i + m_{\\text{min}}^s\\right) \\left(\\frac{m_{\\text{max}}^s}{m_{99}^i}\\right) $$
 which takes the intensities of $I_i$ to the range $[m_{\\text{min}}^s, m_{\\text{max}}^s]$ excluding outliers.
 Then we calculate the deciles for the new image $\\tilde I_i$, i.e., the set
 $\\{\\tilde m_{10}^i,\\tilde m_{20}^i,\\ldots,\\tilde m_{90}^i\\}$ (note that $\\tilde
@@ -106,6 +111,9 @@ value is the learned landmark for the standard histogram. That is, for $n \\in
 $$ m_n^s = \\frac{1}{K} \\sum_{i=1}^{K} \\tilde m_n^i $$
 and the standard scale landarks is the set
 $\\{m_{\\text{min}}^s,m_{10}^s,\\ldots,m_{90}^s,m_{\\text{max}}^s\\}$.
+
+Normalizing new images
+""""""""""""""""""""""
 
 For a test image $I$, the transform for the normalization is done by first calculating
 the set of percentiles $\\{m_{1},m_{10},m_{20},\\ldots,m_{90},m_{99}\\}$. These
@@ -121,11 +129,10 @@ $$ I_{\\text{nu}} = \\bigcup_{\\substack{i,j \\in \\{1,10,20,\\ldots,90,99\\}\\n
 WhiteStripe
 ~~~~~~~~~~~
 
-WhiteStripe intensity normalization [3] attempts to do a
-Z-score normalization based on the intensity values of normal appearing white
-matter (NAWM). The NAWM is found by smoothing the histogram of the image and
-selecting the largest peak (for T1-w images). Let $\\mu$ be the intensity
-associated with this peak. The "white stripe" is then defined as the 10%
+WhiteStripe intensity normalization [3] attempts to do a Z-score normalization based on the
+intensity values of normal appearing white matter (NAWM). The NAWM is found by smoothing the
+histogram of the image (i.e., KDE) and selecting the mode of the distribution (for T1-w images).
+Let $p$ be the intensity associated with the mode. The "white stripe" is then defined as the 10%
 segment of intensity values around $\\mu$. That is, let $F(x)$ be the cdf of the
 specific MR image $I(\\mathbf x)$ inside its brain mask $B$, and define $\\tau =
 5\\%$. Then, the white stripe $\\Omega_\\tau$ is defined as the set

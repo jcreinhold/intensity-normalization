@@ -1,8 +1,11 @@
 Executables
-===================================
+===========
+
+Normalization scripts
+---------------------
 
 Z-Score Normalization
-~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^
 
 .. argparse:: 
    :module: intensity_normalization.exec.zscore_normalize
@@ -10,7 +13,7 @@ Z-Score Normalization
    :prog: zscore-normalize
 
 FCM Normalization
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 .. argparse:: 
    :module: intensity_normalization.exec.fcm_normalize
@@ -18,7 +21,7 @@ FCM Normalization
    :prog: fcm-normalize
 
 GMM Normalization
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 .. argparse:: 
    :module: intensity_normalization.exec.gmm_normalize
@@ -26,15 +29,15 @@ GMM Normalization
    :prog: gmm-normalize
 
 KDE Normalization
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 .. argparse:: 
    :module: intensity_normalization.exec.kde_normalize
    :func: arg_parser
    :prog: kde-normalize
 
-Nyul Normalization
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Piecewise Linear Histogram Matching (Nyul & Udupa)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. argparse:: 
    :module: intensity_normalization.exec.nyul_normalize
@@ -42,7 +45,7 @@ Nyul Normalization
    :prog: nyul-normalize
 
 WhiteStripe Normalization
-~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. argparse:: 
    :module: intensity_normalization.exec.ws_normalize
@@ -50,7 +53,7 @@ WhiteStripe Normalization
    :prog: ws-normalize
 
 RAVEL Normalization
-~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^
 
 .. argparse:: 
    :module: intensity_normalization.exec.ravel_normalize
@@ -58,25 +61,26 @@ RAVEL Normalization
    :prog: ravel-normalize
 
 Least Squares Normalization
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. argparse::
    :module: intensity_normalization.exec.lsq_normalize
    :func: arg_parser
    :prog: lsq-normalize
 
+Other scripts
+-------------
+
 Plot Histograms
-~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 .. argparse::
    :module: intensity_normalization.exec.plot_hists
    :func: arg_parser
    :prog: plot-hists
 
-The following four scripts are only installed if the `--preprocess` flag is used during installation
-
 Preprocessing
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 .. argparse:: 
    :module: intensity_normalization.exec.preprocess
@@ -84,7 +88,7 @@ Preprocessing
    :prog: preprocess
 
 Tissue Mask
-~~~~~~~~~~~
+^^^^^^^^^^^
 
 .. argparse:: 
    :module: intensity_normalization.exec.tissue_mask
@@ -92,7 +96,7 @@ Tissue Mask
    :prog: tissue-mask
 
 Co-register
-~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^
 
 .. argparse::
    :module: intensity_normalization.exec.coregister
@@ -100,7 +104,7 @@ Co-register
    :prog: coregister
 
 Plot Quality Metric
-~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^
 
 .. argparse::
    :module: intensity_normalization.exec.norm_quality

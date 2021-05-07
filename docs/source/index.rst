@@ -6,9 +6,16 @@
 intensity-normalization documentation
 ===================================================
 
-This package contains various routines to normalize the intensity of various contrasts of magnetic resonance (MR) brain images; specifically,
-T1-weighted (T1-w), T2-weighted (T2-w), and FLuid-Attenuated Inversion Recovery (FLAIR). Intensity normalization is an important pre-processing step
-in many image processing applications regarding MR images since MR images do not have a consistent intensity scale.
+This package contains various methods to normalize the intensity of various modalities of magnetic resonance (MR)
+images, e.g., T1-weighted (T1-w), T2-weighted (T2-w), FLuid-Attenuated Inversion Recovery (FLAIR), and Proton
+Density-weighted (PD-w) images.
+
+Intensity normalization is an important pre-processing step in many machine learning applications since MR images do not
+have a consistent intensity scale which breaks the iid assumption inherent in most ML methods.
+
+.. image:: _static/imgs/intnorm_illustration.png
+   :width: 800px
+
 
 .. toctree::
    :maxdepth: 1
