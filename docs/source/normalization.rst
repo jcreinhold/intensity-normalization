@@ -28,8 +28,8 @@ Kernel Density Estimation
 .. automodule:: intensity_normalization.normalize.kde
    :members:
 
-Nyul and Udupa
-~~~~~~~~~~~~~~~~~~
+Piecewise Linear Histogram Matching (Nyul & Udupa)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: intensity_normalization.normalize.nyul
    :members:
