@@ -35,7 +35,7 @@ def jsd(p, q):
     """
     m = 1 / 2 * (p + q)
     with warnings.catch_warnings():
-        warnings.filterwarnings('ignore')
+        warnings.filterwarnings("ignore")
         D_js = 1 / 2 * np.sum(p * np.log10(p / m)) + 1 / 2 * np.sum(q * np.log10(q / m))
     return D_js
 
@@ -59,7 +59,8 @@ def pairwise_jsd(img_dir, mask_dir, nbins=200):
 
     if len(img_fns) != len(mask_fns):
         raise NormalizationError(
-            f'Number of images ({len(img_fns)}) must be equal to the number of masks ({len(mask_fns)}).')
+            f"Number of images ({len(img_fns)}) must be equal to the number of masks ({len(mask_fns)})."
+        )
 
     min_intensities, max_intensities = [], []
     for img_fn, mask_fn in zip(img_fns, mask_fns):
@@ -71,7 +72,9 @@ def pairwise_jsd(img_dir, mask_dir, nbins=200):
     hists = []
     for img_fn, mask_fn in zip(img_fns, mask_fns):
         data = nib.load(img_fn).get_fdata()[nib.load(mask_fn).get_fdata() == 1]
-        hist, _ = np.histogram(data.flatten(), nbins, range=intensity_range, density=True)
+        hist, _ = np.histogram(
+            data.flatten(), nbins, range=intensity_range, density=True
+        )
         hists.append(hist + eps)
 
     pairwise_jsd = []

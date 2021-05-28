@@ -14,32 +14,35 @@ Created on: May 30, 2018
 import logging
 
 import nibabel as nib
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
 
-def zscore_normalize(img, mask=None):
+def zscore_normalize(image, mask=None):
     """
-    normalize a target image by subtracting the mean of the whole brain
-    and dividing by the standard deviation
+    normalize a target image by subtracting the mean and dividing
+    by the standard deviation of the foreground
 
     Args:
-        img (nibabel.nifti1.Nifti1Image): target MR brain image
-        mask (nibabel.nifti1.Nifti1Image): brain mask for img
+        image (nibabel.nifti1.Nifti1Image): MR image to normalize
+        mask (nibabel.nifti1.Nifti1Image): foreground mask for image
 
     Returns:
-        normalized (nibabel.nifti1.Nifti1Image): img with WM mean at norm_value
+        normalized (nibabel.nifti1.Nifti1Image): normalized image
     """
 
-    img_data = img.get_fdata()
+    data = image.get_fdata()
     if mask is not None and not isinstance(mask, str):
         mask_data = mask.get_fdata()
-    elif mask == 'nomask':
-        mask_data = img_data == img_data
+    elif mask == "nomask":
+        mask_data = np.ones_like(data)
     else:
-        mask_data = img_data > img_data.mean()
-    logical_mask = mask_data > 0.  # force the mask to be logical type
-    mean = img_data[logical_mask].mean()
-    std = img_data[logical_mask].std()
-    normalized = nib.Nifti1Image((img_data - mean) / std, img.affine, img.header)
+        mask_data = data > data.mean()  # noqa
+    logical_mask = mask_data > 0.0  # force the mask to be logical type
+    data_inside_mask = data[logical_mask]  # noqa
+    mean = data_inside_mask.mean()
+    std = data_inside_mask.std()
+    normalized_data = (data - mean) / std  # noqa
+    normalized = nib.Nifti1Image(normalized_data, image.affine, image.header)
     return normalized

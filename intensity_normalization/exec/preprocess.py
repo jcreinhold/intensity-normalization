@@ -21,59 +21,108 @@ import sys
 import warnings
 
 with warnings.catch_warnings():
-    warnings.filterwarnings('ignore', category=FutureWarning)
+    warnings.filterwarnings("ignore", category=FutureWarning)
     from intensity_normalization.utilities.preprocess import preprocess
 
 
 def arg_parser():
     parser = argparse.ArgumentParser(
-        description='Do some basic preprocessing on a set of NIfTI MR images of the brain. '
-                    '(i.e., resampling, reorientation, and bias field correction)')
-    required = parser.add_argument_group('Required')
-    required.add_argument('-i', '--img-dir', type=str, required=True,
-                          help='path to directory with images to be processed')
-    required.add_argument('-o', '--out-dir', type=str, required=True,
-                          help='output directory for preprocessed files')
+        description="Do some basic preprocessing on a set of NIfTI MR images of the brain. "
+        "(i.e., resampling, reorientation, and bias field correction)"
+    )
+    required = parser.add_argument_group("Required")
+    required.add_argument(
+        "-i",
+        "--image-dir",
+        type=str,
+        required=True,
+        help="path to directory with images to be processed",
+    )
+    required.add_argument(
+        "-o",
+        "--output-dir",
+        type=str,
+        required=True,
+        help="output directory for preprocessed files",
+    )
 
-    options = parser.add_argument_group('Options')
-    options.add_argument('-m', '--mask-dir', type=str, default=None,
-                         help='directory to output the corresponding mask files')
-    options.add_argument('-r', '--resolution', nargs=3, type=float, default=None,
-                         help='resolution for resampled images (if not set, then keep image resolution)')
-    options.add_argument('--orientation', type=str, default='RAI',
-                         help='orientation of preprocessed images')
-    options.add_argument('--n4-opts', type=str, default=None,
-                         help='n4 convergence options. Add arguments to json file or formatted string, e.g., '
-                              "'{\"iters\": [200, 200, 200, 200], \"tol\": 0.0005}', "
-                              'see ants.n4_bias_field_correction for details about options.')
-    options.add_argument('-v', '--verbosity', action="count", default=0,
-                         help="increase output verbosity (e.g., -vv is more than -v)")
+    options = parser.add_argument_group("Options")
+    options.add_argument(
+        "-b",
+        "--brain-mask-dir",
+        type=str,
+        default=None,
+        help="directory to output the corresponding mask files",
+    )
+    options.add_argument(
+        "-r",
+        "--resolution",
+        nargs=3,
+        type=float,
+        default=None,
+        help="resolution for resampled images (if not set, then keep image resolution)",
+    )
+    options.add_argument(
+        "--orientation",
+        type=str,
+        default="RAI",
+        help="orientation of preprocessed images",
+    )
+    options.add_argument(
+        "--n4-opts",
+        type=str,
+        default=None,
+        help="n4 convergence options. Add arguments to json file or formatted string, e.g., "
+        '\'{"iters": [200, 200, 200, 200], "tol": 0.0005}\', '
+        "see ants.n4_bias_field_correction for details about options.",
+    )
+    options.add_argument(
+        "-v",
+        "--verbosity",
+        action="count",
+        default=0,
+        help="increase output verbosity (e.g., -vv is more than -v)",
+    )
     return parser
 
 
 def main(args=None):
     args = arg_parser().parse_args(args)
     if args.verbosity == 1:
-        level = logging.getLevelName('INFO')
+        level = logging.getLevelName("INFO")
     elif args.verbosity >= 2:
-        level = logging.getLevelName('DEBUG')
+        level = logging.getLevelName("DEBUG")
     else:
-        level = logging.getLevelName('WARNING')
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
+        level = logging.getLevelName("WARNING")
+    logging.basicConfig(
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=level
+    )
     logger = logging.getLogger(__name__)
     try:
-        if not os.path.isdir(args.img_dir):
-            raise ValueError('(-i / --img-dir) argument needs to be a directory of NIfTI images.')
-        if args.mask_dir is not None:
-            if not os.path.isdir(args.mask_dir):
-                raise ValueError('(-m / --mask-dir) argument needs to be a directory of NIfTI images.')
+        if not os.path.isdir(args.image_dir):
+            raise ValueError(
+                "(-i / --img-dir) argument needs to be a directory of NIfTI images."
+            )
+        if args.brain_mask_dir is not None:
+            if not os.path.isdir(args.brain_mask_dir):
+                raise ValueError(
+                    "(-m / --mask-dir) argument needs to be a directory of NIfTI images."
+                )
 
         if args.n4_opts is None:
             n4_opts = None
         else:
             import json
+
             n4_opts = json.loads(args.n4_opts)
-        preprocess(args.img_dir, args.out_dir, args.mask_dir, args.resolution, args.orientation, n4_opts)
+        preprocess(
+            args.image_dir,
+            args.output_dir,
+            args.brain_mask_dir,
+            args.resolution,
+            args.orientation,
+            n4_opts,
+        )
         return 0
     except Exception as e:
         logger.exception(e)

@@ -27,35 +27,34 @@ from intensity_normalization.utilities.mask import gmm_class_mask
 logger = logging.getLogger(__name__)
 
 
-def gmm_normalize(img, brain_mask=None, norm_value=1, contrast='t1', bg_mask=None, wm_peak=None):
+def gmm_normalize(
+    image, brain_mask=None, norm_value=1, modality="t1", bg_mask=None, wm_mean=None
+):
     """
     normalize the white matter of an image using a GMM to find the tissue classes
 
     Args:
-        img (nibabel.nifti1.Nifti1Image): target MR image
-        brain_mask (nibabel.nifti1.Nifti1Image): brain mask for img
+        image (nibabel.nifti1.Nifti1Image): MR image to be normalized
+        brain_mask (nibabel.nifti1.Nifti1Image): brain mask for image
         norm_value (float): value at which to place the WM mean
-        contrast (str): MR contrast type for img
-        bg_mask (nibabel.nifti1.Nifti1Image): if provided, use to zero bkgd
-        wm_peak (float): previously calculated WM peak
+        modality (str): MR contrast type for image
+        bg_mask (nibabel.nifti1.Nifti1Image): if provided, use to zero background
+        wm_mean (float): previously calculated WM mean
 
     Returns:
-        normalized (nibabel.nifti1.Nifti1Image): gmm wm peak normalized image
+        normalized (nibabel.nifti1.Nifti1Image): gmm WM mean normalized image
     """
 
-    if wm_peak is None:
-        wm_peak = gmm_class_mask(img, brain_mask=brain_mask, contrast=contrast)
+    if wm_mean is None:
+        wm_mean = gmm_class_mask(image, brain_mask=brain_mask, modality=modality)
 
-    img_data = img.get_fdata()
-    logger.info('Normalizing Data...')
-    norm_data = (img_data / wm_peak) * norm_value
-    norm_data[norm_data < 0.1] = 0.0
+    data = image.get_fdata()
+    normalized_data = (data / wm_mean) * norm_value
 
     if bg_mask is not None:
-        logger.info('Applying background mask...')
-        masked_image = norm_data * bg_mask.get_fdata()
+        masked_image = normalized_data * bg_mask.get_fdata()
     else:
-        masked_image = norm_data
+        masked_image = normalized_data
 
-    normalized = nib.Nifti1Image(masked_image, img.affine, img.header)
+    normalized = nib.Nifti1Image(masked_image, image.affine, image.header)
     return normalized

@@ -36,7 +36,7 @@ def lsq_normalize(img_dir, mask_dir=None, output_dir=None, write_to_disk=True):
         write_to_disk (bool): write the normalized data to disk or nah
 
     Returns:
-        normalized (np.ndarray): last normalized image from img_dir
+        normalized (np.ndarray): last normalized image from image_dir (for debugging)
     """
     input_files = io.glob_nii(img_dir)
     if output_dir is None:
@@ -45,29 +45,37 @@ def lsq_normalize(img_dir, mask_dir=None, output_dir=None, write_to_disk=True):
         out_fns = []
         for fn in input_files:
             _, base, ext = io.split_filename(fn)
-            out_fns.append(os.path.join(output_dir, base + '_lsq' + ext))
+            out_fns.append(os.path.join(output_dir, base + "_lsq" + ext))
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
 
-    mask_files = [None] * len(input_files) if mask_dir is None else io.glob_nii(mask_dir)
+    mask_files = (
+        [None] * len(input_files) if mask_dir is None else io.glob_nii(mask_dir)
+    )
 
     standard_tissue_means = None
     normalized = None
-    for i, (img_fn, mask_fn, out_fn) in enumerate(zip(input_files, mask_files, out_fns)):
+    for i, (img_fn, mask_fn, out_fn) in enumerate(
+        zip(input_files, mask_files, out_fns)
+    ):
         _, base, _ = io.split_filename(img_fn)
-        logger.info('Transforming image {} to standard scale ({:d}/{:d})'.format(base, i + 1, len(input_files)))
+        logger.info(
+            "Transforming image {} to standard scale ({:d}/{:d})".format(
+                base, i + 1, len(input_files)
+            )
+        )
         img = io.open_nii(img_fn)
         mask = io.open_nii(mask_fn) if mask_fn is not None else None
         tissue_mem = mask_util.fcm_class_mask(img, mask)
         if standard_tissue_means is None:
-            csf_tissue_mask = find_tissue_mask(img, mask, tissue_type='csf')
+            csf_tissue_mask = find_tissue_mask(img, mask, tissue_type="csf")
             csf_normed_data = fcm_normalize(img, csf_tissue_mask).get_fdata()
             standard_tissue_means = calc_tissue_means(csf_normed_data, tissue_mem)
             del csf_tissue_mask, csf_normed_data
         img_data = img.get_fdata()
         tissue_means = calc_tissue_means(img_data, tissue_mem)
         sf = find_scaling_factor(tissue_means, standard_tissue_means)
-        logger.debug('Scaling factor for {}: {:0.3e}'.format(base, sf))
+        logger.debug("Scaling factor for {}: {:0.3e}".format(base, sf))
         normalized = nib.Nifti1Image(sf * img_data, img.affine, img.header)
         if write_to_disk:
             io.save_nii(normalized, out_fn, is_nii=True)
@@ -75,11 +83,14 @@ def lsq_normalize(img_dir, mask_dir=None, output_dir=None, write_to_disk=True):
     return normalized
 
 
-def calc_tissue_means(img, tissue_mem):
+def calc_tissue_means(image, tissue_membership):
     def weighted_avg(w, x):
         return (w * x).sum() / w.sum()
-    tissue_types = tissue_mem.shape[-1]
-    weighted_avgs = [weighted_avg(tissue_mem[..., i], img) for i in range(tissue_types)]
+
+    tissue_types = tissue_membership.shape[-1]
+    weighted_avgs = [
+        weighted_avg(tissue_membership[..., i], image) for i in range(tissue_types)
+    ]
     return np.asarray([weighted_avgs]).T
 
 

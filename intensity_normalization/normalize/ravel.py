@@ -36,9 +36,21 @@ from intensity_normalization.utilities import io
 logger = logging.getLogger(__name__)
 
 
-def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=False,
-                    do_whitestripe=True, b=1, membership_thresh=0.99, segmentation_smoothness=0.25,
-                    do_registration=False, use_fcm=True, sparse_svd=False, csf_masks=False):
+def ravel_normalize(
+    image_dir,
+    mask_dir,
+    contrast,
+    output_dir=None,
+    write_to_disk=False,
+    do_whitestripe=True,
+    b=1,
+    membership_thresh=0.99,
+    segmentation_smoothness=0.25,
+    do_registration=False,
+    use_fcm=True,
+    sparse_svd=False,
+    csf_masks=False,
+):
     """
     Use RAVEL [1] to normalize the intensities of a set of MR images to eliminate
     unwanted technical variation in images (but, hopefully, preserve biological variation)
@@ -49,7 +61,7 @@ def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=
     but there seems to be some more inconsistency in the results
 
     Args:
-        img_dir (str): directory containing MR images to be normalized
+        image_dir (str): directory containing MR images to be normalized
         mask_dir (str): brain masks for imgs (or csf masks if csf_masks is True)
         contrast (str): contrast of MR images to be normalized (T1, T2, or FLAIR)
         output_dir (str): directory to save images if you do not want them saved in
@@ -77,7 +89,7 @@ def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=
             in magnetic resonance imaging studies,” Neuroimage, vol. 132,
             pp. 198–212, 2016.
     """
-    img_fns = io.glob_nii(img_dir)
+    img_fns = io.glob_nii(image_dir)
     mask_fns = io.glob_nii(mask_dir)
 
     if output_dir is None or not write_to_disk:
@@ -91,14 +103,25 @@ def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=
             os.mkdir(output_dir)
 
     # get parameters necessary and setup the V array
-    V, Vc = image_matrix(img_fns, contrast, masks=mask_fns, do_whitestripe=do_whitestripe,
-                         return_ctrl_matrix=True, membership_thresh=membership_thresh,
-                         do_registration=do_registration, smoothness=segmentation_smoothness,
-                         use_fcm=use_fcm, csf_masks=csf_masks)
+    V, Vc = image_matrix(
+        img_fns,
+        contrast,
+        masks=mask_fns,
+        do_whitestripe=do_whitestripe,
+        return_ctrl_matrix=True,
+        membership_thresh=membership_thresh,
+        do_registration=do_registration,
+        smoothness=segmentation_smoothness,
+        use_fcm=use_fcm,
+        csf_masks=csf_masks,
+    )
 
     # estimate the unwanted factors Z
-    _, _, vh = np.linalg.svd(Vc, full_matrices=False) if not sparse_svd else \
-               svds(bsr_matrix(Vc), k=b, return_singular_vectors='vh')
+    _, _, vh = (
+        np.linalg.svd(Vc, full_matrices=False)
+        if not sparse_svd
+        else svds(bsr_matrix(Vc), k=b, return_singular_vectors="vh")
+    )
     Z = vh.T[:, 0:b]
 
     # perform the ravel correction
@@ -128,22 +151,35 @@ def ravel_correction(V, Z):
     """
     means = np.mean(V, axis=1)  # row means
     beta = np.matmul(np.matmul(np.linalg.inv(np.matmul(Z.T, Z)), Z.T), V.T)
-    fitted = np.matmul(Z, beta).T  # this line (alone) gives slightly diff answer than R ver, otherwise exactly same
+    fitted = np.matmul(
+        Z, beta
+    ).T  # this line (alone) gives slightly diff answer than R ver, otherwise exactly same
     res = V - fitted
     res = res + means[:, np.newaxis]
     return res
 
 
-def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_matrix=False,
-                 membership_thresh=0.99, smoothness=0.25, max_ctrl_vox=10000, do_registration=False,
-                 ctrl_prob=1, use_fcm=False, csf_masks=False):
+def image_matrix(
+    images,
+    modality,
+    masks=None,
+    do_whitestripe=True,
+    return_ctrl_matrix=False,
+    membership_thresh=0.99,
+    smoothness=0.25,
+    max_ctrl_vox=10000,
+    do_registration=False,
+    ctrl_prob=1,
+    use_fcm=False,
+    csf_masks=False,
+):
     """
     creates an matrix of images where the rows correspond the the voxels of
     each image and the columns are the images
 
     Args:
-        imgs (list): list of paths to MR images of interest
-        contrast (str): contrast of the set of imgs (e.g., T1)
+        images (list): list of paths to MR images of interest
+        modality (str): contrast of the set of imgs (e.g., T1)
         masks (list or str): list of corresponding brain masks or just one (template) mask
         do_whitestripe (bool): do whitestripe on the images before storing in matrix or nah
         return_ctrl_matrix (bool): return control matrix for imgs (i.e., a subset of V's rows)
@@ -166,106 +202,183 @@ def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_ma
         Vc (np.ndarray): image matrix of control voxels (rows are voxels, columns are images)
             Vc only returned if return_ctrl_matrix is True
     """
-    img_shape = io.open_nii(imgs[0]).get_fdata().shape
-    V = np.zeros((int(np.prod(img_shape)), len(imgs)))
+    img_shape = io.open_nii(images[0]).get_fdata().shape
+    V = np.zeros((int(np.prod(img_shape)), len(images)))
 
     if return_ctrl_matrix:
         ctrl_vox = []
 
     if masks is None and return_ctrl_matrix:
-        raise NormalizationError('Brain masks must be provided if returning control memberships')
+        raise NormalizationError(
+            "Brain masks must be provided if returning control memberships"
+        )
     if masks is None:
-        masks = [None] * len(imgs)
+        masks = [None] * len(images)
 
     do_registration = do_registration and not csf_masks
 
-    for i, (img_fn, mask_fn) in enumerate(zip(imgs, masks)):
-        _, base, _ = io.split_filename(img_fn)
-        img = io.open_nii(img_fn)
+    for i, (image_fn, mask_fn) in enumerate(zip(images, masks)):
+        _, base, _ = io.split_filename(image_fn)
+        image = io.open_nii(image_fn)
         mask = io.open_nii(mask_fn) if mask_fn is not None else None
         # do whitestripe on the image before applying RAVEL (if desired)
         if do_whitestripe:
-            logger.info('Applying WhiteStripe to image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
-            inds = whitestripe(img, contrast, mask)
-            img = whitestripe_norm(img, inds)
-        img_data = img.get_fdata()
-        if img_data.shape != img_shape:
-            raise NormalizationError('Cannot normalize because image {} needs to have same dimension '
-                                     'as all other images ({} != {})'.format(base, img_data.shape, img_shape))
-        V[:, i] = img_data.flatten()
+            logger.info(
+                "Applying WhiteStripe to image {} ({:d}/{:d})".format(
+                    base, i + 1, len(images)
+                )
+            )
+            inds = whitestripe(image, modality, mask)
+            image = whitestripe_norm(image, inds)
+        data = image.get_fdata()
+        if data.shape != img_shape:
+            raise NormalizationError(
+                "Cannot normalize because image {} needs to have same dimension "
+                "as all other images ({} != {})".format(base, data.shape, img_shape)
+            )
+        V[:, i] = data.flatten()
         if return_ctrl_matrix:
             if do_registration and i == 0:
-                logger.info('Creating control mask for image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
-                verbose = True if logger.getEffectiveLevel() == logging.getLevelName('DEBUG') else False
+                logger.info(
+                    "Creating control mask for image {} ({:d}/{:d})".format(
+                        base, i + 1, len(images)
+                    )
+                )
+                verbose = (
+                    True
+                    if logger.getEffectiveLevel() == logging.getLevelName("DEBUG")
+                    else False
+                )
                 ctrl_masks = []
                 reg_imgs = []
-                reg_imgs.append(csf.nibabel_to_ants(img))
-                ctrl_masks.append(csf.csf_mask(img, mask, contrast=contrast, csf_thresh=membership_thresh,
-                                               mrf=smoothness, use_fcm=use_fcm))
+                reg_imgs.append(csf.nibabel_to_ants(image))
+                ctrl_masks.append(
+                    csf.csf_mask(
+                        image,
+                        mask,
+                        contrast=modality,
+                        csf_thresh=membership_thresh,
+                        mrf=smoothness,
+                        use_fcm=use_fcm,
+                    )
+                )
             elif do_registration and i != 0:
-                template = ants.image_read(imgs[0])
+                template = ants.image_read(images[0])
                 tmask = ants.image_read(masks[0])
-                img = csf.nibabel_to_ants(img)
-                logger.info('Starting registration for image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
-                reg_result = ants.registration(template, img, type_of_transform='SyN', mask=tmask, verbose=verbose)
-                img = reg_result['warpedmovout']
+                image = csf.nibabel_to_ants(image)
+                logger.info(
+                    "Starting registration for image {} ({:d}/{:d})".format(
+                        base, i + 1, len(images)
+                    )
+                )
+                reg_result = ants.registration(
+                    template,
+                    image,
+                    type_of_transform="SyN",
+                    mask=tmask,
+                    verbose=verbose,  # noqa
+                )
+                image = reg_result["warpedmovout"]
                 mask = csf.nibabel_to_ants(mask)
-                reg_imgs.append(img)
-                logger.info('Creating control mask for image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
-                ctrl_masks.append(csf.csf_mask(img, mask, contrast=contrast, csf_thresh=membership_thresh,
-                                               mrf=smoothness, use_fcm=use_fcm))
+                reg_imgs.append(image)  # noqa
+                logger.info(
+                    "Creating control mask for image {} ({:d}/{:d})".format(
+                        base, i + 1, len(images)
+                    )
+                )
+                ctrl_masks.append(  # noqa
+                    csf.csf_mask(
+                        image,
+                        mask,
+                        contrast=modality,
+                        csf_thresh=membership_thresh,
+                        mrf=smoothness,
+                        use_fcm=use_fcm,
+                    )
+                )
             else:  # assume pre-registered
-                logger.info('Finding control voxels for image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
-                ctrl_mask = csf.csf_mask(img, mask, contrast=contrast, csf_thresh=membership_thresh,
-                                         mrf=smoothness, use_fcm=use_fcm) if csf_masks else mask.get_fdata()
+                logger.info(
+                    "Finding control voxels for image {} ({:d}/{:d})".format(
+                        base, i + 1, len(images)
+                    )
+                )
+                ctrl_mask = (
+                    csf.csf_mask(
+                        image,
+                        mask,
+                        contrast=modality,
+                        csf_thresh=membership_thresh,
+                        mrf=smoothness,
+                        use_fcm=use_fcm,
+                    )
+                    if csf_masks
+                    else mask.get_fdata()
+                )
                 if np.sum(ctrl_mask) == 0:
-                    raise NormalizationError('No control voxels found for image ({}) at threshold ({})'
-                                             .format(base, membership_thresh))
+                    raise NormalizationError(
+                        "No control voxels found for image ({}) at threshold ({})".format(
+                            base, membership_thresh
+                        )
+                    )
                 elif np.sum(ctrl_mask) < 100:
-                    logger.warning('Few control voxels found ({:d}) (potentially a problematic image ({}) or '
-                                   'threshold ({}) too high)'.format(int(np.sum(ctrl_mask)), base, membership_thresh))
-                ctrl_vox.append(img_data[ctrl_mask == 1].flatten())
+                    logger.warning(
+                        "Few control voxels found ({:d}) (potentially a problematic image ({}) or "
+                        "threshold ({}) too high)".format(
+                            int(np.sum(ctrl_mask)), base, membership_thresh
+                        )
+                    )
+                ctrl_vox.append(data[ctrl_mask == 1].flatten())  # noqa
 
     if return_ctrl_matrix and not do_registration:
         min_len = min(min(map(len, ctrl_vox)), max_ctrl_vox)
-        logger.info('Using {:d} control voxels'.format(min_len))
-        Vc = np.zeros((min_len, len(imgs)))
-        for i in range(len(imgs)):
+        logger.info("Using {:d} control voxels".format(min_len))
+        Vc = np.zeros((min_len, len(images)))
+        for i in range(len(images)):
             ctrl_voxs = ctrl_vox[i][:min_len]
-            logger.info('Image {:d} control voxel stats -  mean: {:.3f}, std: {:.3f}'
-                        .format(i + 1, np.mean(ctrl_voxs), np.std(ctrl_voxs)))
+            logger.info(
+                "Image {:d} control voxel stats -  mean: {:.3f}, std: {:.3f}".format(
+                    i + 1, np.mean(ctrl_voxs), np.std(ctrl_voxs)
+                )
+            )
             Vc[:, i] = ctrl_voxs
     elif return_ctrl_matrix and do_registration:
-        ctrl_sum = reduce(add, ctrl_masks)  # need to use reduce instead of sum b/c data structure
+        ctrl_sum = reduce(
+            add, ctrl_masks
+        )  # need to use reduce instead of sum b/c data structure
         intersection = np.zeros(ctrl_sum.shape)
         intersection[ctrl_sum >= np.floor(len(ctrl_masks) * ctrl_prob)] = 1
         num_ctrl_vox = int(np.sum(intersection))
-        Vc = np.zeros((num_ctrl_vox, len(imgs)))
-        for i, img in enumerate(reg_imgs):
-            ctrl_voxs = img.numpy()[intersection == 1]
-            logger.info('Image {:d} control voxel stats -  mean: {:.3f}, std: {:.3f}'
-                        .format(i + 1, np.mean(ctrl_voxs), np.std(ctrl_voxs)))
+        Vc = np.zeros((num_ctrl_vox, len(images)))
+        for i, image in enumerate(reg_imgs):
+            ctrl_voxs = image.numpy()[intersection == 1]
+            logger.info(
+                "Image {:d} control voxel stats -  mean: {:.3f}, std: {:.3f}".format(
+                    i + 1, np.mean(ctrl_voxs), np.std(ctrl_voxs)
+                )
+            )
             Vc[:, i] = ctrl_voxs
         del ctrl_masks, reg_imgs
         gc.collect()  # force a garbage collection, since we just used the majority of the system memory
 
-    return V if not return_ctrl_matrix else (V, Vc)
+    return V if not return_ctrl_matrix else (V, Vc)  # noqa
 
 
-def image_matrix_to_images(V, imgs):
+def image_matrix_to_images(V, images):
     """
     convert an image matrix to a list of the correctly formated nifti images
 
     Args:
         V (np.ndarray): image matrix (rows are voxels, columns are images)
-        imgs (list): list of paths to corresponding MR images in V
+        images (list): list of paths to corresponding MR images in V
 
     Returns:
         img_list (list): list of nifti images extracted from V
     """
     img_list = []
-    for i, img_fn in enumerate(imgs):
-        img = io.open_nii(img_fn)
-        nimg = nib.Nifti1Image(V[:, i].reshape(img.get_fdata().shape), img.affine, img.header)
+    for i, image_fn in enumerate(images):
+        image = io.open_nii(image_fn)
+        nimg = nib.Nifti1Image(
+            V[:, i].reshape(image.get_fdata().shape), image.affine, image.header
+        )
         img_list.append(nimg)
     return img_list
