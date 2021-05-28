@@ -14,6 +14,15 @@ import numpy as np
 from scipy.signal import argrelmax
 import statsmodels.api as sm
 
+from intensity_normalization.errors import NormalizationError
+
+PEAK = {
+    "last": ["t1", "flair", "last"],
+    "largest": ["t2", "largest"],
+    "first": ["md", "first"],
+}
+VALID_MODALITIES = [m for modalities in PEAK.values() for m in modalities]
+
 
 def smooth_hist(data):
     """
@@ -31,14 +40,14 @@ def smooth_hist(data):
 
     kde = sm.nonparametric.KDEUnivariate(data)
 
-    kde.fit(kernel='gau', bw=bw, gridsize=80, fft=True)
+    kde.fit(kernel="gau", bw=bw, gridsize=80, fft=True)
     pdf = 100.0 * kde.density
     grid = kde.support
 
     return grid, pdf
 
 
-def get_largest_mode(data):
+def get_largest_tissue_mode(data):
     """
     gets the last (reliable) peak in the histogram
 
@@ -53,7 +62,7 @@ def get_largest_mode(data):
     return largest_peak
 
 
-def get_last_mode(data, rare_prop=96, remove_tail=True):
+def get_last_tissue_mode(data, rare_prop=96, remove_tail=True):
     """
     gets the last (reliable) peak in the histogram
 
@@ -71,12 +80,14 @@ def get_last_mode(data, rare_prop=96, remove_tail=True):
         which_rare = data >= rare_thresh
         data = data[which_rare != 1]
     grid, pdf = smooth_hist(data)
-    maxima = argrelmax(pdf)[0]  # for some reason argrelmax returns a tuple, so [0] extracts value
+    maxima = argrelmax(pdf)[
+        0
+    ]  # for some reason argrelmax returns a tuple, so [0] extracts value
     last_peak = grid[maxima[-1]]
     return last_peak
 
 
-def get_first_mode(data, rare_prop=99, remove_tail=True):
+def get_first_tissue_mode(data, rare_prop=99, remove_tail=True):
     """
     gets the first (reliable) peak in the histogram
 
@@ -94,6 +105,23 @@ def get_first_mode(data, rare_prop=99, remove_tail=True):
         which_rare = data >= rare_thresh
         data = data[which_rare != 1]
     grid, pdf = smooth_hist(data)
-    maxima = argrelmax(pdf)[0]  # for some reason argrelmax returns a tuple, so [0] extracts value
+    maxima = argrelmax(pdf)[
+        0
+    ]  # for some reason argrelmax returns a tuple, so [0] extracts value
     first_peak = grid[maxima[0]]
     return first_peak
+
+
+def get_tissue_mode(voi, modality):
+    modality_ = modality.lower()
+    if modality_ in ["t1", "flair", "last"]:
+        mode = get_last_tissue_mode(voi)
+    elif modality_ in ["t2", "largest"]:
+        mode = get_largest_tissue_mode(voi)
+    elif modality_ in ["md", "first"]:
+        mode = get_first_tissue_mode(voi)
+    else:
+        msg = "Contrast {} not valid, needs to be {}"
+        modalities = ", ".join(VALID_MODALITIES)
+        raise NormalizationError(msg.format(modality, modalities))
+    return mode

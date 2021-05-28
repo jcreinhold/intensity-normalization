@@ -15,19 +15,19 @@ import unittest
 
 
 class TestPlot(unittest.TestCase):
-
     def setUp(self):
         wd = os.path.dirname(os.path.abspath(__file__))
-        self.data_dir = os.path.join(wd, 'test_data', 'images')
-        self.mask_dir = os.path.join(wd, 'test_data', 'masks')
+        self.data_dir = os.path.join(wd, "test_data", "images")
+        self.mask_dir = os.path.join(wd, "test_data", "masks")
 
     def test_all_hist(self):
         from intensity_normalization.plot.hist import all_hists
+
         _ = all_hists(self.data_dir, self.mask_dir)
 
     def tearDown(self):
         pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

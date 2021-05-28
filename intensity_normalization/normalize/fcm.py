@@ -25,12 +25,12 @@ from intensity_normalization.utilities import mask
 logger = logging.getLogger(__name__)
 
 
-def fcm_normalize(img, tissue_mask, norm_value=1):
+def fcm_normalize(image, tissue_mask, norm_value=1):
     """
     Use FCM generated mask to normalize some specified tissue of a target image
 
     Args:
-        img (nibabel.nifti1.Nifti1Image): target MR brain image
+        image (nibabel.nifti1.Nifti1Image): target MR brain image
         tissue_mask (nibabel.nifti1.Nifti1Image): tissue mask for img
         norm_value (float): value at which to place the tissue mean
 
@@ -38,29 +38,29 @@ def fcm_normalize(img, tissue_mask, norm_value=1):
         normalized (nibabel.nifti1.Nifti1Image): img with specified tissue mean at norm_value
     """
 
-    img_data = img.get_fdata()
-    tissue_mask_data = tissue_mask.get_fdata() > 0.
-    tissue_mean = img_data[tissue_mask_data].mean()
-    normalized = nib.Nifti1Image((img_data / tissue_mean) * norm_value,
-                                 img.affine, img.header)
+    img_data = image.get_fdata()
+    tissue_mask_data = tissue_mask.get_fdata() > 0.0
+    tissue_mean = img_data[tissue_mask_data].mean()  # noqa
+    normalized_data = (img_data / tissue_mean) * norm_value  # noqa
+    normalized = nib.Nifti1Image(normalized_data, image.affine, image.header)
     return normalized
 
 
-def find_tissue_mask(img, brain_mask, threshold=0.8, tissue_type='wm'):
+def find_tissue_mask(image, brain_mask, threshold=0.8, tissue_type="wm"):
     """
     find tissue mask using FCM with a membership threshold
 
     Args:
-        img (nibabel.nifti1.Nifti1Image): target img
-        brain_mask (nibabel.nifti1.Nifti1Image): brain mask for img
-        threshold (float): membership threshold
+        image (nibabel.nifti1.Nifti1Image): image to be normalized
+        brain_mask (nibabel.nifti1.Nifti1Image): brain mask for image
+        threshold (float): fuzzy membership threshold
         tissue_type (str): find the mask of this tissue type (wm, gm, or csf)
 
     Returns:
-        tissue_mask_nifti (nibabel.nifti1.Nifti1Image): tissue mask for img
+        tissue_mask_nifti (nibabel.nifti1.Nifti1Image): tissue mask for image
     """
-    tissue_to_int = {'csf': 0, 'gm': 1, 'wm': 2}
-    t1_mem = mask.fcm_class_mask(img, brain_mask)
+    tissue_to_int = {"csf": 0, "gm": 1, "wm": 2}
+    t1_mem = mask.fcm_class_mask(image, brain_mask)
     tissue_mask = t1_mem[..., tissue_to_int[tissue_type]] > threshold
-    tissue_mask_nifti = nib.Nifti1Image(tissue_mask, img.affine, img.header)
+    tissue_mask_nifti = nib.Nifti1Image(tissue_mask, image.affine, image.header)
     return tissue_mask_nifti

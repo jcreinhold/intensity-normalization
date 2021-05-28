@@ -16,40 +16,34 @@ import logging
 
 import nibabel as nib
 
-from intensity_normalization.errors import NormalizationError
 from intensity_normalization.utilities import hist
 
 logger = logging.getLogger(__name__)
 
 
-def kde_normalize(img, mask=None, contrast='t1', norm_value=1):
+def kde_normalize(image, mask=None, modality="t1", norm_value=1):
     """
     use kernel density estimation to find the peak of the white
     matter in the histogram of a skull-stripped image. Normalize
     the WM of the non-skull-stripped image to norm_value
 
     Args:
-        img (nibabel.nifti1.Nifti1Image): target MR image
+        image (nibabel.nifti1.Nifti1Image): target MR image
         mask (nibabel.nifti1.Nifti1Image): brain mask of img
-        contrast (str): contrast of img (T1,T2,FA,MD)
-        norm_value (float): value at which to place WM peak
+        modality (str): modality of the MR image (e.g., t1)
+        norm_value (float): value at which to place WM mode
 
     Returns:
-        normalized (nibabel.nifti1.Nifti1Image): WM normalized img
+        normalized (nibabel.nifti1.Nifti1Image):
+            WM mode normalized image
     """
+    data = image.get_fdata()
     if mask is not None:
-        voi = img.get_fdata()[mask.get_fdata() == 1].flatten()
+        mask_data = mask.get_fdata() > 0.0
+        voi = data[mask_data].flatten()  # noqa
     else:
-        voi = img.get_fdata()[img.get_fdata() > img.get_fdata().mean()].flatten()
-    if contrast.lower() in ['t1', 'flair', 'last']:
-        wm_peak = hist.get_last_mode(voi)
-    elif contrast.lower() in ['t2', 'largest']:
-        wm_peak = hist.get_largest_mode(voi)
-    elif contrast.lower() in ['md', 'first']:
-        wm_peak = hist.get_first_mode(voi)
-    else:
-        raise NormalizationError(
-            'Contrast {} not valid, needs to be `t1`,`t2`,`flair`,`md`,`first`,`largest`,`last`'.format(contrast))
-    normalized = nib.Nifti1Image((img.get_fdata() / wm_peak) * norm_value,
-                                 img.affine, img.header)
+        voi = data[data > data.mean()].flatten()  # noqa
+    peak = hist.get_tissue_mode(voi, modality)
+    normalized_data = (image.get_fdata() / peak) * norm_value  # noqa
+    normalized = nib.Nifti1Image(normalized_data, image.affine, image.header)
     return normalized
