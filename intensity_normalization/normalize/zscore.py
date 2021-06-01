@@ -1,48 +1,41 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity_normalization.normalize.zscore
+intensity-normalization.normalize.fcm
 
-normalize an image by simply subtracting the mean
-and dividing by the standard deviation of the whole brain
-
-Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
-
-Created on: May 30, 2018
+Author: Jacob Reinhold (jcreinhold@gmail.com)
+Created on: Jun 01, 2021
 """
 
-import logging
+__all__ = []
 
-import nibabel as nib
+from typing import Optional
+
 import numpy as np
 
-logger = logging.getLogger(__name__)
+from intensity_normalization.type import Array
+from intensity_normalization.normalize.base import NormalizeBase
+from intensity_normalization.util.tissue_mask import find_tissue_memberships
 
 
-def zscore_normalize(image, mask=None):
-    """
-    normalize a target image by subtracting the mean and dividing
-    by the standard deviation of the foreground
+class ZScoreNormalize(NormalizeBase):
+    def __init__(self):
+        super().__init__()
 
-    Args:
-        image (nibabel.nifti1.Nifti1Image): MR image to normalize
-        mask (nibabel.nifti1.Nifti1Image): foreground mask for image
+    def calculate_location(
+        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
+    ) -> float:
+        return self.voi.mean()
 
-    Returns:
-        normalized (nibabel.nifti1.Nifti1Image): normalized image
-    """
+    def calculate_scale(
+        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
+    ) -> float:
+        return self.voi.std()
 
-    data = image.get_fdata()
-    if mask is not None and not isinstance(mask, str):
-        mask_data = mask.get_fdata()
-    elif mask == "nomask":
-        mask_data = np.ones_like(data)
-    else:
-        mask_data = data > data.mean()  # noqa
-    logical_mask = mask_data > 0.0  # force the mask to be logical type
-    data_inside_mask = data[logical_mask]  # noqa
-    mean = data_inside_mask.mean()
-    std = data_inside_mask.std()
-    normalized_data = (data - mean) / std  # noqa
-    normalized = nib.Nifti1Image(normalized_data, image.affine, image.header)
-    return normalized
+    def setup(
+        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None
+    ):
+        self.voi = self._get_voi(data, mask, modality)
+
+    def teardown(self):
+        del self.voi
