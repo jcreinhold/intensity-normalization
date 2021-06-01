@@ -1,9 +1,0 @@
-matplotlib
-nibabel
-numpy
-scikit-image
-scikit-learn
-scikit-fuzzy
-scipy
-statsmodels
-webcolors

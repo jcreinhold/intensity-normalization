@@ -3,10 +3,10 @@
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = intensity-normalization
-SOURCEDIR     = source
-BUILDDIR      = build
+SPHINXBUILD   = python -msphinx
+SPHINXPROJ    = intensity_normalization
+SOURCEDIR     = .
+BUILDDIR      = _build
 
 # Put it first so that "make" without argument is like "make help".
 help:
