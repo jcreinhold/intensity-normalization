@@ -21,10 +21,6 @@ from intensity_normalization.util.tissue_membership import find_tissue_membershi
 
 
 class LeastSquaresNormalize(NormalizeSetBase):
-    def __init__(self, standard_tissue_means: Vector, norm_value: float = 1.0):
-        super().__init__(norm_value)
-        self.standard_tissue_means = standard_tissue_means
-
     def calculate_location(
         self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
     ) -> float:
@@ -38,11 +34,11 @@ class LeastSquaresNormalize(NormalizeSetBase):
         sf = self.scaling_factor(tissue_means)
         return sf
 
-    @classmethod
     def fit(
-        cls,
+        self,
         images: List[ArrayOrNifti],
         masks: Optional[List[ArrayOrNifti]] = None,
+        modality: Optional[str] = None,
         **kwargs,
     ):
         image = images[0]  # only need one image to fit this method
@@ -53,9 +49,8 @@ class LeastSquaresNormalize(NormalizeSetBase):
             mask = mask.get_fdata()
         tissue_membership = find_tissue_memberships(image, mask)
         csf_mean = np.average(image, weights=tissue_membership[..., 0])
-        norm_image = image / csf_mean
-        standard_tissue_means = cls.tissue_means(norm_image, tissue_membership)
-        return cls(standard_tissue_means, **kwargs)
+        norm_image = (image / csf_mean) * self.norm_value
+        self.standard_tissue_means = self.tissue_means(norm_image, tissue_membership)
 
     @staticmethod
     def tissue_means(image: Array, tissue_membership: Array) -> Vector:

@@ -10,6 +10,7 @@ __all__ = [
     "WhiteStripeNormalize",
 ]
 
+from argparse import ArgumentParser
 from typing import Optional
 
 import numpy as np
@@ -64,3 +65,11 @@ class WhiteStripeNormalize(NormalizeBase):
     @staticmethod
     def name() -> str:
         return "ws"
+
+    @staticmethod
+    def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
+        parser = parent_parser.add_argument_group("Method")
+        parser.add_argument(
+            "--width", default=0.05, type=float, help="width of the whitestripe",
+        )
+        return parent_parser
