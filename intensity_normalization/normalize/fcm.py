@@ -10,6 +10,7 @@ __all__ = [
     "FCMNormalize",
 ]
 
+from argparse import ArgumentParser
 from typing import Optional
 
 import numpy as np
@@ -42,8 +43,7 @@ class FCMNormalize(NormalizeBase):
     ) -> float:
         modality = self._get_modality(modality)
         if modality == "t1":
-            if mask is None:
-                mask = data > 0.0
+            mask = self._get_mask(data, mask, modality)
             tissue_memberships = find_tissue_memberships(data, mask)
             self.tissue_membership = tissue_memberships[
                 ..., self.tissue_to_int[self.tissue_type]
@@ -64,3 +64,14 @@ class FCMNormalize(NormalizeBase):
     @staticmethod
     def name() -> str:
         return "fcm"
+
+    @staticmethod
+    def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
+        parser = parent_parser.add_argument_group("Method")
+        parser.add_argument(
+            "--tissue-type",
+            default="wm",
+            type=str,
+            help="reference tissue to use for normalization",
+        )
+        return parent_parser

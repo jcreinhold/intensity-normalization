@@ -11,6 +11,7 @@ __all__ = [
     "NormalizeSetBase",
 ]
 
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from pathlib import Path
 from typing import List, Optional
 
@@ -79,6 +80,14 @@ class NormalizeBase:
         return
 
     @staticmethod
+    def estimate_foreground(data: Array) -> Array:
+        return data > data.mean()
+
+    @staticmethod
+    def skull_stripped_foreground(data: Array) -> Array:
+        return data > 0.0
+
+    @staticmethod
     def name() -> str:
         raise NotImplementedError
 
@@ -90,7 +99,7 @@ class NormalizeBase:
         self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None
     ):
         if mask is None:
-            mask = data > 0.0
+            mask = self.skull_stripped_foreground(data)
         return mask
 
     def _get_voi(
@@ -101,25 +110,78 @@ class NormalizeBase:
     def _get_modality(self, modality: Optional[str]) -> str:
         return "t1" if modality is None else modality.lower()
 
+    @staticmethod
+    def get_parent_parser(desc: str) -> ArgumentParser:
+        parser = ArgumentParser(
+            description=desc, formatter_class=ArgumentDefaultsHelpFormatter,
+        )
+        parser.add_argument(
+            "image", type=str, help="path of image to normalize",
+        )
+        parser.add_argument(
+            "--mask", type=str, default=None, help="path of foreground mask for image",
+        )
+        parser.add_argument(
+            "--modality", type=str, default=None, help="modality of the MR image",
+        )
+        parser.add_argument(
+            "--norm-value",
+            type=float,
+            default=1.0,
+            help="reference value for normalization",
+        )
+        return parser
+
+    @staticmethod
+    def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
+        return parent_parser
+
 
 class NormalizeSetBase(NormalizeBase):
-    @classmethod
     def fit(
-        cls,
+        self,
         images: List[ArrayOrNifti],
         masks: Optional[List[ArrayOrNifti]] = None,
+        modality: Optional[str] = None,
         **kwargs,
     ):
         raise NotImplementedError
 
-    @classmethod
     def fit_from_directories(
-        cls,
+        self,
         image_dir: PathLike,
         mask_dir: Optional[PathLike] = None,
+        modality: Optional[str] = None,
         ext: str = "nii*",
         **kwargs,
     ):
         images, masks = gather_images_and_masks(image_dir, mask_dir, ext)
-        normalizer = cls.fit(images, masks, **kwargs)
-        return normalizer
+        self.fit(images, masks, modality, **kwargs)
+
+    @staticmethod
+    def get_parent_parser(desc: str) -> ArgumentParser:
+        parser = ArgumentParser(
+            description=desc, formatter_class=ArgumentDefaultsHelpFormatter,
+        )
+        parser.add_argument(
+            "--image-dir",
+            type=str,
+            default=None,
+            help="path of directory of images to normalize",
+        )
+        parser.add_argument(
+            "--mask-dir",
+            type=str,
+            default=None,
+            help="path of directory of foreground masks corresponding to images",
+        )
+        parser.add_argument(
+            "--output-dir",
+            type=str,
+            default=None,
+            help="path of directory in which to save normalized images",
+        )
+        parser.add_argument(
+            "--modality", type=str, default=None, help="modality of the MR images",
+        )
+        return parser
