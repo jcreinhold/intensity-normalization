@@ -1,13 +1,14 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity-normalization.normalize.fcm
+intensity_normalization.normalize.fcm
 
 Author: Jacob Reinhold (jcreinhold@gmail.com)
 Created on: Jun 01, 2021
 """
 
-__all__ = []
+__all__ = [
+    "FCMNormalize",
+]
 
 from typing import Optional
 
@@ -15,10 +16,14 @@ import numpy as np
 
 from intensity_normalization.type import Array
 from intensity_normalization.normalize.base import NormalizeBase
-from intensity_normalization.util.tissue_mask import find_tissue_memberships
+from intensity_normalization.util.tissue_membership import find_tissue_memberships
 
 
 class FCMNormalize(NormalizeBase):
+    """
+    Use fuzzy c-means-generated tissue membership (found on a T1-w
+    image) to normalize the tissue to norm_value (default = 1.)
+    """
 
     tissue_to_int = {"csf": 0, "gm": 1, "wm": 2}
 
@@ -55,3 +60,7 @@ class FCMNormalize(NormalizeBase):
             )
             raise ValueError(msg)
         return tissue_mean
+
+    @staticmethod
+    def name() -> str:
+        return "fcm"

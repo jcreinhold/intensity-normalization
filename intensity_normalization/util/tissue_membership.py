@@ -1,7 +1,6 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity-normalization.util.tissue_mask
+intensity_normalization.util.tissue_membership
 
 Author: Jacob Reinhold (jcreinhold@gmail.com)
 Created on: Jun 01, 2021
