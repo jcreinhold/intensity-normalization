@@ -1,7 +1,6 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity-normalization.normalize.normalize
+intensity_normalization.normalize.base
 
 Author: Jacob Reinhold (jcreinhold@gmail.com)
 Created on: Jun 01, 2021
@@ -9,13 +8,21 @@ Created on: Jun 01, 2021
 
 __all__ = [
     "NormalizeBase",
+    "NormalizeSetBase",
 ]
 
-from typing import Optional, Union
+from pathlib import Path
+from typing import List, Optional
 
 import nibabel as nib
 
-from intensity_normalization.type import Array, NiftiImage
+from intensity_normalization.type import (
+    Array,
+    ArrayOrNifti,
+    NiftiImage,
+    PathLike,
+)
+from intensity_normalization.util.io import gather_images_and_masks, split_filename
 
 
 class NormalizeBase:
@@ -24,10 +31,10 @@ class NormalizeBase:
 
     def __call__(
         self,
-        data: Union[Array, NiftiImage],
-        mask: Optional[Union[Array, NiftiImage]] = None,
+        data: ArrayOrNifti,
+        mask: Optional[ArrayOrNifti] = None,
         modality: Optional[str] = None,
-    ) -> Union[Array, NiftiImage]:
+    ) -> ArrayOrNifti:
         if isinstance(data, nib.Nifti1Image):
             return self.normalize_nifti(data, mask, modality)
         else:
@@ -71,6 +78,14 @@ class NormalizeBase:
     def teardown(self):
         return
 
+    @staticmethod
+    def name() -> str:
+        raise NotImplementedError
+
+    def append_name_to_file(self, filepath: PathLike) -> Path:
+        path, base, ext = split_filename(filepath)
+        return path / (base + f"_{self.name()}" + ext)
+
     def _get_mask(
         self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None
     ):
@@ -88,4 +103,23 @@ class NormalizeBase:
 
 
 class NormalizeSetBase(NormalizeBase):
-    pass
+    @classmethod
+    def fit(
+        cls,
+        images: List[ArrayOrNifti],
+        masks: Optional[List[ArrayOrNifti]] = None,
+        **kwargs,
+    ):
+        raise NotImplementedError
+
+    @classmethod
+    def fit_from_directories(
+        cls,
+        image_dir: PathLike,
+        mask_dir: Optional[PathLike] = None,
+        ext: str = "nii*",
+        **kwargs,
+    ):
+        images, masks = gather_images_and_masks(image_dir, mask_dir, ext)
+        normalizer = cls.fit(images, masks, **kwargs)
+        return normalizer

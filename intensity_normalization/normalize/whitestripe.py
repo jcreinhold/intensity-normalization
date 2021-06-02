@@ -1,13 +1,14 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity-normalization.normalize.fcm
+intensity_normalization.normalize.whitestripe
 
 Author: Jacob Reinhold (jcreinhold@gmail.com)
 Created on: Jun 01, 2021
 """
 
-__all__ = []
+__all__ = [
+    "WhiteStripeNormalize",
+]
 
 from typing import Optional
 
@@ -19,6 +20,12 @@ from intensity_normalization.util.histogram_tools import get_tissue_mode
 
 
 class WhiteStripeNormalize(NormalizeBase):
+    """
+    find the "(normal appearing) white (matter) stripe" of the input MR image
+    and use those values to standardize the data (i.e., subtract the mean of
+    the values in the indices and divide by the std of those values)
+    """
+
     def __init__(
         self,
         width: float = 0.05,
@@ -53,3 +60,7 @@ class WhiteStripeNormalize(NormalizeBase):
 
     def teardown(self):
         del self.whitestripe
+
+    @staticmethod
+    def name() -> str:
+        return "ws"

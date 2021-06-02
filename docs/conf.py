@@ -22,6 +22,18 @@ import sys
 
 sys.path.insert(0, os.path.abspath(".."))
 
+autodoc_mock_imports = [
+    "ants",
+    "matplotlib",
+    "nibabel",
+    "numpy",
+    "skfuzzy",
+    "sklearn",
+    "scipy",
+    "statsmodels",
+    "seaborn",
+]
+
 import intensity_normalization
 
 # -- General configuration ---------------------------------------------
@@ -32,7 +44,13 @@ import intensity_normalization
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ["sphinx.ext.autodoc", "sphinx.ext.viewcode"]
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
+    "sphinxarg.ext",
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -40,8 +58,7 @@ templates_path = ["_templates"]
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-# source_suffix = ['.rst', '.md']
-source_suffix = ".rst"
+source_suffix = [".rst", ".md"]
 
 # The master toctree document.
 master_doc = "index"
