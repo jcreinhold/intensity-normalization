@@ -23,12 +23,6 @@ from intensity_normalization.util.tissue_membership import find_tissue_membershi
 
 logger = logging.getLogger(__name__)
 
-try:
-    import ants
-except (ModuleNotFoundError, ImportError):
-    logger.warning("ANTsPy not installed. Install antspyx to use co-registration.")
-    raise
-
 
 class RavelNormalize(NormalizeSetBase):
     def __init__(
