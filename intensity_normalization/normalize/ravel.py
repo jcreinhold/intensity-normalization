@@ -22,6 +22,21 @@ from intensity_normalization.util.tissue_membership import find_tissue_membershi
 
 
 class RavelNormalize(NormalizeSetBase):
+    def __init__(
+        self,
+        membership_threshold: float = 0.99,
+        smoothness: float = 0.25,
+        max_num_control_voxels: int = 10000,
+        register: bool = False,
+        control_proportion: float = 1.0,
+    ):
+        super().__init__()
+        self.membership_threshold = membership_threshold
+        self.smoothness = smoothness
+        self.max_num_control_voxels = max_num_control_voxels
+        self.register = register
+        self.control_proportion = control_proportion
+
     def calculate_location(
         self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
     ) -> float:
