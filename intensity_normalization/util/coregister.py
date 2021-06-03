@@ -6,13 +6,23 @@ Author: Jacob Reinhold (jcreinhold@gmail.com)
 Created on: Jun 03, 2021
 """
 
-__all__ = []
+__all__ = [
+    "Registrator",
+]
 
+import logging
 from typing import List, Optional
 
-import ants
 
 from intensity_normalization.type import NiftiImage
+
+logger = logging.getLogger(__name__)
+
+try:
+    import ants
+except (ModuleNotFoundError, ImportError):
+    logger.warning("ANTsPy not installed. Install antspyx to use co-registration.")
+    raise
 
 
 class Registrator:
