@@ -10,6 +10,7 @@ __all__ = [
     "RavelNormalize",
 ]
 
+import logging
 from typing import List, Optional
 
 import nibabel as nib
@@ -19,6 +20,14 @@ from intensity_normalization.type import Array, ArrayOrNifti, Vector
 from intensity_normalization.normalize.base import NormalizeSetBase
 from intensity_normalization.normalize.whitestripe import WhiteStripeNormalize
 from intensity_normalization.util.tissue_membership import find_tissue_memberships
+
+logger = logging.getLogger(__name__)
+
+try:
+    import ants
+except (ModuleNotFoundError, ImportError):
+    logger.warning("ANTsPy not installed. Install antspyx to use co-registration.")
+    raise
 
 
 class RavelNormalize(NormalizeSetBase):
