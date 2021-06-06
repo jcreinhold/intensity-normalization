@@ -7,6 +7,7 @@ Created on: Jun 01, 2021
 """
 
 __all__ = [
+    "ArgType",
     "Array",
     "ArrayOrNifti",
     "NiftiImage",
@@ -14,12 +15,14 @@ __all__ = [
     "Vector",
 ]
 
-from typing import Union
+from argparse import Namespace
+from typing import List, Optional, Union
 
 import nibabel as nib
 import numpy as np
 from pathlib import Path
 
+ArgType = Optional[Union[Namespace, List[str]]]
 Array = np.ndarray
 NiftiImage = nib.Nifti1Image
 ArrayOrNifti = Union[Array, NiftiImage]

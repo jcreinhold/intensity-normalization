@@ -11,12 +11,23 @@ __all__ = [
     "NormalizeSetBase",
 ]
 
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from argparse import (
+    ArgumentParser,
+    ArgumentDefaultsHelpFormatter,
+    Namespace,
+)
 from pathlib import Path
 from typing import List, Optional
 
 import nibabel as nib
 
+from intensity_normalization import VALID_MODALITIES
+from intensity_normalization.parse import (
+    dir_path,
+    file_path,
+    positive_float,
+    save_file_path,
+)
 from intensity_normalization.type import (
     Array,
     ArrayOrNifti,
@@ -60,6 +71,25 @@ class NormalizeBase:
         mask = mask_image and mask_image.get_fdata()
         normalized = self.normalize_array(data, mask, modality)
         return nib.Nifti1Image(normalized, image.affine, image.header)
+
+    def normalize_from_filenames(
+        self,
+        image_path: PathLike,
+        mask_path: Optional[PathLike] = None,
+        out_path: Optional[PathLike] = None,
+        modality: Optional[str] = None,
+    ):
+        image = nib.load(image_path)
+        mask = nib.load(mask_path) if mask_path is not None else None
+        if out_path is None:
+            out_path = self.append_name_to_file(image_path)
+        normalized = self.normalize_nifti(image, mask, modality)
+        normalized.to_filename(out_path)
+
+    def normalize_from_argparse_args(self, args: Namespace):
+        self.normalize_from_filenames(
+            args.image, args.mask, args.output, args.modality,
+        )
 
     def calculate_location(
         self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None
@@ -116,25 +146,60 @@ class NormalizeBase:
             description=desc, formatter_class=ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
-            "image", type=str, help="path of image to normalize",
+            "image", type=file_path(), help="Path of image to normalize.",
         )
         parser.add_argument(
-            "--mask", type=str, default=None, help="path of foreground mask for image",
+            "-m",
+            "--mask",
+            type=file_path(),
+            default=None,
+            help="Path of foreground mask for image.",
         )
         parser.add_argument(
-            "--modality", type=str, default=None, help="modality of the MR image",
+            "-o",
+            "--output",
+            type=save_file_path(),
+            default=None,
+            help="Path to save normalized image.",
         )
         parser.add_argument(
+            "-mo",
+            "--modality",
+            type=str,
+            default=None,
+            choices=VALID_MODALITIES,
+            help="Modality of the image.",
+        )
+        parser.add_argument(
+            "-n",
             "--norm-value",
-            type=float,
+            type=positive_float(),
             default=1.0,
-            help="reference value for normalization",
+            help="Reference value for normalization.",
+        )
+        options = parser.add_argument_group("Options")
+        options.add_argument(
+            "-p",
+            "--plot-histogram",
+            action="store_true",
+            help="Plot the histogram of the normalized image.",
+        )
+        options.add_argument(
+            "-v",
+            "--verbosity",
+            action="count",
+            default=0,
+            help="Increase output verbosity (e.g., -vv is more than -v).",
         )
         return parser
 
     @staticmethod
     def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
         return parent_parser
+
+    @classmethod
+    def from_argparse_args(cls, args: Namespace):
+        raise NotImplementedError
 
 
 class NormalizeSetBase(NormalizeBase):
@@ -164,24 +229,44 @@ class NormalizeSetBase(NormalizeBase):
             description=desc, formatter_class=ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
-            "--image-dir",
-            type=str,
-            default=None,
-            help="path of directory of images to normalize",
+            "image-dir",
+            type=dir_path(),
+            help="Path of directory of images to normalize.",
         )
         parser.add_argument(
+            "-m",
             "--mask-dir",
-            type=str,
+            type=dir_path(),
             default=None,
-            help="path of directory of foreground masks corresponding to images",
+            help="Path of directory of foreground masks corresponding to images.",
         )
         parser.add_argument(
+            "-o",
             "--output-dir",
-            type=str,
+            type=dir_path(),
             default=None,
-            help="path of directory in which to save normalized images",
+            help="Path of directory in which to save normalized images.",
         )
         parser.add_argument(
-            "--modality", type=str, default=None, help="modality of the MR images",
+            "-mo",
+            "--modality",
+            type=str,
+            default=None,
+            choices=VALID_MODALITIES,
+            help="Modality of the images.",
+        )
+        options = parser.add_argument_group("Options")
+        options.add_argument(
+            "-p",
+            "--plot-histogram",
+            action="store_true",
+            help="Plot the histogram of the normalized image.",
+        )
+        options.add_argument(
+            "-v",
+            "--verbosity",
+            action="count",
+            default=0,
+            help="Increase output verbosity (e.g., -vv is more than -v).",
         )
         return parser

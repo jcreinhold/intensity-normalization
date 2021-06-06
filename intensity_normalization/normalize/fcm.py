@@ -10,11 +10,12 @@ __all__ = [
     "FCMNormalize",
 ]
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from typing import Optional
 
 import numpy as np
 
+from intensity_normalization.parse import file_path, remove_args
 from intensity_normalization.type import Array
 from intensity_normalization.normalize.base import NormalizeBase
 from intensity_normalization.util.tissue_membership import find_tissue_memberships
@@ -72,6 +73,36 @@ class FCMNormalize(NormalizeBase):
             "--tissue-type",
             default="wm",
             type=str,
-            help="reference tissue to use for normalization",
+            choices=("wm", "gm", "csf"),
+            help="Reference tissue to use for normalization.",
+        )
+        remove_args(parent_parser, ["mask"])
+        group = parent_parser.add_mutually_exclusive_group(required=True)
+        group.add_argument(
+            "-m",
+            "--mask",
+            type=file_path(),
+            help="Path to a foreground mask for the image. "
+            "Provide this if not providing a tissue mask.",
+        )
+        group.add_argument(
+            "-tm",
+            "--tissue-mask",
+            type=file_path(),
+            help="Path to a mask of a target tissue (usually found through FCM). "
+            "Provide this if not providing the foreground mask.",
         )
         return parent_parser
+
+    @classmethod
+    def from_argparse_args(cls, args: Namespace):
+        return cls(args.norm_value, args.tissue_type)
+
+    def normalize_from_argparse_args(self, args: Namespace):
+        if hasattr(args, "mask"):
+            mask = args.mask
+        else:
+            mask = args.tissue_mask
+        self.normalize_from_filenames(
+            args.image, mask, args.output, args.modality,
+        )

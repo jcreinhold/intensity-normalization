@@ -14,15 +14,9 @@ import numpy as np
 from scipy.signal import argrelmax
 import statsmodels.api as sm
 
+from intensity_normalization import PEAK, VALID_PEAKS
 from intensity_normalization.errors import NormalizationError
 from intensity_normalization.type import Array
-
-PEAK = {
-    "last": ["t1", "flair", "last"],
-    "largest": ["t2", "largest"],
-    "first": ["md", "first"],
-}
-VALID_MODALITIES = [m for modalities in PEAK.values() for m in modalities]
 
 
 def smooth_histogram(data: Array) -> Tuple[Array, Array]:
@@ -66,7 +60,8 @@ def get_last_tissue_mode(
     Args:
         data: image data
         remove_tail: remove tail from histogram
-        tail_percentage: if remove_tail, use the proportion of hist above
+        tail_percentage: if remove_tail, use the
+            histogram below this percentage
 
     Returns:
         last_tissue_mode: mode of the highest-intensity tissue class
@@ -108,14 +103,14 @@ def get_first_tissue_mode(
 def get_tissue_mode(data: Array, modality: str) -> float:
     """ Find the appropriate tissue mode given a modality """
     modality_ = modality.lower()
-    if modality_ in ["t1", "flair", "last"]:
+    if modality_ in PEAK["last"]:
         mode = get_last_tissue_mode(data)
-    elif modality_ in ["t2", "largest"]:
+    elif modality_ in PEAK["largest"]:
         mode = get_largest_tissue_mode(data)
-    elif modality_ in ["md", "first"]:
+    elif modality_ in PEAK["first"]:
         mode = get_first_tissue_mode(data)
     else:
-        msg = "Contrast {} not valid, needs to be {}"
-        modalities = ", ".join(VALID_MODALITIES)
-        raise NormalizationError(msg.format(modality, modalities))
+        modalities = ", ".join(VALID_PEAKS)
+        msg = f"Modality {modality} not valid. Needs to be one of {modalities}."
+        raise NormalizationError(msg)
     return mode
