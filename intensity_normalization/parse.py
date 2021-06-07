@@ -8,6 +8,7 @@ Created on: Jun 06, 2021
 """
 
 __all__ = [
+    "CLI",
     "dir_path",
     "file_path",
     "new_parse_type",
@@ -24,10 +25,12 @@ __all__ = [
     "setup_log",
 ]
 
-import argparse
+from argparse import ArgumentParser, ArgumentTypeError, Namespace
 import logging
 from pathlib import Path
 from typing import Any, Callable, List, Union
+
+from intensity_normalization.type import ArgType
 
 
 def return_none(func: Callable) -> Callable:
@@ -63,7 +66,7 @@ class save_file_path(_ParseType):
                 "Needs to end with .nii or .nii.gz and can "
                 "only contain printable characters."
             )
-            raise argparse.ArgumentTypeError(msg)
+            raise ArgumentTypeError(msg)
         path = Path(string)
         return path
 
@@ -82,7 +85,7 @@ class file_path(_ParseType):
         path = Path(string)
         if not path.is_file():
             msg = f"{string} is not a valid file path."
-            raise argparse.ArgumentTypeError(msg)
+            raise ArgumentTypeError(msg)
         return str(path.resolve())
 
 
@@ -91,7 +94,7 @@ class positive_float(_ParseType):
         num = float(string)
         if num <= 0.0:
             msg = f"{string} needs to be a positive float."
-            raise argparse.ArgumentTypeError(msg)
+            raise ArgumentTypeError(msg)
         return num
 
 
@@ -100,7 +103,7 @@ class positive_int(_ParseType):
         num = int(string)
         if num <= 0:
             msg = f"{string} needs to be a positive integer."
-            raise argparse.ArgumentTypeError(msg)
+            raise ArgumentTypeError(msg)
         return num
 
 
@@ -110,7 +113,7 @@ class positive_odd_int_or_none(_ParseType):
         num = int(string)
         if num <= 0 or not (num % 2):
             msg = f"{string} needs to be a positive odd integer."
-            raise argparse.ArgumentTypeError(msg)
+            raise ArgumentTypeError(msg)
         return num
 
 
@@ -125,7 +128,7 @@ class nonnegative_int(_ParseType):
         num = int(string)
         if num < 0:
             msg = f"{string} needs to be a nonnegative integer."
-            raise argparse.ArgumentTypeError(msg)
+            raise ArgumentTypeError(msg)
         return num
 
 
@@ -134,7 +137,7 @@ class nonnegative_float(_ParseType):
         num = float(string)
         if num < 0.0:
             msg = f"{string} needs to be a nonnegative float."
-            raise argparse.ArgumentTypeError(msg)
+            raise ArgumentTypeError(msg)
         return num
 
 
@@ -143,7 +146,7 @@ class probability_float(_ParseType):
         num = float(string)
         if num < 0.0 or num > 1.0:
             msg = f"{string} needs to be between 0 and 1."
-            raise argparse.ArgumentTypeError(msg)
+            raise ArgumentTypeError(msg)
         return num
 
 
@@ -164,7 +167,7 @@ def new_parse_type(func: Callable, name: str):
     return NewParseType()
 
 
-def remove_args(parser: argparse.ArgumentParser, args: List[str]):
+def remove_args(parser: ArgumentParser, args: List[str]):
     """ remove a list of arguments from a parser """
     # https://stackoverflow.com/questions/32807319/disable-remove-argument-in-argparse
     for arg in args:
@@ -194,3 +197,43 @@ def setup_log(verbosity: int):
     fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     logging.basicConfig(format=fmt, level=level)
     logging.captureWarnings(True)
+
+
+class CLI:
+    @staticmethod
+    def description() -> str:
+        raise NotImplementedError
+
+    @staticmethod
+    def get_parent_parser(desc: str) -> ArgumentParser:
+        raise NotImplementedError
+
+    @staticmethod
+    def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
+        return parent_parser
+
+    @classmethod
+    def parser(cls) -> ArgumentParser:
+        parser = cls.get_parent_parser(cls.description())
+        parser = cls.add_method_specific_arguments(parser)
+        return parser
+
+    @classmethod
+    def main(cls, parser: ArgumentParser) -> Callable:
+        def _main(args: ArgType = None) -> int:
+            if args is None:
+                args = parser.parse_args()
+            elif isinstance(args, list):
+                args = parser.parse_args(args)
+            else:
+                raise ValueError("args must be None or a list of strings to parse")
+            setup_log(args.verbosity)
+            cls_instance = cls.from_argparse_args(args)
+            cls_instance.call_from_argparse_args(args)
+            return 0
+
+        return _main
+
+    @classmethod
+    def from_argparse_args(cls, args: Namespace):
+        raise NotImplementedError

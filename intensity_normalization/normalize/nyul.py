@@ -89,3 +89,10 @@ class NyulNormalize(NormalizeSetBase):
     @staticmethod
     def name() -> str:
         return "lsq"
+
+    @staticmethod
+    def description() -> str:
+        return (
+            "Perform piecewise-linear histogram matching per "
+            "Nyul and Udupa given a set of NIfTI MR images."
+        )

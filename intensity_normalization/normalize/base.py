@@ -23,6 +23,7 @@ import nibabel as nib
 
 from intensity_normalization import VALID_MODALITIES
 from intensity_normalization.parse import (
+    CLI,
     dir_path,
     file_path,
     positive_float,
@@ -37,7 +38,7 @@ from intensity_normalization.type import (
 from intensity_normalization.util.io import gather_images_and_masks, split_filename
 
 
-class NormalizeBase:
+class NormalizeBase(CLI):
     def __init__(self, norm_value: float = 1.0):
         self.norm_value = norm_value
 
@@ -51,6 +52,9 @@ class NormalizeBase:
             return self.normalize_nifti(data, mask, modality)
         else:
             return self.normalize_array(data, mask, modality)
+
+    def __str__(self):
+        return self.__class__.__name__
 
     def normalize_array(
         self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
@@ -86,7 +90,7 @@ class NormalizeBase:
         normalized = self.normalize_nifti(image, mask, modality)
         normalized.to_filename(out_path)
 
-    def normalize_from_argparse_args(self, args: Namespace):
+    def call_from_argparse_args(self, args: Namespace):
         self.normalize_from_filenames(
             args.image, args.mask, args.output, args.modality,
         )
@@ -192,14 +196,6 @@ class NormalizeBase:
             help="Increase output verbosity (e.g., -vv is more than -v).",
         )
         return parser
-
-    @staticmethod
-    def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
-        return parent_parser
-
-    @classmethod
-    def from_argparse_args(cls, args: Namespace):
-        raise NotImplementedError
 
 
 class NormalizeSetBase(NormalizeBase):

@@ -50,7 +50,7 @@ class FCMNormalize(NormalizeBase):
                 ..., self.tissue_to_int[self.tissue_type]
             ]
             tissue_mean = np.average(data, weights=self.tissue_membership)
-        elif modality != "t1" and mask is None and self.tissue_membership is not None:
+        elif modality != "t1" and mask is None and self.is_fit:
             tissue_mean = np.average(data, weights=self.tissue_membership)
         elif modality != "t1" and mask is not None:
             tissue_mean = np.average(data, weights=mask)
@@ -62,9 +62,20 @@ class FCMNormalize(NormalizeBase):
             raise ValueError(msg)
         return tissue_mean
 
+    @property
+    def is_fit(self):
+        return self.tissue_membership is not None
+
     @staticmethod
     def name() -> str:
         return "fcm"
+
+    @staticmethod
+    def description() -> str:
+        return (
+            "Use fuzzy c-means to find memberships of CSF/GM/WM in the brain. "
+            "Use the found and specified tissue mean to normalize a NIfTI MRI."
+        )
 
     @staticmethod
     def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
@@ -98,9 +109,15 @@ class FCMNormalize(NormalizeBase):
     def from_argparse_args(cls, args: Namespace):
         return cls(args.norm_value, args.tissue_type)
 
-    def normalize_from_argparse_args(self, args: Namespace):
+    def call_from_argparse_args(self, args: Namespace):
         if hasattr(args, "mask"):
             mask = args.mask
+            if args.modality.lower() != "t1":
+                msg = (
+                    "If a brain mask is provided, modality must be `t1`. "
+                    f"Got {args.modality}."
+                )
+                raise ValueError(msg)
         else:
             mask = args.tissue_mask
         self.normalize_from_filenames(

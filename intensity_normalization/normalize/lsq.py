@@ -70,3 +70,10 @@ class LeastSquaresNormalize(NormalizeSetBase):
     @staticmethod
     def name() -> str:
         return "lsq"
+
+    @staticmethod
+    def description() -> str:
+        return (
+            "Minimize distance between tissue means (CSF/GM/WM) in a "
+            "least squares-sense within a set of NIfTI MR images."
+        )

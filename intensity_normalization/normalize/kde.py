@@ -40,3 +40,10 @@ class KDENormalize(NormalizeBase):
     @staticmethod
     def name() -> str:
         return "kde"
+
+    @staticmethod
+    def description() -> str:
+        return (
+            "Use kernel density estimation to find the WM mode from "
+            "a smoothed histogram and normalize an NIfTI MR image."
+        )
