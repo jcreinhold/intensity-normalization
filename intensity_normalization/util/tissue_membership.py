@@ -6,7 +6,9 @@ Author: Jacob Reinhold (jcreinhold@gmail.com)
 Created on: Jun 01, 2021
 """
 
-__all__ = []
+__all__ = [
+    "find_tissue_memberships",
+]
 
 import numpy as np
 from skfuzzy import cmeans

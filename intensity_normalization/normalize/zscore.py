@@ -41,3 +41,7 @@ class ZScoreNormalize(NormalizeBase):
     @staticmethod
     def name() -> str:
         return "zscore"
+
+    @staticmethod
+    def description() -> str:
+        return "Standardize an MR image by the foreground intensities."

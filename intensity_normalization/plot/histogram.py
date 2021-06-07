@@ -6,6 +6,7 @@ Author: Jacob Reinhold (jcreinhold@gmail.com)
 Created on: Jun 02, 2021
 """
 
+from argparse import ArgumentParser, Namespace
 import logging
 from typing import List, Optional, Tuple
 import warnings
@@ -13,6 +14,7 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 
+from intensity_normalization.parse import CLI
 from intensity_normalization.type import Array, PathLike
 from intensity_normalization.util.io import gather_images_and_masks
 
@@ -26,7 +28,7 @@ except ImportError:
     logger.debug("Seaborn not installed. Plots won't look as pretty.")
 
 
-class HistogramPlotter:
+class HistogramPlotter(CLI):
     def __init__(
         self,
         images: List[Array],
@@ -60,6 +62,18 @@ class HistogramPlotter:
         ax.set_ylabel(r"Log$_{10}$ Count")
         ax.set_ylim((0, None))
         return ax
+
+    @staticmethod
+    def description() -> str:
+        return "Plot the histogram of an image."
+
+    @staticmethod
+    def get_parent_parser(desc: str) -> ArgumentParser:
+        raise NotImplementedError
+
+    @classmethod
+    def from_argparse_args(cls, args: Namespace):
+        raise NotImplementedError
 
 
 def plot_histogram(

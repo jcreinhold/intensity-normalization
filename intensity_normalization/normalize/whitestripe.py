@@ -22,8 +22,8 @@ from intensity_normalization.util.histogram_tools import get_tissue_mode
 
 class WhiteStripeNormalize(NormalizeBase):
     """
-    find the "(normal appearing) white (matter) stripe" of the input MR image
-    and use those values to standardize the data (i.e., subtract the mean of
+    find the normal appearing white matter of the input MR image and
+    use those values to standardize the data (i.e., subtract the mean of
     the values in the indices and divide by the std of those values)
     """
 
@@ -34,7 +34,6 @@ class WhiteStripeNormalize(NormalizeBase):
         width_u: Optional[float] = None,
     ):
         super().__init__()
-        self.width = width
         self.width_l = width_l or width
         self.width_u = width_u or width
 
@@ -65,6 +64,10 @@ class WhiteStripeNormalize(NormalizeBase):
     @staticmethod
     def name() -> str:
         return "ws"
+
+    @staticmethod
+    def description() -> str:
+        return "Standardize the normal appearing WM of a NIfTI MR image."
 
     @staticmethod
     def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:

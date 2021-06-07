@@ -10,10 +10,11 @@ __all__ = [
     "Registrator",
 ]
 
+from argparse import ArgumentParser, Namespace
 import logging
 from typing import List, Optional
 
-
+from intensity_normalization.parse import CLI
 from intensity_normalization.type import NiftiImage
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ except (ModuleNotFoundError, ImportError):
     raise
 
 
-class Registrator:
+class Registrator(CLI):
     def __init__(
         self,
         template: Optional[NiftiImage] = None,
@@ -78,3 +79,15 @@ class Registrator:
             registered.append(self(image))
         self.template = original_template
         return registered
+
+    @staticmethod
+    def description() -> str:
+        return "Co-register an image to MNI or another image."
+
+    @staticmethod
+    def get_parent_parser(desc: str) -> ArgumentParser:
+        raise NotImplementedError
+
+    @classmethod
+    def from_argparse_args(cls, args: Namespace):
+        raise NotImplementedError

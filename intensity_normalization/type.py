@@ -15,8 +15,8 @@ __all__ = [
     "Vector",
 ]
 
-from argparse import Namespace
-from typing import List, Optional, Union
+from argparse import ArgumentParser, Namespace
+from typing import Callable, List, Optional, Union
 
 import nibabel as nib
 import numpy as np

@@ -2,11 +2,19 @@
 """
 intensity_normalization.util.histogram_tools
 
-holds routines to process histograms of MR neuro images
+Process the histograms of MR (brain) images
 
 Author: Jacob Reinhold (jcreinhold@gmail.com)
 Created on: Jun 01, 2021
 """
+
+__all__ = [
+    "get_first_tissue_mode",
+    "get_largest_tissue_mode",
+    "get_last_tissue_mode",
+    "get_tissue_mode",
+    "smooth_histogram",
+]
 
 from typing import Tuple
 
