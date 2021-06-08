@@ -30,7 +30,10 @@ import logging
 from pathlib import Path
 from typing import Any, Callable, List, Union
 
-from intensity_normalization.type import ArgType
+import nibabel as nib
+
+from intensity_normalization.type import ArgType, NiftiImage, PathLike
+from intensity_normalization.util.io import split_filename
 
 
 def return_none(func: Callable) -> Callable:
@@ -172,6 +175,8 @@ def remove_args(parser: ArgumentParser, args: List[str]):
     # https://stackoverflow.com/questions/32807319/disable-remove-argument-in-argparse
     for arg in args:
         for action in parser._actions:
+            if len(action.option_strings) == 0:
+                continue
             opt_str = action.option_strings[-1]
             dest = action.dest
             if opt_str[0] == arg or dest == arg:
@@ -200,9 +205,23 @@ def setup_log(verbosity: int):
 
 
 class CLI:
+    def __call__(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def __str__(self):
+        return self.__class__.__name__
+
     @staticmethod
     def description() -> str:
         raise NotImplementedError
+
+    @staticmethod
+    def name() -> str:
+        raise NotImplementedError
+
+    def append_name_to_file(self, filepath: PathLike) -> Path:
+        path, base, ext = split_filename(filepath)
+        return path / (base + f"_{self.name()}" + ext)
 
     @staticmethod
     def get_parent_parser(desc: str) -> ArgumentParser:
@@ -237,3 +256,15 @@ class CLI:
     @classmethod
     def from_argparse_args(cls, args: Namespace):
         raise NotImplementedError
+
+    def call_from_argparse_args(self, args: Namespace):
+        image = self.load_image(args.image)
+        mask = self.load_image(args.mask) if hasattr(args, "mask") else None
+        out = self(image, mask)
+        if args.output is None:
+            args.output = self.append_name_to_file(args.image)
+        out.to_filename(args.output)
+
+    @staticmethod
+    def load_image(image_path: PathLike) -> NiftiImage:
+        return nib.load(image_path)

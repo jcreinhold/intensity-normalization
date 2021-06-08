@@ -79,7 +79,7 @@ class HistogramPlotter(CLI):
 def plot_histogram(
     image: Array,
     mask: Optional[Array] = None,
-    ax: Optional[plt.axes.Axes] = None,
+    ax: Optional[plt.Axes] = None,
     n_bins: int = 200,
     log: bool = True,
     alpha: float = 0.8,

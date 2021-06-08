@@ -16,7 +16,6 @@ from argparse import (
     ArgumentDefaultsHelpFormatter,
     Namespace,
 )
-from pathlib import Path
 from typing import List, Optional
 
 import nibabel as nib
@@ -35,7 +34,7 @@ from intensity_normalization.type import (
     NiftiImage,
     PathLike,
 )
-from intensity_normalization.util.io import gather_images_and_masks, split_filename
+from intensity_normalization.util.io import gather_images_and_masks
 
 
 class NormalizeBase(CLI):
@@ -52,9 +51,6 @@ class NormalizeBase(CLI):
             return self.normalize_nifti(data, mask, modality)
         else:
             return self.normalize_array(data, mask, modality)
-
-    def __str__(self):
-        return self.__class__.__name__
 
     def normalize_array(
         self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
@@ -120,14 +116,6 @@ class NormalizeBase(CLI):
     @staticmethod
     def skull_stripped_foreground(data: Array) -> Array:
         return data > 0.0
-
-    @staticmethod
-    def name() -> str:
-        raise NotImplementedError
-
-    def append_name_to_file(self, filepath: PathLike) -> Path:
-        path, base, ext = split_filename(filepath)
-        return path / (base + f"_{self.name()}" + ext)
 
     def _get_mask(
         self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None

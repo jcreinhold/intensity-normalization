@@ -66,7 +66,6 @@ class RavelNormalize(NormalizeSetBase):
     @staticmethod
     def description() -> str:
         return (
-            "Perform WhiteStripe on a set of MR images and "
-            "then correct for technical variation with RAVEL "
-            "on a set of NIfTI MR images."
+            "Perform WhiteStripe and then correct for technical "
+            "variation with RAVEL on a set of NIfTI MR images."
         )
