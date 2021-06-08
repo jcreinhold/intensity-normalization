@@ -8,46 +8,107 @@ Created on: Jun 01, 2021
 
 __all__ = [
     "find_tissue_memberships",
+    "TissueMembershipFinder",
 ]
+
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
+from typing import Optional
 
 import numpy as np
 from skfuzzy import cmeans
 
-from intensity_normalization.type import Array
+from intensity_normalization.parse import CLI, file_path, save_file_path
+from intensity_normalization.type import Array, NiftiImage
 
 
 def find_tissue_memberships(
-    image: Array, brain_mask: Array = None, hard_segmentation: bool = False
+    image: Array, mask: Array = None, hard_segmentation: bool = False
 ) -> Array:
     """Tissue memberships for a T1-w brain image with fuzzy c-means
 
     Args:
         image: image to find tissue masks for (must be T1-w)
-        brain_mask: mask covering the brain of image (none if already skull-stripped)
+        mask: mask covering the brain of image (none if already skull-stripped)
         hard_segmentation: pick the maximum membership as the true class in output
 
     Returns:
         tissue_mask: membership values for each of three classes in the image
             (or class determinations w/ hard_seg)
     """
-    if brain_mask is None:
-        brain_mask = image > 0.0
+    if mask is None:
+        mask = image > 0.0
     else:
-        brain_mask = brain_mask > 0.0
-    mask_size = brain_mask.sum()
-    foreground = image[brain_mask]
-    t1_cntr, t1_mem, _, _, _, _, _ = cmeans(
-        foreground.reshape(-1, mask_size), 3, 2, 0.005, 50
-    )
-    t1_mem_list = [
-        t1_mem[i] for i, _ in sorted(enumerate(t1_cntr), key=lambda x: x[1])
-    ]  # sort the tissue memberships to CSF/GM/WM
+        mask = mask > 0.0
+    mask_size = mask.sum()
+    foreground = image[mask].reshape(-1, mask_size)
+    centers, memberships_, *_ = cmeans(foreground, 3, 2, 0.005, 50)
+    # sort the tissue memberships to CSF/GM/WM (assuming T1-w image)
+    sorted_memberships = sorted(zip(centers, memberships_), key=lambda x: x[0])
+    memberships = [m for _, m in sorted_memberships]
     tissue_mask = np.zeros(image.shape + (3,))
     for i in range(3):
-        tissue_mask[..., i][brain_mask] = t1_mem_list[i]
+        tissue_mask[..., i][mask] = memberships[i]
     if hard_segmentation:
         tmp_mask = np.zeros(image.shape)
-        masked = tissue_mask[brain_mask]
-        tmp_mask[brain_mask] = np.argmax(masked, axis=1) + 1
+        masked = tissue_mask[mask]
+        tmp_mask[mask] = np.argmax(masked, axis=1) + 1
         tissue_mask = tmp_mask
     return tissue_mask
+
+
+class TissueMembershipFinder(CLI):
+    def __init__(self, hard_segmentation: bool = False):
+        self.hard_segmentation = hard_segmentation
+
+    def __call__(self, image: NiftiImage, mask: Optional[NiftiImage] = None):
+        return find_tissue_memberships(image, mask, self.hard_segmentation)
+
+    def name(self) -> str:
+        base = "tissue_"
+        suffix = "mask" if self.hard_segmentation else "membership"
+        return base + suffix
+
+    @staticmethod
+    def description() -> str:
+        return "Find tissue memberships of an MR image."
+
+    @staticmethod
+    def get_parent_parser(desc: str) -> ArgumentParser:
+        parser = ArgumentParser(
+            description=desc, formatter_class=ArgumentDefaultsHelpFormatter,
+        )
+        parser.add_argument(
+            "image", type=file_path(), help="Path of image to normalize.",
+        )
+        parser.add_argument(
+            "-m",
+            "--mask",
+            type=file_path(),
+            default=None,
+            help="Path of foreground mask for image.",
+        )
+        parser.add_argument(
+            "-o",
+            "--output",
+            type=save_file_path(),
+            default=None,
+            help="Path to save registered image.",
+        )
+        parser.add_argument(
+            "-hs",
+            "--hard-segmentation",
+            action="store_true",
+            help="classify tissue memberships into segmentation",
+        )
+        parser.add_argument(
+            "-v",
+            "--verbosity",
+            action="count",
+            default=0,
+            help="Increase output verbosity (e.g., -vv is more than -v).",
+        )
+        return parser
+
+    @classmethod
+    def from_argparse_args(cls, args: Namespace):
+        return cls(args.hard_segmentation)

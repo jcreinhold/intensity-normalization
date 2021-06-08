@@ -7,23 +7,60 @@ Created on: Jun 03, 2021
 """
 
 __all__ = [
+    "register",
     "Registrator",
 ]
 
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
 import logging
 from typing import List, Optional
 
-from intensity_normalization.parse import CLI
-from intensity_normalization.type import NiftiImage
+from intensity_normalization.parse import CLI, file_path, save_file_path
+from intensity_normalization.type import (
+    allowed_interpolators,
+    allowed_transforms,
+    NiftiImage,
+    PathLike,
+)
 
-logger = logging.getLogger(__name__)
 
 try:
     import ants
 except (ModuleNotFoundError, ImportError):
-    logger.warning("ANTsPy not installed. Install antspyx to use co-registration.")
+    logging.warning("ANTsPy not installed. Install antspyx to use co-registration.")
     raise
+
+
+def register(
+    image: NiftiImage,
+    template: Optional[NiftiImage] = None,
+    type_of_transform: str = "Affine",
+    interpolator: str = "bSpline",
+    initial_rigid: bool = True,
+) -> NiftiImage:
+    if template is None:
+        standard_mni = ants.get_ants_data("mni")
+        template = ants.image_read(standard_mni)
+    else:
+        template = ants.from_nibabel(template)
+    image = ants.from_nibabel(image)
+    if initial_rigid:
+        transforms = ants.registration(
+            fixed=template, moving=image, type_of_transform="Rigid",
+        )
+        rigid_transform = transforms["fwdtransforms"][0]
+    else:
+        rigid_transform = None
+    transform = ants.registration(
+        fixed=template,
+        moving=image,
+        initial_transform=rigid_transform,
+        type_of_transform=type_of_transform,
+    )["fwdtransforms"]
+    registered = ants.apply_transforms(
+        template, image, transform, interpolator=interpolator,
+    )
+    return registered.to_nibabel()
 
 
 class Registrator(CLI):
@@ -43,28 +80,14 @@ class Registrator(CLI):
         self.interpolator = interpolator
         self.initial_rigid = initial_rigid
 
-    def __call__(self, image: NiftiImage) -> NiftiImage:
-        return self.register(image)
-
-    def register(self, image: NiftiImage) -> NiftiImage:
-        image = ants.from_nibabel(image)
-        if self.initial_rigid:
-            transforms = ants.registration(
-                fixed=self.template, moving=image, type_of_transform="Rigid",
-            )
-            rigid_transform = transforms["fwdtransforms"][0]
-        else:
-            rigid_transform = None
-        transform = ants.registration(
-            fixed=self.template,
-            moving=image,
-            initial_transform=rigid_transform,
-            type_of_transform=self.type_of_transform,
-        )["fwdtransforms"]
-        registered = ants.apply_transforms(
-            self.template, image, transform, interpolator=self.interpolator,
+    def __call__(self, image: NiftiImage, *args, **kwargs) -> NiftiImage:
+        return register(
+            image,
+            self.template,
+            self.type_of_transform,
+            self.interpolator,
+            self.initial_rigid,
         )
-        return registered.to_nibabel()
 
     def register_images(self, images: List[NiftiImage]) -> List[NiftiImage]:
         return [self(image) for image in images]
@@ -72,6 +95,7 @@ class Registrator(CLI):
     def register_images_to_templates(
         self, images: List[NiftiImage], templates: List[NiftiImage],
     ) -> List[NiftiImage]:
+        assert len(images) == len(templates)
         registered = []
         original_template = self.template
         for image, template in zip(images, templates):
@@ -81,13 +105,76 @@ class Registrator(CLI):
         return registered
 
     @staticmethod
+    def name() -> str:
+        return "registered"
+
+    @staticmethod
     def description() -> str:
         return "Co-register an image to MNI or another image."
 
     @staticmethod
     def get_parent_parser(desc: str) -> ArgumentParser:
-        raise NotImplementedError
+        parser = ArgumentParser(
+            description=desc, formatter_class=ArgumentDefaultsHelpFormatter,
+        )
+        parser.add_argument(
+            "image", type=file_path(), help="Path of image to normalize.",
+        )
+        parser.add_argument(
+            "-t",
+            "--template",
+            type=file_path(),
+            default=None,
+            help="Path of target for registration.",
+        )
+        parser.add_argument(
+            "-o",
+            "--output",
+            type=save_file_path(),
+            default=None,
+            help="Path to save registered image.",
+        )
+        parser.add_argument(
+            "-tot",
+            "--type-of-transform",
+            type=str,
+            default="Affine",
+            choices=allowed_transforms,
+            help="Type of registration transform to perform.",
+        )
+        parser.add_argument(
+            "-i",
+            "--interpolator",
+            type=str,
+            default="bSpline",
+            choices=allowed_interpolators,
+            help="Type of interpolator to use.",
+        )
+        parser.add_argument(
+            "-ir",
+            "--initial-rigid",
+            action="store_true",
+            help=(
+                "Do a rigid registration before doing "
+                "the `type_of_transform` registration."
+            ),
+        )
+        parser.add_argument(
+            "-v",
+            "--verbosity",
+            action="count",
+            default=0,
+            help="Increase output verbosity (e.g., -vv is more than -v).",
+        )
+        return parser
 
     @classmethod
     def from_argparse_args(cls, args: Namespace):
-        raise NotImplementedError
+        template = ants.image_read(args.template)
+        return cls(
+            template, args.type_of_transform, args.interpolator, args.initial_rigid,
+        )
+
+    @staticmethod
+    def load_image(image_path: PathLike) -> ants.ANTsImage:
+        return ants.image_read(image_path)

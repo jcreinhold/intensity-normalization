@@ -17,9 +17,6 @@ from intensity_normalization.normalize.base import NormalizeBase
 
 
 class ZScoreNormalize(NormalizeBase):
-    def __init__(self):
-        super().__init__()
-
     def calculate_location(
         self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
     ) -> float:

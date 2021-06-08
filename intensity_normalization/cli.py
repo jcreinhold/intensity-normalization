@@ -9,14 +9,22 @@ Created on: Jun 07, 2021
 __all__ = [
     "fcm_main",
     "fcm_parser",
+    "histogram_main",
+    "histogram_parser",
     "kde_main",
     "kde_parser",
     "lsq_main",
     "lsq_parser",
     "nyul_main",
     "nyul_parser",
+    "preprocessor_main",
+    "preprocessor_parser",
     "ravel_main",
     "ravel_parser",
+    "register_main",
+    "register_parser",
+    "tissue_main",
+    "tissue_parser",
     "ws_main",
     "ws_parser",
     "zs_main",
@@ -32,6 +40,8 @@ from intensity_normalization.normalize.whitestripe import WhiteStripeNormalize
 from intensity_normalization.normalize.zscore import ZScoreNormalize
 from intensity_normalization.plot.histogram import HistogramPlotter
 from intensity_normalization.util.coregister import Registrator
+from intensity_normalization.util.preprocess import Preprocessor
+from intensity_normalization.util.tissue_membership import TissueMembershipFinder
 
 
 fcm_parser = FCMNormalize.parser()
@@ -57,6 +67,12 @@ ravel_main = RavelNormalize.main(ravel_parser)
 
 histogram_parser = HistogramPlotter.parser()
 histogram_main = HistogramPlotter.main(histogram_parser)
+
+preprocessor_parser = Preprocessor.parser()
+preprocessor_main = Preprocessor.main(preprocessor_parser)
+
+tissue_parser = TissueMembershipFinder.parser()
+tissue_main = TissueMembershipFinder.main(tissue_parser)
 
 register_parser = Registrator.parser()
 register_main = Registrator.main(register_parser)
