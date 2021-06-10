@@ -122,7 +122,7 @@ class NormalizeBase(CLI):
     ):
         if mask is None:
             mask = self.skull_stripped_foreground(data)
-        return mask
+        return mask > 0.0
 
     def _get_voi(
         self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None
@@ -185,6 +185,10 @@ class NormalizeBase(CLI):
         )
         return parser
 
+    @classmethod
+    def from_argparse_args(cls, args: Namespace):
+        return cls(args.norm_value)
+
 
 class NormalizeSetBase(NormalizeBase):
     def fit(
@@ -202,10 +206,16 @@ class NormalizeSetBase(NormalizeBase):
         mask_dir: Optional[PathLike] = None,
         modality: Optional[str] = None,
         ext: str = "nii*",
+        return_normalized: bool = False,
         **kwargs,
     ):
         images, masks = gather_images_and_masks(image_dir, mask_dir, ext)
         self.fit(images, masks, modality, **kwargs)
+        if return_normalized:
+            normalized = [
+                self(image, mask, modality) for image, mask in zip(images, masks)
+            ]
+            return normalized
 
     @staticmethod
     def get_parent_parser(desc: str) -> ArgumentParser:
@@ -213,7 +223,7 @@ class NormalizeSetBase(NormalizeBase):
             description=desc, formatter_class=ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
-            "image-dir",
+            "image_dir",
             type=dir_path(),
             help="Path of directory of images to normalize.",
         )

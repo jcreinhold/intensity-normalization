@@ -170,9 +170,13 @@ class Registrator(CLI):
 
     @classmethod
     def from_argparse_args(cls, args: Namespace):
-        template = ants.image_read(args.template)
+        if args.template is not None:
+            args.template = ants.image_read(args.template)
         return cls(
-            template, args.type_of_transform, args.interpolator, args.initial_rigid,
+            args.template,
+            args.type_of_transform,
+            args.interpolator,
+            args.initial_rigid,
         )
 
     @staticmethod

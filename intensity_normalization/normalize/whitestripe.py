@@ -50,13 +50,17 @@ class WhiteStripeNormalize(NormalizeBase):
     def setup(
         self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
     ):
-        voi = self._get_voi(data, mask, modality)
+        if modality is None:
+            modality = "t1"
+        mask = self._get_mask(data, mask, modality)
+        masked = data * mask
+        voi = data[mask]
         wm_mode = get_tissue_mode(voi, modality)
         wm_mode_quantile = np.mean(voi < wm_mode)
         lower_bound = max(wm_mode_quantile - self.width_l, 0)
         upper_bound = min(wm_mode_quantile + self.width_u, 1)
         ws_l, ws_u = np.quantile(voi, (lower_bound, upper_bound))
-        self.whitestripe = (voi > ws_l) & (voi < ws_u)
+        self.whitestripe = (masked > ws_l) & (masked < ws_u)
 
     def teardown(self):
         del self.whitestripe
