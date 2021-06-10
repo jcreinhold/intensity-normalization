@@ -54,7 +54,7 @@ def mask(temp_dir: Path) -> Path:
 
 
 @pytest.fixture
-def base_cli_image_args(image: Path, mask: Path, temp_dir: Path):
+def base_cli_image_args(image: Path, mask: Path):
     return f"{image} -m {mask}".split()
 
 
@@ -63,7 +63,70 @@ def base_cli_dir_args(temp_dir: Path):
     return f"{temp_dir} -m {temp_dir}".split()
 
 
+def test_fcm_normalization_cli(base_cli_image_args: List[str]):
+    args = base_cli_image_args
+    retval = fcm_main(args)
+    assert retval == 0
+
+
+def test_kde_normalization_cli(base_cli_image_args: List[str]):
+    retval = kde_main(base_cli_image_args)
+    assert retval == 0
+
+
+def test_ws_normalization_cli(base_cli_image_args: List[str]):
+    retval = ws_main(base_cli_image_args)
+    assert retval == 0
+
+
 def test_zscore_normalization_cli(base_cli_image_args: List[str]):
-    args = base_cli_image_args + []
-    retval = zs_main(args)
+    retval = zs_main(base_cli_image_args)
+    assert retval == 0
+
+
+def test_nyul_normalization_cli(base_cli_dir_args):
+    retval = nyul_main(base_cli_dir_args)
+    assert retval == 0
+
+
+@pytest.fixture
+def coregister_cli_args(image: Path):
+    return f"{image}".split()
+
+
+def test_coregister_mni_cli(coregister_cli_args: List[str]):
+    retval = register_main(coregister_cli_args)
+    assert retval == 0
+
+
+def test_coregister_template_cli(coregister_cli_args: List[str]):
+    coregister_cli_args *= 2
+    coregister_cli_args.insert(1, "-t")
+    retval = register_main(coregister_cli_args)
+    assert retval == 0
+
+
+@pytest.fixture
+def preprocess_cli_args(image: Path):
+    return f"{image} -2n4".split()
+
+
+def test_preprocess_cli(preprocess_cli_args: List[str]):
+    retval = preprocessor_main(preprocess_cli_args)
+    assert retval == 0
+
+
+@pytest.fixture
+def tissue_membership_cli_args(image: Path):
+    return f"{image}".split()
+
+
+def test_tissue_membership_cli(tissue_membership_cli_args: List[str]):
+    retval = preprocessor_main(tissue_membership_cli_args)
+    assert retval == 0
+
+
+def test_tissue_membership_hard_seg_cli(tissue_membership_cli_args: List[str]):
+    tissue_membership_cli_args.append("-hs")
+    retval = preprocessor_main(tissue_membership_cli_args)
     assert retval == 0

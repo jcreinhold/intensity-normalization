@@ -10,12 +10,13 @@ __all__ = [
     "FCMNormalize",
 ]
 
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
 from typing import Optional
 
 import numpy as np
 
-from intensity_normalization.parse import file_path, remove_args
+from intensity_normalization import VALID_MODALITIES
+from intensity_normalization.parse import file_path, positive_float, save_file_path
 from intensity_normalization.type import Array
 from intensity_normalization.normalize.base import NormalizeBase
 from intensity_normalization.util.tissue_membership import find_tissue_memberships
@@ -78,6 +79,52 @@ class FCMNormalize(NormalizeBase):
         )
 
     @staticmethod
+    def get_parent_parser(desc: str) -> ArgumentParser:
+        parser = ArgumentParser(
+            description=desc, formatter_class=ArgumentDefaultsHelpFormatter,
+        )
+        parser.add_argument(
+            "image", type=file_path(), help="Path of image to normalize.",
+        )
+        parser.add_argument(
+            "-o",
+            "--output",
+            type=save_file_path(),
+            default=None,
+            help="Path to save normalized image.",
+        )
+        parser.add_argument(
+            "-mo",
+            "--modality",
+            type=str,
+            default=None,
+            choices=VALID_MODALITIES,
+            help="Modality of the image.",
+        )
+        parser.add_argument(
+            "-n",
+            "--norm-value",
+            type=positive_float(),
+            default=1.0,
+            help="Reference value for normalization.",
+        )
+        options = parser.add_argument_group("Options")
+        options.add_argument(
+            "-p",
+            "--plot-histogram",
+            action="store_true",
+            help="Plot the histogram of the normalized image.",
+        )
+        options.add_argument(
+            "-v",
+            "--verbosity",
+            action="count",
+            default=0,
+            help="Increase output verbosity (e.g., -vv is more than -v).",
+        )
+        return parser
+
+    @staticmethod
     def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
         parser = parent_parser.add_argument_group("Method")
         parser.add_argument(
@@ -87,7 +134,6 @@ class FCMNormalize(NormalizeBase):
             choices=("wm", "gm", "csf"),
             help="Reference tissue to use for normalization.",
         )
-        remove_args(parent_parser, ["mask"])
         group = parent_parser.add_mutually_exclusive_group(required=True)
         group.add_argument(
             "-m",
@@ -112,12 +158,13 @@ class FCMNormalize(NormalizeBase):
     def call_from_argparse_args(self, args: Namespace):
         if hasattr(args, "mask"):
             mask = args.mask
-            if args.modality.lower() != "t1":
-                msg = (
-                    "If a brain mask is provided, modality must be `t1`. "
-                    f"Got {args.modality}."
-                )
-                raise ValueError(msg)
+            if args.modality is not None:
+                if args.modality.lower() != "t1":
+                    msg = (
+                        "If a brain mask is provided, modality must be `t1`. "
+                        f"Got {args.modality}."
+                    )
+                    raise ValueError(msg)
         else:
             mask = args.tissue_mask
         self.normalize_from_filenames(

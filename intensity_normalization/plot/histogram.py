@@ -6,15 +6,21 @@ Author: Jacob Reinhold (jcreinhold@gmail.com)
 Created on: Jun 02, 2021
 """
 
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
 import logging
+from pathlib import Path
 from typing import List, Optional, Tuple
 import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-from intensity_normalization.parse import CLI
+from intensity_normalization.parse import (
+    CLI,
+    file_path,
+    probability_float,
+    save_file_path,
+)
 from intensity_normalization.type import Array, PathLike
 from intensity_normalization.util.io import gather_images_and_masks
 
@@ -30,32 +36,20 @@ except ImportError:
 
 class HistogramPlotter(CLI):
     def __init__(
-        self,
-        images: List[Array],
-        masks: List[Optional[Array]],
-        figsize: Tuple[int, int] = (12, 10),
-        alpha: float = 0.8,
+        self, figsize: Tuple[int, int] = (12, 10), alpha: float = 0.8,
     ):
-        self.images = images
-        self.masks = masks
         self.figsize = figsize
         self.alpha = alpha
 
-    @classmethod
-    def from_directories(
-        cls,
-        image_dir: PathLike,
-        mask_dir: Optional[PathLike] = None,
-        ext: str = "nii*",
-        **kwargs,
-    ):
-        images, masks = gather_images_and_masks(image_dir, mask_dir, ext, True)
-        return cls(images, masks, **kwargs)
+    def __call__(self, images: List[Array], masks: List[Optional[Array]], **kwargs):
+        return self.plot_all_histograms(images, masks, **kwargs)
 
-    def plot_all_histograms(self, **kwargs):
+    def plot_all_histograms(
+        self, images: List[Array], masks: List[Optional[Array]], **kwargs
+    ):
         _, ax = plt.subplots(figsize=self.figsize)
-        n_images = len(self.images)
-        for i, (image, mask) in enumerate(zip(self.images, self.masks), 1):
+        n_images = len(images)
+        for i, (image, mask) in enumerate(zip(images, masks), 1):
             logger.info(f"Creating histogram ({i:d}/{n_images:d})")
             _ = plot_histogram(image, mask, ax=ax, alpha=self.alpha, **kwargs)
         ax.set_xlabel("Intensity")
@@ -63,17 +57,75 @@ class HistogramPlotter(CLI):
         ax.set_ylim((0, None))
         return ax
 
+    def from_directories(
+        self,
+        image_dir: PathLike,
+        mask_dir: Optional[PathLike] = None,
+        ext: str = "nii*",
+        **kwargs,
+    ):
+        images, masks = gather_images_and_masks(image_dir, mask_dir, ext, True)
+        return self(images, masks, **kwargs)
+
     @staticmethod
     def description() -> str:
         return "Plot the histogram of an image."
 
     @staticmethod
     def get_parent_parser(desc: str) -> ArgumentParser:
-        raise NotImplementedError
+        parser = ArgumentParser(
+            description=desc, formatter_class=ArgumentDefaultsHelpFormatter,
+        )
+        parser.add_argument(
+            "image", type=file_path(), help="Path of image to normalize.",
+        )
+        parser.add_argument(
+            "-m",
+            "--mask",
+            type=file_path(),
+            default=None,
+            help="Path of foreground mask for image.",
+        )
+        parser.add_argument(
+            "-o",
+            "--output",
+            type=save_file_path(),
+            default=None,
+            help="Path to save histogram.",
+        )
+        parser.add_argument(
+            "-fs",
+            "--figsize",
+            nargs=2,
+            type=int,
+            default=(12, 10),
+            help="Figure size of histogram.",
+        )
+        parser.add_argument(
+            "-a",
+            "--alpha",
+            type=probability_float,
+            default=0.8,
+            help="Alpha level for line representing histogram.",
+        )
+        parser.add_argument(
+            "-v",
+            "--verbosity",
+            action="count",
+            default=0,
+            help="Increase output verbosity (e.g., -vv is more than -v).",
+        )
+        return parser
 
     @classmethod
     def from_argparse_args(cls, args: Namespace):
-        raise NotImplementedError
+        return cls(args.figsize, args.alpha)
+
+    def call_from_argparse_args(self, args: Namespace):
+        _ = self.from_directories(args.image, args.mask)
+        if args.output is None:
+            args.output = Path.cwd().resolve() / "hist.pdf"
+        plt.savefig(args.output)
 
 
 def plot_histogram(
