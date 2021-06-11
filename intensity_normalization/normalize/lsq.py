@@ -34,19 +34,15 @@ class LeastSquaresNormalize(NormalizeSetBase):
         sf = self.scaling_factor(tissue_means)
         return sf
 
-    def fit(
+    def _fit(
         self,
-        images: List[ArrayOrNifti],
-        masks: Optional[List[ArrayOrNifti]] = None,
+        images: List[Array],
+        masks: Optional[List[Array]] = None,
         modality: Optional[str] = None,
         **kwargs,
     ):
         image = images[0]  # only need one image to fit this method
         mask = masks and masks[0]
-        if isinstance(images, nib.Nifti1Image):
-            image = image.get_fdata()
-        if isinstance(mask, nib.Nifti1Image):
-            mask = mask.get_fdata()
         tissue_membership = find_tissue_memberships(image, mask)
         csf_mean = np.average(image, weights=tissue_membership[..., 0])
         norm_image = (image / csf_mean) * self.norm_value
