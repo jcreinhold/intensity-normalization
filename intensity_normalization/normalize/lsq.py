@@ -12,10 +12,9 @@ __all__ = [
 
 from typing import List, Optional
 
-import nibabel as nib
 import numpy as np
 
-from intensity_normalization.type import Array, ArrayOrNifti, Vector
+from intensity_normalization.type import Array, Vector
 from intensity_normalization.normalize.base import NormalizeSetBase
 from intensity_normalization.util.tissue_membership import find_tissue_memberships
 
