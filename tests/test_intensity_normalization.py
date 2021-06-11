@@ -15,6 +15,9 @@ try:
 except (ImportError, ModuleNotFoundError):
     ants = None
 
+ANTSPY_DIR = Path.home() / ".antspy"
+ANTSPY_DIR_EXISTS = ANTSPY_DIR.is_dir()
+
 from intensity_normalization.cli import (
     fcm_main,
     histogram_main,
@@ -125,6 +128,7 @@ def coregister_cli_args(image: Path):
 
 
 @pytest.mark.skipif(ants is None, reason="Requires ANTsPy")
+@pytest.mark.skipif(ANTSPY_DIR_EXISTS, reason="ANTsPy directory wasn't found.")
 def test_coregister_mni_cli(coregister_cli_args: List[str]):
     retval = register_main(coregister_cli_args)
     assert retval == 0
