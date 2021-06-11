@@ -25,6 +25,10 @@ test_requirements = [
     "pytest>=3",
 ]
 
+extras_requirements = {
+    "ants": ["antspyx"],
+}
+
 setup(
     author="Jacob Reinhold",
     author_email="jcreinhold@gmail.com",
@@ -54,6 +58,7 @@ setup(
         ],
     },
     install_requires=requirements,
+    extras_require=extras_requirements,
     license="Apache Software License 2.0",
     long_description=readme + "\n\n" + history,
     include_package_data=True,

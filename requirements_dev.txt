@@ -10,11 +10,12 @@ twine==1.14.0
 
 pytest==6.2.4
 
-matplotlib==3.3.4
-nibabel==3.2.1
-numpy==1.19.2
-scikit-fuzzy==0.4.2
-scikit-image==0.17.2
-scikit-learn==0.24.1
-scipy==1.6.1
-statsmodels==0.12.2
+matplotlib>=3
+nibabel>=3
+numpy>=1.19
+scikit-fuzzy>=0.4.2
+scikit-image>=0.17
+scikit-learn>=0.24
+scipy>=1.6
+statsmodels>=0.12
+antspyx>=0.2.4
