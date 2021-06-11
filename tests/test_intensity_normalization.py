@@ -128,7 +128,7 @@ def coregister_cli_args(image: Path):
 
 
 @pytest.mark.skipif(ants is None, reason="Requires ANTsPy")
-@pytest.mark.skipif(ANTSPY_DIR_EXISTS, reason="ANTsPy directory wasn't found.")
+@pytest.mark.skipif(not ANTSPY_DIR_EXISTS, reason="ANTsPy directory wasn't found.")
 def test_coregister_mni_cli(coregister_cli_args: List[str]):
     retval = register_main(coregister_cli_args)
     assert retval == 0
