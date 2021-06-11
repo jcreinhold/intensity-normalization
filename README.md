@@ -4,7 +4,6 @@ intensity-normalization
 [![Build Status](https://api.travis-ci.com/jcreinhold/intensity-normalization.svg?branch=master&status=created)](https://travis-ci.com/jcreinhold/intensity-normalization)
 [![Coverage Status](https://coveralls.io/repos/github/jcreinhold/intensity-normalization/badge.svg?branch=master)](https://coveralls.io/github/jcreinhold/intensity-normalization?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/intensity-normalization/badge/?version=latest)](http://intensity-normalization.readthedocs.io/en/latest/)
-[![Docker Automated Build](https://img.shields.io/docker/cloud/build/jcreinhold/intensity-normalization.svg)](https://hub.docker.com/r/jcreinhold/intensity-normalization/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/intensity-normalization)](https://www.python.org/)
 [![PyPI Version](https://img.shields.io/pypi/v/intensity-normalization.svg)](https://pypi.python.org/pypi/pyrobex)
 
@@ -188,7 +187,7 @@ corresponding [paper](https://arxiv.org/abs/1812.04652):
       volume={10949},
       pages={109493H},
       year={2019},
-      organization={International Society for Optics and Photonics}} 
+      organization={International Society for Optics and Photonics}}
 
 References
 ----------
