@@ -16,7 +16,7 @@ from typing import Optional
 import numpy as np
 
 from intensity_normalization import VALID_MODALITIES
-from intensity_normalization.parse import file_path, positive_float, save_file_path
+from intensity_normalization.parse import file_path, positive_float, save_nifti_path
 from intensity_normalization.type import Array
 from intensity_normalization.normalize.base import NormalizeBase
 from intensity_normalization.util.tissue_membership import find_tissue_memberships
@@ -89,7 +89,7 @@ class FCMNormalize(NormalizeBase):
         parser.add_argument(
             "-o",
             "--output",
-            type=save_file_path(),
+            type=save_nifti_path(),
             default=None,
             help="Path to save normalized image.",
         )

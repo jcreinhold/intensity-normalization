@@ -21,8 +21,14 @@ import logging
 from typing import Optional, Tuple
 
 import ants
+import nibabel as nib
 
-from intensity_normalization.parse import CLI, file_path, positive_float, save_file_path
+from intensity_normalization.parse import (
+    CLI,
+    file_path,
+    positive_float,
+    save_nifti_path,
+)
 from intensity_normalization.type import (
     allowed_orientations,
     interp_type_dict,
@@ -63,21 +69,21 @@ def preprocess(
     """
 
     if n4_convergence_options is None:
-        n4_convergence_options = {"iters": [200, 200, 200, 200], "tol": 0.0005}
-    logging.debug("N4 Options are: {}".format(n4_convergence_options))
+        n4_convergence_options = {"iters": [200, 200, 200, 200], "tol": 1e-7}
+    logging.debug(f"N4 Options are: {n4_convergence_options}")
 
-    image = ants.from_nibabel(image)
+    if isinstance(image, nib.Nifti1Image):
+        image = ants.from_nibabel(image)
     if mask is not None:
-        mask = ants.from_nibabel(mask)
+        if isinstance(mask, nib.Nifti1Image):
+            mask = ants.from_nibabel(mask)
     else:
         mask = image.get_mask()
-    image = ants.n4_bias_field_correction(
-        image, mask, convergence=n4_convergence_options
-    )
+    image = ants.n4_bias_field_correction(image, convergence=n4_convergence_options)
     if second_n4_with_smoothed_mask:
         smoothed_mask = ants.smooth_image(mask, 1.0)
         image = ants.n4_bias_field_correction(
-            image, mask, convergence=n4_convergence_options, weight_mask=smoothed_mask,
+            image, convergence=n4_convergence_options, weight_mask=smoothed_mask,
         )
     if resolution is not None:
         if resolution != mask.spacing:
@@ -96,6 +102,8 @@ def preprocess(
             )
     image = image.reorient_image2(orientation)
     mask = mask.reorient_image2(orientation)
+    image = image.to_nibabel()
+    mask = mask.to_nibabel()
     return image, mask
 
 
@@ -157,7 +165,7 @@ class Preprocessor(CLI):
         parser.add_argument(
             "-o",
             "--output",
-            type=save_file_path(),
+            type=save_nifti_path(),
             default=None,
             help="Path to save registered image.",
         )

@@ -21,6 +21,7 @@ __all__ = [
     "probability_float",
     "probability_float_or_none",
     "save_file_path",
+    "save_nifti_path",
     "setup_log",
 ]
 
@@ -60,6 +61,15 @@ class _ParseType:
 
 
 class save_file_path(_ParseType):
+    def __call__(self, string: str) -> Path:
+        if not string.isprintable():
+            msg = "String must only contain printable characters."
+            raise ArgumentTypeError(msg)
+        path = Path(string)
+        return path
+
+
+class save_nifti_path(_ParseType):
     def __call__(self, string: str) -> Path:
         not_nifti = not string.endswith(".nii.gz") and not string.endswith(".nii")
         if not_nifti or not string.isprintable():

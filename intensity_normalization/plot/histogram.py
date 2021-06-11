@@ -17,7 +17,7 @@ import numpy as np
 
 from intensity_normalization.parse import (
     CLI,
-    file_path,
+    dir_path,
     probability_float,
     save_file_path,
 )
@@ -77,14 +77,16 @@ class HistogramPlotter(CLI):
             description=desc, formatter_class=ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
-            "image", type=file_path(), help="Path of image to normalize.",
+            "image_dir",
+            type=dir_path(),
+            help="Path of image directory to plot histograms for.",
         )
         parser.add_argument(
             "-m",
-            "--mask",
-            type=file_path(),
+            "--mask-dir",
+            type=dir_path(),
             default=None,
-            help="Path of foreground mask for image.",
+            help="Path of directory to corresponding foreground masks for image_dir.",
         )
         parser.add_argument(
             "-o",
@@ -122,7 +124,7 @@ class HistogramPlotter(CLI):
         return cls(args.figsize, args.alpha)
 
     def call_from_argparse_args(self, args: Namespace):
-        _ = self.from_directories(args.image, args.mask)
+        _ = self.from_directories(args.image_dir, args.mask_dir)
         if args.output is None:
             args.output = Path.cwd().resolve() / "hist.pdf"
         plt.savefig(args.output)

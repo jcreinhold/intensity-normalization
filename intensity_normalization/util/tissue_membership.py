@@ -14,10 +14,11 @@ __all__ = [
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
 from typing import Optional
 
+import nibabel as nib
 import numpy as np
 from skfuzzy import cmeans
 
-from intensity_normalization.parse import CLI, file_path, save_file_path
+from intensity_normalization.parse import CLI, file_path, save_nifti_path
 from intensity_normalization.type import Array, NiftiImage
 
 
@@ -61,7 +62,13 @@ class TissueMembershipFinder(CLI):
         self.hard_segmentation = hard_segmentation
 
     def __call__(self, image: NiftiImage, mask: Optional[NiftiImage] = None):
-        return find_tissue_memberships(image, mask, self.hard_segmentation)
+        data = image.get_fdata()
+        mask = mask and mask.get_fdata()
+        tissue_memberships = find_tissue_memberships(
+            data, mask, self.hard_segmentation,
+        )
+        out = nib.Nifti1Image(tissue_memberships, image.affine)
+        return out
 
     def name(self) -> str:
         base = "tissue_"
@@ -90,7 +97,7 @@ class TissueMembershipFinder(CLI):
         parser.add_argument(
             "-o",
             "--output",
-            type=save_file_path(),
+            type=save_nifti_path(),
             default=None,
             help="Path to save registered image.",
         )

@@ -16,7 +16,7 @@ from argparse import (
     ArgumentDefaultsHelpFormatter,
     Namespace,
 )
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import nibabel as nib
 
@@ -26,7 +26,7 @@ from intensity_normalization.parse import (
     dir_path,
     file_path,
     positive_float,
-    save_file_path,
+    save_nifti_path,
 )
 from intensity_normalization.type import (
     Array,
@@ -34,7 +34,7 @@ from intensity_normalization.type import (
     NiftiImage,
     PathLike,
 )
-from intensity_normalization.util.io import gather_images_and_masks
+from intensity_normalization.util.io import gather_images_and_masks, glob_ext
 
 
 class NormalizeBase(CLI):
@@ -150,7 +150,7 @@ class NormalizeBase(CLI):
         parser.add_argument(
             "-o",
             "--output",
-            type=save_file_path(),
+            type=save_nifti_path(),
             default=None,
             help="Path to save normalized image.",
         )
@@ -198,7 +198,31 @@ class NormalizeSetBase(NormalizeBase):
         modality: Optional[str] = None,
         **kwargs,
     ):
+        images, masks = self.before_fit(images, masks, modality, **kwargs)
+        self._fit(images, masks, modality, **kwargs)
+
+    def _fit(
+        self,
+        images: List[ArrayOrNifti],
+        masks: Optional[List[ArrayOrNifti]] = None,
+        modality: Optional[str] = None,
+        **kwargs,
+    ):
         raise NotImplementedError
+
+    def before_fit(
+        self,
+        images: List[ArrayOrNifti],
+        masks: Optional[List[ArrayOrNifti]] = None,
+        modality: Optional[str] = None,
+        **kwargs,
+    ) -> Tuple[List[Array], Optional[List[Array]]]:
+        assert len(images) > 0
+        if hasattr(images[0], "get_fdata"):
+            images = [image.get_fdata() for image in images]
+        if hasattr(masks[0], "get_fdata"):
+            masks = [mask.get_fdata() for mask in masks]
+        return images, masks
 
     def fit_from_directories(
         self,
@@ -264,3 +288,18 @@ class NormalizeSetBase(NormalizeBase):
             help="Increase output verbosity (e.g., -vv is more than -v).",
         )
         return parser
+
+    @classmethod
+    def from_argparse_args(cls, args: Namespace):
+        return cls()
+
+    def call_from_argparse_args(self, args: Namespace):
+        normalized = self.fit_from_directories(
+            args.image_dir, args.mask_dir, return_normalized=True,
+        )
+        image_filenames = glob_ext(args.image_dir)
+        output_filenames = [
+            self.append_name_to_file(fn, args.output_dir) for fn in image_filenames
+        ]
+        for norm_image, fn in zip(normalized, output_filenames):
+            norm_image.to_filename(fn)

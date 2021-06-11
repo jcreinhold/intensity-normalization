@@ -15,7 +15,7 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
 import logging
 from typing import List, Optional
 
-from intensity_normalization.parse import CLI, file_path, save_file_path
+from intensity_normalization.parse import CLI, file_path, save_nifti_path
 from intensity_normalization.type import (
     allowed_interpolators,
     allowed_transforms,
@@ -130,7 +130,7 @@ class Registrator(CLI):
         parser.add_argument(
             "-o",
             "--output",
-            type=save_file_path(),
+            type=save_nifti_path(),
             default=None,
             help="Path to save registered image.",
         )
