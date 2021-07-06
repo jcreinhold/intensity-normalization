@@ -211,4 +211,5 @@ vol. 6, pp. 9–19, 2014.
 [4] J. P. Fortin, E. M. Sweeney, J. Muschelli, C. M. Crainiceanu, and R. T. Shinohara, “Removing inter-subject technical
 variability in magnetic resonance imaging studies,” NeuroImage, vol. 132, pp. 198–212, 2016.
 
-[5] Iglesias, Juan Eugenio, Cheng-Yi Liu, Paul M. Thompson, and Zhuowen Tu. "Robust brain extraction across datasets and comparison with publicly available methods." IEEE transactions on medical imaging 30, no. 9 (2011): 1617-1634.
+[5] Iglesias, Juan Eugenio, Cheng-Yi Liu, Paul M. Thompson, and Zhuowen Tu. "Robust brain extraction across datasets and
+comparison with publicly available methods." IEEE transactions on medical imaging 30, no. 9 (2011): 1617-1634.
