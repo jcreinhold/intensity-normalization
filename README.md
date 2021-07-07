@@ -7,6 +7,7 @@ intensity-normalization
 [![Docker Automated Build](https://img.shields.io/docker/cloud/build/jcreinhold/intensity-normalization.svg)](https://hub.docker.com/r/jcreinhold/intensity-normalization/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/intensity-normalization)](https://www.python.org/)
 [![PyPI Version](https://img.shields.io/pypi/v/intensity-normalization.svg)](https://pypi.python.org/pypi/pyrobex)
+[![Conda Version](https://img.shields.io/conda/vn/conda-forge/intensity-normalization)](https://anaconda.org/conda-forge/intensity-normalization)
 
 This package contains various methods to normalize the intensity of various modalities of magnetic resonance (MR)
 images, e.g., T1-weighted (T1-w), T2-weighted (T2-w), FLuid-Attenuated Inversion Recovery (FLAIR), and Proton
@@ -99,6 +100,10 @@ Install
 The easiest way to install the package is through the following command:
 
     pip install intensity-normalization
+
+OR, via the conda package manager:
+
+    conda install -c conda-forge intensity-normalization
 
 To install from the source directory, use
 
