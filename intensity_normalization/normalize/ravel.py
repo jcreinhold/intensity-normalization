@@ -21,7 +21,11 @@ from intensity_normalization.normalize.base import NormalizeSetBase
 from intensity_normalization.normalize.whitestripe import WhiteStripeNormalize
 from intensity_normalization.util.tissue_membership import find_tissue_memberships
 
-logger = logging.getLogger(__name__)
+try:
+    import ants
+except (ModuleNotFoundError, ImportError):
+    logging.warning("ANTsPy not installed. Install antspyx to use RAVEL.")
+    raise
 
 
 class RavelNormalize(NormalizeSetBase):
@@ -49,6 +53,26 @@ class RavelNormalize(NormalizeSetBase):
         self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
     ) -> float:
         return 1.0
+
+    @staticmethod
+    def _ravel_correction(control_voxels, unwanted_factors):
+        """Correct control voxels by removing trend from unwanted factors
+
+        Args:
+            control_voxels (np.ndarray): rows are voxels, columns are images
+                (see V matrix in the paper)
+            unwanted_factors (np.ndarray): unwanted factors
+                (see Z matrix in the paper)
+
+        Returns:
+            normalized (np.ndarray): normalized images
+        """
+        gamma = np.linalg.solve(unwanted_factors, control_voxels)
+        fitted = (unwanted_factors @ gamma).T
+        residuals = control_voxels - fitted
+        voxel_means = np.mean(control_voxels, axis=1, keepdims=True)
+        normalized = residuals + voxel_means
+        return normalized
 
     def fit(
         self,

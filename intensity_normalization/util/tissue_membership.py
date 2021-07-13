@@ -40,8 +40,8 @@ def find_tissue_memberships(
         mask = image > 0.0
     else:
         mask = mask > 0.0
-    mask_size = mask.sum()
-    foreground = image[mask].reshape(-1, mask_size)
+    foreground_size = mask.sum()
+    foreground = image[mask].reshape(-1, foreground_size)
     centers, memberships_, *_ = cmeans(foreground, 3, 2, 0.005, 50)
     # sort the tissue memberships to CSF/GM/WM (assuming T1-w image)
     sorted_memberships = sorted(zip(centers, memberships_), key=lambda x: x[0])
