@@ -9,7 +9,7 @@ Created on: Jun 02, 2021
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
 import logging
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Type, TypeVar
 import warnings
 
 import matplotlib.pyplot as plt
@@ -33,6 +33,8 @@ try:
 except ImportError:
     logger.debug("Seaborn not installed. Plots won't look as pretty.")
 
+HP = TypeVar("HP", bound="HistogramPlotter")
+
 
 class HistogramPlotter(CLI):
     def __init__(
@@ -41,12 +43,14 @@ class HistogramPlotter(CLI):
         self.figsize = figsize
         self.alpha = alpha
 
-    def __call__(self, images: List[Array], masks: List[Optional[Array]], **kwargs):
+    def __call__(  # type: ignore[no-untyped-def,override]
+        self, images: List[Array], masks: List[Optional[Array]], **kwargs,
+    ) -> plt.Axes:
         return self.plot_all_histograms(images, masks, **kwargs)
 
-    def plot_all_histograms(
-        self, images: List[Array], masks: List[Optional[Array]], **kwargs
-    ):
+    def plot_all_histograms(  # type: ignore[no-untyped-def]
+        self, images: List[Array], masks: List[Optional[Array]], **kwargs,
+    ) -> plt.Axes:
         _, ax = plt.subplots(figsize=self.figsize)
         n_images = len(images)
         for i, (image, mask) in enumerate(zip(images, masks), 1):
@@ -57,13 +61,13 @@ class HistogramPlotter(CLI):
         ax.set_ylim((0, None))
         return ax
 
-    def from_directories(
+    def from_directories(  # type: ignore[no-untyped-def]
         self,
         image_dir: PathLike,
         mask_dir: Optional[PathLike] = None,
         ext: str = "nii*",
         **kwargs,
-    ):
+    ) -> plt.Axes:
         images, masks = gather_images_and_masks(image_dir, mask_dir, ext, True)
         return self(images, masks, **kwargs)
 
@@ -106,7 +110,7 @@ class HistogramPlotter(CLI):
         parser.add_argument(
             "-a",
             "--alpha",
-            type=probability_float,
+            type=probability_float,  # type: ignore[arg-type]
             default=0.8,
             help="Alpha level for line representing histogram.",
         )
@@ -120,17 +124,17 @@ class HistogramPlotter(CLI):
         return parser
 
     @classmethod
-    def from_argparse_args(cls, args: Namespace):
+    def from_argparse_args(cls: Type[HP], args: Namespace) -> HP:
         return cls(args.figsize, args.alpha)
 
-    def call_from_argparse_args(self, args: Namespace):
+    def call_from_argparse_args(self, args: Namespace) -> None:
         _ = self.from_directories(args.image_dir, args.mask_dir)
         if args.output is None:
             args.output = Path.cwd().resolve() / "hist.pdf"
         plt.savefig(args.output)
 
 
-def plot_histogram(
+def plot_histogram(  # type: ignore[no-untyped-def]
     image: Array,
     mask: Optional[Array] = None,
     ax: Optional[plt.Axes] = None,
@@ -139,7 +143,7 @@ def plot_histogram(
     alpha: float = 0.8,
     linewidth: float = 3.0,
     **kwargs,
-):
+) -> plt.Axes:
     """
     plots the histogram of the intensities of a numpy array within a given brain mask
     or estimated foreground mask (the estimate is just all intensities above the mean)
@@ -158,7 +162,7 @@ def plot_histogram(
     """
     if ax is None:
         _, ax = plt.subplots()
-    data = image[mask > 0.0] if mask is None else image[image > 0.0]
+    data = image[image > 0.0] if mask is None else image[mask > 0.0]
     hist, bin_edges = np.histogram(data.flatten(), n_bins, **kwargs)
     bins = np.diff(bin_edges) / 2 + bin_edges[:-1]
     if log:

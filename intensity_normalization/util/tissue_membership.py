@@ -12,7 +12,7 @@ __all__ = [
 ]
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
-from typing import Optional
+from typing import Optional, Tuple, Type, TypeVar
 
 import nibabel as nib
 import numpy as np
@@ -43,8 +43,13 @@ def find_tissue_memberships(
     foreground_size = mask.sum()
     foreground = image[mask].reshape(-1, foreground_size)
     centers, memberships_, *_ = cmeans(foreground, 3, 2, 0.005, 50)
+
+    def get_center(element: Tuple[float, Array]) -> float:
+        center: float = element[0]
+        return center
+
     # sort the tissue memberships to CSF/GM/WM (assuming T1-w image)
-    sorted_memberships = sorted(zip(centers, memberships_), key=lambda x: x[0])
+    sorted_memberships = sorted(zip(centers, memberships_), key=get_center)
     memberships = [m for _, m in sorted_memberships]
     tissue_mask = np.zeros(image.shape + (3,))
     for i in range(3):
@@ -57,11 +62,16 @@ def find_tissue_memberships(
     return tissue_mask
 
 
+TMF = TypeVar("TMF", bound="TissueMembershipFinder")
+
+
 class TissueMembershipFinder(CLI):
     def __init__(self, hard_segmentation: bool = False):
         self.hard_segmentation = hard_segmentation
 
-    def __call__(self, image: NiftiImage, mask: Optional[NiftiImage] = None):
+    def __call__(  # type: ignore[override]
+        self, image: NiftiImage, mask: Optional[NiftiImage] = None,
+    ) -> NiftiImage:
         data = image.get_fdata()
         mask = mask and mask.get_fdata()
         tissue_memberships = find_tissue_memberships(
@@ -70,7 +80,7 @@ class TissueMembershipFinder(CLI):
         out = nib.Nifti1Image(tissue_memberships, image.affine)
         return out
 
-    def name(self) -> str:
+    def name(self) -> str:  # type: ignore[override]
         base = "tissue_"
         suffix = "mask" if self.hard_segmentation else "membership"
         return base + suffix
@@ -117,5 +127,5 @@ class TissueMembershipFinder(CLI):
         return parser
 
     @classmethod
-    def from_argparse_args(cls, args: Namespace):
+    def from_argparse_args(cls: Type[TMF], args: Namespace) -> TMF:
         return cls(args.hard_segmentation)

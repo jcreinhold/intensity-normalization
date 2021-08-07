@@ -40,16 +40,18 @@ class WhiteStripeNormalize(NormalizeBase):
     def calculate_location(
         self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
     ) -> float:
-        return data[self.whitestripe].mean()
+        loc: float = data[self.whitestripe].mean()
+        return loc
 
     def calculate_scale(
         self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
     ) -> float:
-        return data[self.whitestripe].std()
+        scale: float = data[self.whitestripe].std()
+        return scale
 
     def setup(
         self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
-    ):
+    ) -> None:
         if modality is None:
             modality = "t1"
         mask = self._get_mask(data, mask, modality)
@@ -62,7 +64,7 @@ class WhiteStripeNormalize(NormalizeBase):
         ws_l, ws_u = np.quantile(voi, (lower_bound, upper_bound))
         self.whitestripe = (masked > ws_l) & (masked < ws_u)
 
-    def teardown(self):
+    def teardown(self) -> None:
         del self.whitestripe
 
     @staticmethod

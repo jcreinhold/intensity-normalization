@@ -76,15 +76,15 @@ Preprocessing
 
 .. argparse::
    :module: intensity_normalization.cli
-   :func: preprocess_parser
+   :func: preprocessor_parser
    :prog: preprocess
 
 Tissue Mask
 ^^^^^^^^^^^
 
 .. argparse::
-   :module: intensity_normalization.exec.tissue_mask
-   :func: arg_parser
+   :module: intensity_normalization.cli
+   :func: tissue_parser
    :prog: tissue-mask
 
 Co-register

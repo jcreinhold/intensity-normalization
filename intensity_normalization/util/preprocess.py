@@ -18,7 +18,7 @@ __all__ = [
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
 import logging
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Type, TypeVar
 
 import ants
 import nibabel as nib
@@ -107,6 +107,9 @@ def preprocess(
     return image, mask
 
 
+PP = TypeVar("PP", bound="Preprocessor")
+
+
 class Preprocessor(CLI):
     def __init__(
         self,
@@ -122,7 +125,7 @@ class Preprocessor(CLI):
         self.interp_type = interp_type
         self.second_n4_with_smoothed_mask = second_n4_with_smoothed_mask
 
-    def __call__(
+    def __call__(  # type: ignore[override]
         self, image: NiftiImage, mask: Optional[NiftiImage] = None,
     ) -> NiftiImage:
         preprocessed, _ = preprocess(
@@ -209,7 +212,7 @@ class Preprocessor(CLI):
         return parser
 
     @classmethod
-    def from_argparse_args(cls, args: Namespace):
+    def from_argparse_args(cls: Type[PP], args: Namespace) -> PP:
         return cls(
             args.resolution,
             args.orientation,

@@ -33,13 +33,13 @@ class LeastSquaresNormalize(NormalizeSetBase):
         sf = self.scaling_factor(tissue_means)
         return sf
 
-    def _fit(
+    def _fit(  # type: ignore[no-untyped-def]
         self,
         images: List[Array],
         masks: Optional[List[Array]] = None,
         modality: Optional[str] = None,
         **kwargs,
-    ):
+    ) -> None:
         image = images[0]  # only need one image to fit this method
         mask = masks and masks[0]
         tissue_membership = find_tissue_memberships(image, mask)
@@ -59,7 +59,7 @@ class LeastSquaresNormalize(NormalizeSetBase):
     def scaling_factor(self, tissue_means: Vector) -> float:
         numerator = tissue_means.T @ tissue_means
         denominator = tissue_means.T @ self.standard_tissue_means
-        sf = (numerator / denominator).item()
+        sf: float = (numerator / denominator).item()
         return sf
 
     @staticmethod

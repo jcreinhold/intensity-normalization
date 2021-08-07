@@ -20,19 +20,21 @@ class ZScoreNormalize(NormalizeBase):
     def calculate_location(
         self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
     ) -> float:
-        return self.voi.mean()
+        loc: float = self.voi.mean()
+        return loc
 
     def calculate_scale(
         self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
     ) -> float:
-        return self.voi.std()
+        scale: float = self.voi.std()
+        return scale
 
     def setup(
         self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None
-    ):
+    ) -> None:
         self.voi = self._get_voi(data, mask, modality)
 
-    def teardown(self):
+    def teardown(self) -> None:
         del self.voi
 
     @staticmethod

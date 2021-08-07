@@ -56,7 +56,7 @@ def get_largest_tissue_mode(data: Array) -> float:
         largest_tissue_mode (float): intensity of the mode
     """
     grid, pdf = smooth_histogram(data)
-    largest_tissue_mode = grid[np.argmax(pdf)]
+    largest_tissue_mode: float = grid[np.argmax(pdf)]
     return largest_tissue_mode
 
 
@@ -80,7 +80,7 @@ def get_last_tissue_mode(
         data = data[valid_mask]
     grid, pdf = smooth_histogram(data)
     maxima = argrelmax(pdf)[0]
-    last_tissue_mode = grid[maxima[-1]]
+    last_tissue_mode: float = grid[maxima[-1]]
     return last_tissue_mode
 
 
@@ -104,7 +104,7 @@ def get_first_tissue_mode(
         data = data[valid_mask]
     grid, pdf = smooth_histogram(data)
     maxima = argrelmax(pdf)[0]
-    first_tissue_mode = grid[maxima[0]]
+    first_tissue_mode: float = grid[maxima[0]]
     return first_tissue_mode
 
 
