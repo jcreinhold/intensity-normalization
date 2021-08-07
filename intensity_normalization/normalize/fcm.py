@@ -11,7 +11,7 @@ __all__ = [
 ]
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
-from typing import Optional
+from typing import Optional, Type, TypeVar
 
 import numpy as np
 
@@ -20,6 +20,8 @@ from intensity_normalization.parse import file_path, positive_float, save_nifti_
 from intensity_normalization.type import Array
 from intensity_normalization.normalize.base import NormalizeBase
 from intensity_normalization.util.tissue_membership import find_tissue_memberships
+
+FCM = TypeVar("FCM", bound="FCMNormalize")
 
 
 class FCMNormalize(NormalizeBase):
@@ -44,6 +46,7 @@ class FCMNormalize(NormalizeBase):
         self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
     ) -> float:
         modality = self._get_modality(modality)
+        tissue_mean: float
         if modality == "t1":
             mask = self._get_mask(data, mask, modality)
             tissue_memberships = find_tissue_memberships(data, mask)
@@ -64,7 +67,7 @@ class FCMNormalize(NormalizeBase):
         return tissue_mean
 
     @property
-    def is_fit(self):
+    def is_fit(self) -> bool:
         return self.tissue_membership is not None
 
     @staticmethod
@@ -152,10 +155,10 @@ class FCMNormalize(NormalizeBase):
         return parent_parser
 
     @classmethod
-    def from_argparse_args(cls, args: Namespace):
+    def from_argparse_args(cls: Type[FCM], args: Namespace) -> FCM:
         return cls(args.norm_value, args.tissue_type)
 
-    def call_from_argparse_args(self, args: Namespace):
+    def call_from_argparse_args(self, args: Namespace) -> None:
         if hasattr(args, "mask"):
             mask = args.mask
             if args.modality is not None:

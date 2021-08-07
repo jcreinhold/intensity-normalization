@@ -49,20 +49,20 @@ class NyulNormalize(NormalizeSetBase):
         return normalized
 
     @property
-    def percentiles(self):
+    def percentiles(self) -> Vector:
         percs = np.arange(self.l_percentile, self.u_percentile + self.step, self.step)
         return np.concatenate(([self.i_min], percs, [self.i_max]))
 
     def get_landmarks(self, image: Array) -> Vector:
         return np.percentile(image, self.percentiles)
 
-    def _fit(
+    def _fit(  # type: ignore[no-untyped-def]
         self,
         images: List[ArrayOrNifti],
         masks: Optional[List[ArrayOrNifti]] = None,
         modality: Optional[str] = None,
-        **kwargs
-    ):
+        **kwargs,
+    ) -> None:
         """Compute standard scale for piecewise linear histogram matching
 
         Args:
@@ -84,7 +84,7 @@ class NyulNormalize(NormalizeSetBase):
             standard_scale += landmarks
         self.standard_scale = standard_scale / n_images
 
-    def save_standard_histogram(self, filename: PathLike):
+    def save_standard_histogram(self, filename: PathLike) -> None:
         np.save(filename, np.vstack((self.standard_scale, self.percentiles)))
 
     @staticmethod

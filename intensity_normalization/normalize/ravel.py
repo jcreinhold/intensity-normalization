@@ -55,7 +55,7 @@ class RavelNormalize(NormalizeSetBase):
         return 1.0
 
     @staticmethod
-    def _ravel_correction(control_voxels, unwanted_factors):
+    def _ravel_correction(control_voxels: Array, unwanted_factors: Array) -> Array:
         """Correct control voxels by removing trend from unwanted factors
 
         Args:
@@ -68,19 +68,19 @@ class RavelNormalize(NormalizeSetBase):
             normalized (np.ndarray): normalized images
         """
         gamma = np.linalg.solve(unwanted_factors, control_voxels)
-        fitted = (unwanted_factors @ gamma).T
+        fitted = (unwanted_factors @ gamma).NB
         residuals = control_voxels - fitted
         voxel_means = np.mean(control_voxels, axis=1, keepdims=True)
         normalized = residuals + voxel_means
         return normalized
 
-    def fit(
+    def fit(  # type: ignore[no-untyped-def]
         self,
         images: List[ArrayOrNifti],
         masks: Optional[List[ArrayOrNifti]] = None,
         modality: Optional[str] = None,
         **kwargs,
-    ):
+    ) -> None:
         raise NotImplementedError
 
     @staticmethod

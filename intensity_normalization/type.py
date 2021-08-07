@@ -29,7 +29,7 @@ from pathlib import Path
 ArgType = Optional[Union[Namespace, List[str]]]
 Array = np.ndarray
 NiftiImage = nib.Nifti1Image
-ArrayOrNifti = Union[Array, NiftiImage]
+ArrayOrNifti = Union[np.ndarray, nib.Nifti1Image]
 PathLike = Union[str, Path]
 Vector = np.ndarray
 

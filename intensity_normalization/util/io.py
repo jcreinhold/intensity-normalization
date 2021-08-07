@@ -67,14 +67,16 @@ def glob_ext(dirpath: PathLike, ext: str = "nii*") -> List[Path]:
     return filenames
 
 
-def split_filename(filepath: PathLike) -> Tuple[Path, str, str]:
+def split_filename(filepath: Union[str, Path]) -> Tuple[Path, str, str]:
     """ split a filepath into the directory, base, and extension """
     filepath = Path(filepath).resolve()
     path = filepath.parent
-    base = Path(filepath.stem)
+    _base = Path(filepath.stem)
     ext = filepath.suffix
     if ext == ".gz":
-        ext2 = base.suffix
-        base = base.stem
+        ext2 = _base.suffix
+        base = str(_base.stem)
         ext = ext2 + ext
-    return Path(path), str(base), ext
+    else:
+        base = str(_base)
+    return Path(path), base, ext

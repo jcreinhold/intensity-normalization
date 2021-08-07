@@ -1,5 +1,5 @@
 Welcome to intensity-normalization's documentation!
-======================================
+===================================================
 
 .. toctree::
    :maxdepth: 2
@@ -12,6 +12,8 @@ Welcome to intensity-normalization's documentation!
    contributing
    authors
    history
+   algorithm
+   cli
 
 Indices and tables
 ==================

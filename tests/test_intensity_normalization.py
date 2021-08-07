@@ -39,7 +39,7 @@ def cwd() -> Path:
 
 
 @pytest.fixture
-def temp_dir(tmpdir_factory) -> Path:
+def temp_dir(tmpdir_factory) -> Path:  # type: ignore[no-untyped-def]
     return Path(tmpdir_factory.mktemp("out"))
 
 
@@ -76,107 +76,107 @@ def mask(mask_dir: Path) -> Path:
 
 
 @pytest.fixture
-def base_cli_image_args(image: Path, mask: Path):
+def base_cli_image_args(image: Path, mask: Path) -> List[str]:
     return f"{image} -m {mask}".split()
 
 
 @pytest.fixture
-def base_cli_dir_args(image: Path, mask: Path):
+def base_cli_dir_args(image: Path, mask: Path) -> List[str]:
     return f"{image.parent} -m {mask.parent}".split()
 
 
-def test_fcm_normalization_cli(base_cli_image_args: List[str]):
+def test_fcm_normalization_cli(base_cli_image_args: List[str]) -> None:
     args = base_cli_image_args
     retval = fcm_main(args)
     assert retval == 0
 
 
-def test_kde_normalization_cli(base_cli_image_args: List[str]):
+def test_kde_normalization_cli(base_cli_image_args: List[str]) -> None:
     retval = kde_main(base_cli_image_args)
     assert retval == 0
 
 
-def test_ws_normalization_cli(base_cli_image_args: List[str]):
+def test_ws_normalization_cli(base_cli_image_args: List[str]) -> None:
     retval = ws_main(base_cli_image_args)
     assert retval == 0
 
 
-def test_zscore_normalization_cli(base_cli_image_args: List[str]):
+def test_zscore_normalization_cli(base_cli_image_args: List[str]) -> None:
     retval = zs_main(base_cli_image_args)
     assert retval == 0
 
 
-def test_lsq_normalization_cli(base_cli_dir_args: List[str]):
+def test_lsq_normalization_cli(base_cli_dir_args: List[str]) -> None:
     retval = lsq_main(base_cli_dir_args)
     assert retval == 0
 
 
-def test_nyul_normalization_cli(base_cli_dir_args: List[str]):
+def test_nyul_normalization_cli(base_cli_dir_args: List[str]) -> None:
     retval = nyul_main(base_cli_dir_args)
     assert retval == 0
 
 
 @pytest.mark.skip("Not implemented.")
-def test_ravel_normalization_cli(base_cli_dir_args: List[str]):
+def test_ravel_normalization_cli(base_cli_dir_args: List[str]) -> None:
     retval = ravel_main(base_cli_dir_args)
     assert retval == 0
 
 
 @pytest.fixture
-def coregister_cli_args(image: Path):
+def coregister_cli_args(image: Path) -> List[str]:
     return f"{image}".split()
 
 
 @pytest.mark.skipif(ants is None, reason="Requires ANTsPy")
 @pytest.mark.skipif(not ANTSPY_DIR_EXISTS, reason="ANTsPy directory wasn't found.")
-def test_coregister_mni_cli(coregister_cli_args: List[str]):
+def test_coregister_mni_cli(coregister_cli_args: List[str]) -> None:
     retval = register_main(coregister_cli_args)
     assert retval == 0
 
 
 @pytest.fixture
-def coregister_template_cli_args(image: Path, mask: Path):
+def coregister_template_cli_args(image: Path, mask: Path) -> List[str]:
     return f"{image} -t {mask}".split()
 
 
 @pytest.mark.skip("Test images are problematic.")
-def test_coregister_template_cli(coregister_template_cli_args: List[str]):
+def test_coregister_template_cli(coregister_template_cli_args: List[str]) -> None:
     retval = register_main(coregister_template_cli_args)
     assert retval == 0
 
 
 @pytest.fixture
-def histogram_cli_args(base_cli_dir_args: List[str], temp_dir: Path):
+def histogram_cli_args(base_cli_dir_args: List[str], temp_dir: Path) -> List[str]:
     return base_cli_dir_args + f"-o {temp_dir}/hist.png".split()
 
 
-def test_histogram_cli(histogram_cli_args: List[str]):
+def test_histogram_cli(histogram_cli_args: List[str]) -> None:
     retval = histogram_main(histogram_cli_args)
     assert retval == 0
 
 
 @pytest.fixture
-def preprocess_cli_args(image: Path):
+def preprocess_cli_args(image: Path) -> List[str]:
     return f"{image} -2n4".split()
 
 
 @pytest.mark.skip("Test images do not work.")
-def test_preprocess_cli(preprocess_cli_args: List[str]):
+def test_preprocess_cli(preprocess_cli_args: List[str]) -> None:
     retval = preprocessor_main(preprocess_cli_args)
     assert retval == 0
 
 
 @pytest.fixture
-def tissue_membership_cli_args(image: Path):
+def tissue_membership_cli_args(image: Path) -> List[str]:
     return f"{image}".split()
 
 
-def test_tissue_membership_cli(tissue_membership_cli_args: List[str]):
+def test_tissue_membership_cli(tissue_membership_cli_args: List[str]) -> None:
     retval = tissue_main(tissue_membership_cli_args)
     assert retval == 0
 
 
-def test_tissue_membership_hard_seg_cli(tissue_membership_cli_args: List[str]):
+def test_tissue_membership_hard_seg_cli(tissue_membership_cli_args: List[str]) -> None:
     tissue_membership_cli_args.append("-hs")
     retval = tissue_main(tissue_membership_cli_args)
     assert retval == 0

@@ -28,7 +28,7 @@ __all__ = [
 from argparse import ArgumentParser, ArgumentTypeError, Namespace
 import logging
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Type, TypeVar, Union
 
 import nibabel as nib
 
@@ -37,26 +37,25 @@ from intensity_normalization.util.io import split_filename
 
 
 def return_none(func: Callable) -> Callable:
-    def new_func(self, string) -> Any:
+    def new_func(self, string: Any) -> Any:  # type: ignore[no-untyped-def]
         if string is None:
             return None
         elif isinstance(string, str):
             if string.lower() in ("none", "null"):
                 return None
-            else:
-                return func(self, string)
-        else:
-            return func(self, string)
+        return func(self, string)
 
     return new_func
 
 
 class _ParseType:
     @property
-    def __name__(self):
-        return self.__class__.__name__
+    def __name__(self) -> str:
+        name = self.__class__.__name__
+        assert isinstance(name, str)
+        return name
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.__name__
 
 
@@ -145,7 +144,7 @@ class nonnegative_int(_ParseType):
 
 
 class nonnegative_float(_ParseType):
-    def __call__(self, string: str) -> int:
+    def __call__(self, string: str) -> float:
         num = float(string)
         if num < 0.0:
             msg = f"{string} needs to be a nonnegative float."
@@ -168,18 +167,23 @@ class probability_float_or_none(_ParseType):
         return probability_float()(string)
 
 
-def new_parse_type(func: Callable, name: str):
-    class NewParseType:
-        def __str__(self):
-            return name
+class NewParseType:
+    def __init__(self, func: Callable, name: str):
+        self.name = name
+        self.func = func
 
-        def __call__(self, val: Any):
-            return func(val)
+    def __str__(self) -> str:
+        return self.name
 
-    return NewParseType()
+    def __call__(self, val: Any) -> Any:
+        return self.func(val)
 
 
-def setup_log(verbosity: int):
+def new_parse_type(func: Callable, name: str) -> NewParseType:
+    return NewParseType(func, name)
+
+
+def setup_log(verbosity: int) -> None:
     """ set logger with verbosity logging level and message """
     if verbosity == 1:
         level = logging.getLevelName("INFO")
@@ -192,11 +196,14 @@ def setup_log(verbosity: int):
     logging.captureWarnings(True)
 
 
+T = TypeVar("T", bound="CLI")
+
+
 class CLI:
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs):  # type: ignore[no-untyped-def]
         raise NotImplementedError
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.__class__.__name__
 
     @staticmethod
@@ -225,13 +232,13 @@ class CLI:
         return parent_parser
 
     @classmethod
-    def parser(cls) -> ArgumentParser:
+    def parser(cls: Type[T]) -> ArgumentParser:
         parser = cls.get_parent_parser(cls.description())
         parser = cls.add_method_specific_arguments(parser)
         return parser
 
     @classmethod
-    def main(cls, parser: ArgumentParser) -> Callable:
+    def main(cls: Type[T], parser: ArgumentParser) -> Callable:
         def _main(args: ArgType = None) -> int:
             if args is None:
                 args = parser.parse_args()
@@ -247,10 +254,10 @@ class CLI:
         return _main
 
     @classmethod
-    def from_argparse_args(cls, args: Namespace):
+    def from_argparse_args(cls: Type[T], args: Namespace) -> T:
         raise NotImplementedError
 
-    def call_from_argparse_args(self, args: Namespace):
+    def call_from_argparse_args(self, args: Namespace) -> None:
         image = self.load_image(args.image)
         if hasattr(args, "mask"):
             mask = args.mask and self.load_image(args.mask)

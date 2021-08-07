@@ -13,7 +13,7 @@ __all__ = [
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
 import logging
-from typing import List, Optional
+from typing import List, Optional, Type, TypeVar
 
 from intensity_normalization.parse import CLI, file_path, save_nifti_path
 from intensity_normalization.type import (
@@ -63,6 +63,9 @@ def register(
     return registered.to_nibabel()
 
 
+R = TypeVar("R", bound="Registrator")
+
+
 class Registrator(CLI):
     def __init__(
         self,
@@ -80,7 +83,9 @@ class Registrator(CLI):
         self.interpolator = interpolator
         self.initial_rigid = initial_rigid
 
-    def __call__(self, image: NiftiImage, *args, **kwargs) -> NiftiImage:
+    def __call__(  # type: ignore[no-untyped-def,override]
+        self, image: NiftiImage, *args, **kwargs,
+    ) -> NiftiImage:
         return register(
             image,
             self.template,
@@ -169,7 +174,7 @@ class Registrator(CLI):
         return parser
 
     @classmethod
-    def from_argparse_args(cls, args: Namespace):
+    def from_argparse_args(cls: Type[R], args: Namespace) -> R:
         if args.template is not None:
             args.template = ants.image_read(args.template)
         return cls(
