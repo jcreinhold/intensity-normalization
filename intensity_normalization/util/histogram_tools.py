@@ -61,7 +61,9 @@ def get_largest_tissue_mode(data: Array) -> float:
 
 
 def get_last_tissue_mode(
-    data: Array, remove_tail: bool = True, tail_percentage: float = 96.0,
+    data: Array,
+    remove_tail: bool = True,
+    tail_percentage: float = 96.0,
 ) -> float:
     """Mode of the highest-intensity tissue class
 
@@ -85,7 +87,9 @@ def get_last_tissue_mode(
 
 
 def get_first_tissue_mode(
-    data: Array, remove_tail: bool = True, tail_percentage: float = 99.0,
+    data: Array,
+    remove_tail: bool = True,
+    tail_percentage: float = 99.0,
 ) -> float:
     """Mode of the lowest-intensity tissue class
 
@@ -109,7 +113,7 @@ def get_first_tissue_mode(
 
 
 def get_tissue_mode(data: Array, modality: str) -> float:
-    """ Find the appropriate tissue mode given a modality """
+    """Find the appropriate tissue mode given a modality"""
     modality_ = modality.lower()
     if modality_ in PEAK["last"]:
         mode = get_last_tissue_mode(data)

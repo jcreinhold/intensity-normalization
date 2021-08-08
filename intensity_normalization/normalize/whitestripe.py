@@ -38,19 +38,28 @@ class WhiteStripeNormalize(NormalizeBase):
         self.width_u = width_u or width
 
     def calculate_location(
-        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
     ) -> float:
         loc: float = data[self.whitestripe].mean()
         return loc
 
     def calculate_scale(
-        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
     ) -> float:
         scale: float = data[self.whitestripe].std()
         return scale
 
     def setup(
-        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
     ) -> None:
         if modality is None:
             modality = "t1"
@@ -79,6 +88,9 @@ class WhiteStripeNormalize(NormalizeBase):
     def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
         parser = parent_parser.add_argument_group("Method")
         parser.add_argument(
-            "--width", default=0.05, type=float, help="width of the whitestripe",
+            "--width",
+            default=0.05,
+            type=float,
+            help="width of the whitestripe",
         )
         return parent_parser

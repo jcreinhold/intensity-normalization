@@ -16,10 +16,10 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 from intensity_normalization.type import Array, ArrayOrNifti, PathLike, Vector
-from intensity_normalization.normalize.base import NormalizeSetBase
+from intensity_normalization.normalize.base import NormalizeFitBase
 
 
-class NyulNormalize(NormalizeSetBase):
+class NyulNormalize(NormalizeFitBase):
     def __init__(
         self,
         i_min: float = 1.0,
@@ -40,7 +40,10 @@ class NyulNormalize(NormalizeSetBase):
         self.step = step
 
     def normalize_array(
-        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
     ) -> Array:
         voi = self._get_voi(data, mask, modality)
         landmarks = self.get_landmarks(voi)

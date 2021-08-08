@@ -18,12 +18,14 @@ import nibabel as nib
 import numpy as np
 from skfuzzy import cmeans
 
-from intensity_normalization.parse import CLI, file_path, save_nifti_path
-from intensity_normalization.type import Array, NiftiImage
+from intensity_normalization.parse import CLI
+from intensity_normalization.type import Array, file_path, NiftiImage, save_nifti_path
 
 
 def find_tissue_memberships(
-    image: Array, mask: Array = None, hard_segmentation: bool = False
+    image: Array,
+    mask: Array = None,
+    hard_segmentation: bool = False,
 ) -> Array:
     """Tissue memberships for a T1-w brain image with fuzzy c-means
 
@@ -70,12 +72,16 @@ class TissueMembershipFinder(CLI):
         self.hard_segmentation = hard_segmentation
 
     def __call__(  # type: ignore[override]
-        self, image: NiftiImage, mask: Optional[NiftiImage] = None,
+        self,
+        image: NiftiImage,
+        mask: Optional[NiftiImage] = None,
     ) -> NiftiImage:
         data = image.get_fdata()
         mask = mask and mask.get_fdata()
         tissue_memberships = find_tissue_memberships(
-            data, mask, self.hard_segmentation,
+            data,
+            mask,
+            self.hard_segmentation,
         )
         out = nib.Nifti1Image(tissue_memberships, image.affine)
         return out
@@ -92,10 +98,13 @@ class TissueMembershipFinder(CLI):
     @staticmethod
     def get_parent_parser(desc: str) -> ArgumentParser:
         parser = ArgumentParser(
-            description=desc, formatter_class=ArgumentDefaultsHelpFormatter,
+            description=desc,
+            formatter_class=ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
-            "image", type=file_path(), help="Path of image to normalize.",
+            "image",
+            type=file_path(),
+            help="Path of image to normalize.",
         )
         parser.add_argument(
             "-m",

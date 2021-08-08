@@ -9,5 +9,5 @@ PEAK = {
     "largest": ["t2", "flair", "largest"],
     "first": ["pd", "md", "first"],
 }
-VALID_PEAKS = set([m for modalities in PEAK.values() for m in modalities])
+VALID_PEAKS = {m for modalities in PEAK.values() for m in modalities}
 VALID_MODALITIES = VALID_PEAKS - {"last", "largest", "first"}

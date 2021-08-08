@@ -25,12 +25,18 @@ class KDENormalize(NormalizeBase):
     """
 
     def calculate_location(
-        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
     ) -> float:
         return 0.0
 
     def calculate_scale(
-        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
     ) -> float:
         modality = self._get_modality(modality)
         voi = self._get_voi(data, mask, modality)

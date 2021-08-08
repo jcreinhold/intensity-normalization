@@ -15,18 +15,24 @@ from typing import List, Optional
 import numpy as np
 
 from intensity_normalization.type import Array, Vector
-from intensity_normalization.normalize.base import NormalizeSetBase
+from intensity_normalization.normalize.base import NormalizeFitBase
 from intensity_normalization.util.tissue_membership import find_tissue_memberships
 
 
-class LeastSquaresNormalize(NormalizeSetBase):
+class LeastSquaresNormalize(NormalizeFitBase):
     def calculate_location(
-        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
     ) -> float:
         return 0.0
 
     def calculate_scale(
-        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
     ) -> float:
         tissue_membership = find_tissue_memberships(data, mask)
         tissue_means = self.tissue_means(data, tissue_membership)

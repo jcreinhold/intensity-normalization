@@ -16,6 +16,5 @@ numpy>=1.19
 scikit-fuzzy>=0.4.2
 scikit-image>=0.17
 scikit-learn>=0.24
-scipy>=1.6
+scipy>=1.5
 statsmodels>=0.12
-antspyx>=0.2.4

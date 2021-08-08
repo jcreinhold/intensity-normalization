@@ -1,11 +1,9 @@
 intensity-normalization
 =======================
 
-[![Build Status](https://api.travis-ci.com/jcreinhold/intensity-normalization.svg?branch=master&status=created)](https://travis-ci.com/jcreinhold/intensity-normalization)
-[![Coverage Status](https://coveralls.io/repos/github/jcreinhold/intensity-normalization/badge.svg?branch=master)](https://coveralls.io/github/jcreinhold/intensity-normalization?branch=master)
+[![PyPI Version](https://img.shields.io/pypi/v/intensity-normalization.svg)](https://pypi.python.org/pypi/pyrobex)
 [![Documentation Status](https://readthedocs.org/projects/intensity-normalization/badge/?version=latest)](http://intensity-normalization.readthedocs.io/en/latest/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/intensity-normalization)](https://www.python.org/)
-[![PyPI Version](https://img.shields.io/pypi/v/intensity-normalization.svg)](https://pypi.python.org/pypi/pyrobex)
 
 This package contains various methods to normalize the intensity of various modalities of magnetic resonance (MR)
 images, e.g., T1-weighted (T1-w), T2-weighted (T2-w), FLuid-Attenuated Inversion Recovery (FLAIR), and Proton
@@ -77,21 +75,6 @@ scanner/site from which an image came)—it's an artifact of the acquisition pro
 with machine learning-based image processing methods, which usually assume the data was gathered iid from some
 distribution.
 
-
-Requirements
-------------
-
-- matplotlib
-- numpy
-- nibabel
-- scikit-fuzzy
-- scikit-learn
-- scipy
-- statsmodels
-
-We have provided a script `create_env.sh` to create a conda environment with the necessary packages
-(run like: `. ./create_env.sh`, this package will be installed in the created environment)
-
 Install
 -------
 
@@ -105,9 +88,9 @@ To install from the source directory, use
 
 Note the package [antspy](https://github.com/ANTsX/ANTsPy) is required for the RAVEL normalization routine, the
 preprocessing tool as well as the co-registration tool, but all other normalization and processing tools work without
-it. To also install the antspy package, run `pip install antspyx` before installing this package or use
-the `create_env.sh` script with the option `--antspy`. If the pip installation fails, you may need to build antspy from
-source.
+it. To install the antspy package along with the RAVEL, preprocessing, and co-registration CLI, install with:
+
+    pip install "intensity-normalization[ants]"
 
 Basic Usage
 -----------

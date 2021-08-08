@@ -13,14 +13,18 @@ __all__ = [
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
 import logging
-from typing import List, Optional, Type, TypeVar
+from typing import List, Optional, Type, TypeVar, Union
 
-from intensity_normalization.parse import CLI, file_path, save_nifti_path
+from intensity_normalization.parse import CLI
 from intensity_normalization.type import (
+    Array,
+    ArrayOrNifti,
     allowed_interpolators,
     allowed_transforms,
+    file_path,
     NiftiImage,
     PathLike,
+    save_nifti_path,
 )
 
 
@@ -31,22 +35,41 @@ except (ModuleNotFoundError, ImportError):
     raise
 
 
+def to_ants(image: Union[ArrayOrNifti, ants.ANTsImage]) -> ants.ANTsImage:
+    if isinstance(image, ants.ANTsImage):
+        ants_image = image
+    elif isinstance(image, NiftiImage):
+        ants_image = ants.from_nibabel(image)
+    elif isinstance(image, Array):
+        ants_image = ants.from_numpy(image)
+    else:
+        raise ValueError(
+            "Provided image must be an ANTsImage, Nifti1Image, or np.ndarray."
+            f" Got {type(image)}."
+        )
+    return ants_image
+
+
 def register(
-    image: NiftiImage,
-    template: Optional[NiftiImage] = None,
+    image: Union[NiftiImage, ants.ANTsImage],
+    template: Optional[Union[NiftiImage, ants.ANTsImage]] = None,
     type_of_transform: str = "Affine",
     interpolator: str = "bSpline",
     initial_rigid: bool = True,
-) -> NiftiImage:
+    template_mask: Optional[Union[NiftiImage, ants.ANTsImage]] = None,
+) -> Union[NiftiImage, ants.ANTsImage]:
     if template is None:
         standard_mni = ants.get_ants_data("mni")
         template = ants.image_read(standard_mni)
     else:
-        template = ants.from_nibabel(template)
-    image = ants.from_nibabel(image)
+        template = to_ants(template)
+    is_nibabel = isinstance(image, NiftiImage)
+    image = to_ants(image)
     if initial_rigid:
         transforms = ants.registration(
-            fixed=template, moving=image, type_of_transform="Rigid",
+            fixed=template,
+            moving=image,
+            type_of_transform="Rigid",
         )
         rigid_transform = transforms["fwdtransforms"][0]
     else:
@@ -56,11 +79,15 @@ def register(
         moving=image,
         initial_transform=rigid_transform,
         type_of_transform=type_of_transform,
+        mask=template_mask,
     )["fwdtransforms"]
     registered = ants.apply_transforms(
-        template, image, transform, interpolator=interpolator,
+        template,
+        image,
+        transform,
+        interpolator=interpolator,
     )
-    return registered.to_nibabel()
+    return registered.to_nibabel() if is_nibabel else registered
 
 
 R = TypeVar("R", bound="Registrator")
@@ -84,7 +111,10 @@ class Registrator(CLI):
         self.initial_rigid = initial_rigid
 
     def __call__(  # type: ignore[no-untyped-def,override]
-        self, image: NiftiImage, *args, **kwargs,
+        self,
+        image: NiftiImage,
+        *args,
+        **kwargs,
     ) -> NiftiImage:
         return register(
             image,
@@ -98,7 +128,9 @@ class Registrator(CLI):
         return [self(image) for image in images]
 
     def register_images_to_templates(
-        self, images: List[NiftiImage], templates: List[NiftiImage],
+        self,
+        images: List[NiftiImage],
+        templates: List[NiftiImage],
     ) -> List[NiftiImage]:
         assert len(images) == len(templates)
         registered = []
@@ -120,10 +152,13 @@ class Registrator(CLI):
     @staticmethod
     def get_parent_parser(desc: str) -> ArgumentParser:
         parser = ArgumentParser(
-            description=desc, formatter_class=ArgumentDefaultsHelpFormatter,
+            description=desc,
+            formatter_class=ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
-            "image", type=file_path(), help="Path of image to normalize.",
+            "image",
+            type=file_path(),
+            help="Path of image to normalize.",
         )
         parser.add_argument(
             "-t",

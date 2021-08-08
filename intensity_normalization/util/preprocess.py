@@ -20,21 +20,24 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
 import logging
 from typing import Optional, Tuple, Type, TypeVar
 
-import ants
 import nibabel as nib
 
-from intensity_normalization.parse import (
-    CLI,
-    file_path,
-    positive_float,
-    save_nifti_path,
-)
+from intensity_normalization.parse import CLI
 from intensity_normalization.type import (
     allowed_orientations,
+    file_path,
     interp_type_dict,
     NiftiImage,
     PathLike,
+    positive_float,
+    save_nifti_path,
 )
+
+try:
+    import ants
+except (ModuleNotFoundError, ImportError):
+    logging.warning("ANTsPy not installed. Install antspyx to use preprocessor.")
+    raise
 
 
 def preprocess(
@@ -83,7 +86,9 @@ def preprocess(
     if second_n4_with_smoothed_mask:
         smoothed_mask = ants.smooth_image(mask, 1.0)
         image = ants.n4_bias_field_correction(
-            image, convergence=n4_convergence_options, weight_mask=smoothed_mask,
+            image,
+            convergence=n4_convergence_options,
+            weight_mask=smoothed_mask,
         )
     if resolution is not None:
         if resolution != mask.spacing:
@@ -126,7 +131,9 @@ class Preprocessor(CLI):
         self.second_n4_with_smoothed_mask = second_n4_with_smoothed_mask
 
     def __call__(  # type: ignore[override]
-        self, image: NiftiImage, mask: Optional[NiftiImage] = None,
+        self,
+        image: NiftiImage,
+        mask: Optional[NiftiImage] = None,
     ) -> NiftiImage:
         preprocessed, _ = preprocess(
             image,
@@ -153,10 +160,13 @@ class Preprocessor(CLI):
     @staticmethod
     def get_parent_parser(desc: str) -> ArgumentParser:
         parser = ArgumentParser(
-            description=desc, formatter_class=ArgumentDefaultsHelpFormatter,
+            description=desc,
+            formatter_class=ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
-            "image", type=file_path(), help="Path of image to normalize.",
+            "image",
+            type=file_path(),
+            help="Path of image to normalize.",
         )
         parser.add_argument(
             "-m",
