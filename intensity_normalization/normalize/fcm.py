@@ -16,9 +16,14 @@ from typing import Optional, Type, TypeVar
 import numpy as np
 
 from intensity_normalization import VALID_MODALITIES
-from intensity_normalization.parse import file_path, positive_float, save_nifti_path
-from intensity_normalization.type import Array
-from intensity_normalization.normalize.base import NormalizeBase
+from intensity_normalization.type import (
+    Array,
+    dir_path,
+    file_path,
+    positive_float,
+    save_nifti_path,
+)
+from intensity_normalization.normalize.base import NormalizeBase, NormalizeDirectoryBase
 from intensity_normalization.util.tissue_membership import find_tissue_memberships
 
 FCM = TypeVar("FCM", bound="FCMNormalize")
@@ -26,7 +31,7 @@ FCM = TypeVar("FCM", bound="FCMNormalize")
 
 class FCMNormalize(NormalizeBase):
     """
-    Use fuzzy c-means-generated tissue membership (found on a T1-w
+    use fuzzy c-means-generated tissue membership (found on a T1-w
     image) to normalize the tissue to norm_value (default = 1.)
     """
 
@@ -38,12 +43,18 @@ class FCMNormalize(NormalizeBase):
         self.tissue_type = tissue_type
 
     def calculate_location(
-        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
     ) -> float:
         return 0.0
 
     def calculate_scale(
-        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
     ) -> float:
         modality = self._get_modality(modality)
         tissue_mean: float
@@ -84,10 +95,13 @@ class FCMNormalize(NormalizeBase):
     @staticmethod
     def get_parent_parser(desc: str) -> ArgumentParser:
         parser = ArgumentParser(
-            description=desc, formatter_class=ArgumentDefaultsHelpFormatter,
+            description=desc,
+            formatter_class=ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
-            "image", type=file_path(), help="Path of image to normalize.",
+            "image",
+            type=file_path(),
+            help="Path of image to normalize.",
         )
         parser.add_argument(
             "-o",
@@ -171,5 +185,8 @@ class FCMNormalize(NormalizeBase):
         else:
             mask = args.tissue_mask
         self.normalize_from_filenames(
-            args.image, mask, args.output, args.modality,
+            args.image,
+            mask,
+            args.output,
+            args.modality,
         )

@@ -13,14 +13,27 @@ __all__ = [
     "ArgType",
     "Array",
     "ArrayOrNifti",
+    "dir_path",
+    "file_path",
+    "new_parse_type",
+    "nonnegative_float",
+    "nonnegative_int",
+    "positive_float",
+    "positive_int",
+    "positive_int_or_none",
+    "positive_odd_int_or_none",
+    "probability_float",
+    "probability_float_or_none",
+    "save_file_path",
+    "save_nifti_path",
     "interp_type_dict",
     "NiftiImage",
     "PathLike",
     "Vector",
 ]
 
-from argparse import Namespace
-from typing import List, Optional, Union
+from argparse import ArgumentTypeError, Namespace
+from typing import Any, Callable, List, Optional, Union
 
 import nibabel as nib
 import numpy as np
@@ -34,7 +47,11 @@ PathLike = Union[str, Path]
 Vector = np.ndarray
 
 interp_type_dict = dict(
-    linear=0, nearest_neighbor=1, gaussian=2, windowed_sinc=3, bspline=4,
+    linear=0,
+    nearest_neighbor=1,
+    gaussian=2,
+    windowed_sinc=3,
+    bspline=4,
 )
 
 # copied from: (https://github.com/ANTsX/ANTsPy/blob/
@@ -91,7 +108,6 @@ allowed_orientations = frozenset(
         "ASL",
     }
 )
-
 
 # copied from (https://github.com/ANTsX/ANTsPy/blob/
 # 4474f894d184da98a099cd9c852795c384fa3b8f/ants/registration/interface.py)
@@ -183,3 +199,150 @@ allowed_interpolators = frozenset(
         "genericLabel",
     }
 )
+
+
+def return_none(func: Callable) -> Callable:
+    def new_func(self, string: Any) -> Any:  # type: ignore[no-untyped-def]
+        if string is None:
+            return None
+        elif isinstance(string, str):
+            if string.lower() in ("none", "null"):
+                return None
+        return func(self, string)
+
+    return new_func
+
+
+class _ParseType:
+    @property
+    def __name__(self) -> str:
+        name = self.__class__.__name__
+        assert isinstance(name, str)
+        return name
+
+    def __str__(self) -> str:
+        return self.__name__
+
+
+class save_file_path(_ParseType):
+    def __call__(self, string: str) -> Path:
+        if not string.isprintable():
+            msg = "String must only contain printable characters."
+            raise ArgumentTypeError(msg)
+        path = Path(string)
+        return path
+
+
+class save_nifti_path(_ParseType):
+    def __call__(self, string: str) -> Path:
+        not_nifti = not string.endswith(".nii.gz") and not string.endswith(".nii")
+        if not_nifti or not string.isprintable():
+            msg = (
+                f"{string} is not a valid path to a NIfTI file. "
+                "Needs to end with .nii or .nii.gz and can "
+                "only contain printable characters."
+            )
+            raise ArgumentTypeError(msg)
+        path = Path(string)
+        return path
+
+
+class dir_path(_ParseType):
+    def __call__(self, string: str) -> str:
+        path = Path(string)
+        if not path.is_dir():
+            msg = f"{string} is not a valid directory path."
+            raise ArgumentTypeError(msg)
+        return str(path.resolve())
+
+
+class file_path(_ParseType):
+    def __call__(self, string: str) -> str:
+        path = Path(string)
+        if not path.is_file():
+            msg = f"{string} is not a valid file path."
+            raise ArgumentTypeError(msg)
+        return str(path.resolve())
+
+
+class positive_float(_ParseType):
+    def __call__(self, string: str) -> float:
+        num = float(string)
+        if num <= 0.0:
+            msg = f"{string} needs to be a positive float."
+            raise ArgumentTypeError(msg)
+        return num
+
+
+class positive_int(_ParseType):
+    def __call__(self, string: str) -> int:
+        num = int(string)
+        if num <= 0:
+            msg = f"{string} needs to be a positive integer."
+            raise ArgumentTypeError(msg)
+        return num
+
+
+class positive_odd_int_or_none(_ParseType):
+    @return_none
+    def __call__(self, string: str) -> Union[int, None]:
+        num = int(string)
+        if num <= 0 or not (num % 2):
+            msg = f"{string} needs to be a positive odd integer."
+            raise ArgumentTypeError(msg)
+        return num
+
+
+class positive_int_or_none(_ParseType):
+    @return_none
+    def __call__(self, string: str) -> Union[int, None]:
+        return positive_int()(string)
+
+
+class nonnegative_int(_ParseType):
+    def __call__(self, string: str) -> int:
+        num = int(string)
+        if num < 0:
+            msg = f"{string} needs to be a nonnegative integer."
+            raise ArgumentTypeError(msg)
+        return num
+
+
+class nonnegative_float(_ParseType):
+    def __call__(self, string: str) -> float:
+        num = float(string)
+        if num < 0.0:
+            msg = f"{string} needs to be a nonnegative float."
+            raise ArgumentTypeError(msg)
+        return num
+
+
+class probability_float(_ParseType):
+    def __call__(self, string: str) -> float:
+        num = float(string)
+        if num < 0.0 or num > 1.0:
+            msg = f"{string} needs to be between 0 and 1."
+            raise ArgumentTypeError(msg)
+        return num
+
+
+class probability_float_or_none(_ParseType):
+    @return_none
+    def __call__(self, string: str) -> Union[float, None]:
+        return probability_float()(string)
+
+
+class NewParseType:
+    def __init__(self, func: Callable, name: str):
+        self.name = name
+        self.func = func
+
+    def __str__(self) -> str:
+        return self.name
+
+    def __call__(self, val: Any) -> Any:
+        return self.func(val)
+
+
+def new_parse_type(func: Callable, name: str) -> NewParseType:
+    return NewParseType(func, name)

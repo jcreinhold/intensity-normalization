@@ -18,19 +18,28 @@ from intensity_normalization.normalize.base import NormalizeBase
 
 class ZScoreNormalize(NormalizeBase):
     def calculate_location(
-        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
     ) -> float:
         loc: float = self.voi.mean()
         return loc
 
     def calculate_scale(
-        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
     ) -> float:
         scale: float = self.voi.std()
         return scale
 
     def setup(
-        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
     ) -> None:
         self.voi = self._get_voi(data, mask, modality)
 

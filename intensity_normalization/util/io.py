@@ -25,9 +25,11 @@ from intensity_normalization.type import Array, NiftiImage, PathLike
 
 
 def gather_images(
-    dirpath: PathLike, ext: str = "nii*", return_data: bool = False
+    dirpath: PathLike,
+    ext: str = "nii*",
+    return_data: bool = False,
 ) -> Union[List[NiftiImage], List[Array]]:
-    """ return all images of extension `ext` from a directory """
+    """return all images of extension `ext` from a directory"""
     if isinstance(dirpath, str):
         dirpath = Path(dirpath)
     assert dirpath.is_dir()
@@ -59,7 +61,7 @@ def gather_images_and_masks(
 
 
 def glob_ext(dirpath: PathLike, ext: str = "nii*") -> List[Path]:
-    """ return a sorted list of ext files for a given directory path """
+    """return a sorted list of ext files for a given directory path"""
     if isinstance(dirpath, str):
         dirpath = Path(dirpath)
     assert dirpath.is_dir()
@@ -68,7 +70,7 @@ def glob_ext(dirpath: PathLike, ext: str = "nii*") -> List[Path]:
 
 
 def split_filename(filepath: Union[str, Path]) -> Tuple[Path, str, str]:
-    """ split a filepath into the directory, base, and extension """
+    """split a filepath into the directory, base, and extension"""
     filepath = Path(filepath).resolve()
     path = filepath.parent
     _base = Path(filepath.stem)

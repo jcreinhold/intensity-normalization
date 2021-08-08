@@ -1,39 +1,15 @@
 # Quick Tutorial
 
-## Install package
-
-First download the package through git, i.e.,
-
-    git clone https://github.com/jcreinhold/intensity-normalization.git
-
-If you are using conda, the easiest way to ensure you are up and running is to run the  `create_env.sh` script
-located in the main directory. You run that as follows:
-
-    . ./create_env.sh
-
-If you are *not* using conda, then you can try to install the package via the setup.py script, i.e.,
-inside the `intensity-normalization` directory, run the following command:
-
-    python setup.py install
-
-If you don't want to bother with any of this, you can create a Docker image or Singularity image via:
-
-    docker pull jcreinhold/intensity-normalization
-
-or 
-
-    singularity pull docker://jcreinhold/intensity-normalization
-
 ## Fuzzy C-means-based Normalization
 
 Once the package is installed, if you just want to do some sort of normalization and not think too much about it, a reasonable choice is Fuzzy C-means (FCM)-based
 normalization. Note that FCM requires access to a (_non-gadolinium-enhanced_) T1-w image, if this is not possible then I would recommend doing either z-score or KDE normalization
-for simple normalization tasks. The FCM method also requires a brain mask for the image, although the brain mask need not be perfect 
+for simple normalization tasks. The FCM method also requires a brain mask for the image, although the brain mask need not be perfect
 ([ROBEX](https://sites.google.com/site/jeiglesias/ROBEX) works fine for this purpose).
 
-Note that FCM-based normalization acts on the image by calculating the specified tissue mean, e.g., white matter (WM) mean 
+Note that FCM-based normalization acts on the image by calculating the specified tissue mean, e.g., white matter (WM) mean
 and setting that to a specified value (the default is 1 in the code base although that is a tunable parameter). Our FCM-based normalization method requires that
-a set of scans contain a T1-w image. We use the T1-w image and the brain mask to create a tissue mask over which we calculate the tissue mean. 
+a set of scans contain a T1-w image. We use the T1-w image and the brain mask to create a tissue mask over which we calculate the tissue mean.
 We then normalize as previously stated (see [here](https://intensity-normalization.readthedocs.io/en/latest/algorithm.html#fuzzy-c-means) for more detail).
 This tissue mask can then be used to normalize the remaining contrasts in the set of images for a specific patient assuming that the
 remaining contrast images are registered to the T1-w image.
@@ -44,28 +20,28 @@ in the terminal to normalize a T1-w image and create a WM mask by running the fo
 ```bash
 fcm-normalize -i t1_w_image_path.nii.gz -m brain_mask_path.nii.gz -o t1_norm_path.nii.gz -v -c t1 -s -tt wm
 ```
- 
-This will output the normalized T1-w image to `t1_norm_path.nii.gz` and will create a directory 
-called `tissue_masks` in which the WM mask will be saved. You can then input the WM mask back in to 
+
+This will output the normalized T1-w image to `t1_norm_path.nii.gz` and will create a directory
+called `tissue_masks` in which the WM mask will be saved. You can then input the WM mask back in to
 the program to normalize an image of a different contrast, e.g. for T2,
 
 ```bash
 fcm-normalize -i t2_image_path.nii.gz -tm wm_masks/wm_mask.nii.gz -o t2_norm_path.nii.gz -v -c t2
-``` 
- 
-You can run `fcm-normalize -h` to see more options, but the above covers most of the details necessary to 
+```
+
+You can run `fcm-normalize -h` to see more options, but the above covers most of the details necessary to
 run FCM normalization on a single image.  You can also input a directory of images like this:
 
 ```bash
 fcm-normalize -i t1_imgs/ -m brain_masks/ -o out/ -v -c t1
-``` 
- 
-and it will FCM normalize all the images in the directory `t1_imgs/` so long as the number of images and brain masks 
+```
+
+and it will FCM normalize all the images in the directory `t1_imgs/` so long as the number of images and brain masks
 are equal and correspond to one another and output the normalized images into the directory `out/`.
 
 If you want to quickly inspect the normalization results on a directory (as in the last command), you can append the
 `-p` flag which will create a plot of the histograms inside the brain mask of the normalized images. For the above
-case, you should expect to see alignment around the intensity level of 1 (or whatever the `--norm-value` is set to). 
+case, you should expect to see alignment around the intensity level of 1 (or whatever the `--norm-value` is set to).
 You can also use the `plot-hists` CLI which is also installed (see [here](https://intensity-normalization.readthedocs.io/en/latest/exec.html#plotting)
 for documentation). A use case of the `plot-hists` command would be to inspect the histograms of a set of images *before* normalization
 to compare with the results of normalization.
@@ -85,7 +61,7 @@ suppose you have a directory of images `img_dir` that contains NIfTI (.nii.gz or
 ```
 
 In addition to the images, all normalization CLIs also can take brain masks as input; the masks (or absence of masks) can affect normalization quality.
-If you have brain masks for the corresponding images (for example, the images in `img_dir`), they should be setup 
+If you have brain masks for the corresponding images (for example, the images in `img_dir`), they should be setup
 like so:
 
 ```none
@@ -100,9 +76,9 @@ like so:
 Note that when both `img_dir` and `mask_dir` are sorted alphabetically, each mask should correspond to the correct image.
 Other than that, the name of the image or mask is not important.
 
-If you have a setup as shown above (with `img_dir` and `mask_dir`), you can call any 
+If you have a setup as shown above (with `img_dir` and `mask_dir`), you can call any
 normalization CLI on `img_dir` to normalize all images in that directory. For example,
-with `fcm-normalize` (assuming that `img_dir` contains T1-w images, in this example) the 
+with `fcm-normalize` (assuming that `img_dir` contains T1-w images, in this example) the
 call would be something like:
 
 ```bash
@@ -121,9 +97,9 @@ The other methods not listed above are accessible via:
 6) `gmm-normalize` - use a GMM to normalize the WM mean over the brain mask, like FCM (do not recommend using this method!)
 7) `lsq-normalize` - minimize the least-squares distance between the means of CSF, GM, and WM in a set of images
 
-Note that these all have approximately the same interface with the `-i`, `-m` and `-o` options, but each 
-individual method *may* need some additional input. To determine if this is the case you can either view the 
-[executable documentation here](https://intensity-normalization.readthedocs.io/en/latest/exec.html) or run the command line interface (CLI) with the `-h` 
+Note that these all have approximately the same interface with the `-i`, `-m` and `-o` options, but each
+individual method *may* need some additional input. To determine if this is the case you can either view the
+[executable documentation here](https://intensity-normalization.readthedocs.io/en/latest/exec.html) or run the command line interface (CLI) with the `-h`
 or `--help` option. To get more detail about what each of these algorithms actually does
 see the [algorithm documentation here](https://intensity-normalization.readthedocs.io/en/latest/algorithm.html).
 
@@ -131,15 +107,15 @@ see the [algorithm documentation here](https://intensity-normalization.readthedo
 
 There a variety of other routines provided for analysis and preprocessing. The CLI names are:
 
-1) `coregister` - coregister via a rigid and affine transformation 
+1) `coregister` - coregister via a rigid and affine transformation
 2) `plot-hists` - plot the histograms of a directory of images on one figure for comparison
 3) `tissue-mask` - create a tissue mask of an input image
 4) `preprocess` - resample, N4-correct, and reorient the image and mask
 
 ## Final Note
 
-While in this tutorial we discussed interfacing with the package through command line interfaces (CLIs), 
-it is worth noting that the normalization routines (and other utilities) are available as importable python functions 
+While in this tutorial we discussed interfacing with the package through command line interfaces (CLIs),
+it is worth noting that the normalization routines (and other utilities) are available as importable python functions
 which you can import, e.g.,
 
 ```python

@@ -15,13 +15,14 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 
-from intensity_normalization.parse import (
-    CLI,
+from intensity_normalization.parse import CLI
+from intensity_normalization.type import (
+    Array,
     dir_path,
+    PathLike,
     probability_float,
     save_file_path,
 )
-from intensity_normalization.type import Array, PathLike
 from intensity_normalization.util.io import gather_images_and_masks
 
 logger = logging.getLogger(__name__)
@@ -38,18 +39,26 @@ HP = TypeVar("HP", bound="HistogramPlotter")
 
 class HistogramPlotter(CLI):
     def __init__(
-        self, figsize: Tuple[int, int] = (12, 10), alpha: float = 0.8,
+        self,
+        figsize: Tuple[int, int] = (12, 10),
+        alpha: float = 0.8,
     ):
         self.figsize = figsize
         self.alpha = alpha
 
     def __call__(  # type: ignore[no-untyped-def,override]
-        self, images: List[Array], masks: List[Optional[Array]], **kwargs,
+        self,
+        images: List[Array],
+        masks: List[Optional[Array]],
+        **kwargs,
     ) -> plt.Axes:
         return self.plot_all_histograms(images, masks, **kwargs)
 
     def plot_all_histograms(  # type: ignore[no-untyped-def]
-        self, images: List[Array], masks: List[Optional[Array]], **kwargs,
+        self,
+        images: List[Array],
+        masks: List[Optional[Array]],
+        **kwargs,
     ) -> plt.Axes:
         _, ax = plt.subplots(figsize=self.figsize)
         n_images = len(images)
@@ -78,7 +87,8 @@ class HistogramPlotter(CLI):
     @staticmethod
     def get_parent_parser(desc: str) -> ArgumentParser:
         parser = ArgumentParser(
-            description=desc, formatter_class=ArgumentDefaultsHelpFormatter,
+            description=desc,
+            formatter_class=ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
             "image_dir",

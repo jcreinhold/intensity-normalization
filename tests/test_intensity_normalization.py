@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """Tests for `intensity_normalization` package."""
 
 from pathlib import Path
@@ -9,11 +8,6 @@ from typing import List
 import numpy as np
 import nibabel as nib
 import pytest
-
-try:
-    import ants
-except (ImportError, ModuleNotFoundError):
-    ants = None
 
 ANTSPY_DIR = Path.home() / ".antspy"
 ANTSPY_DIR_EXISTS = ANTSPY_DIR.is_dir()
@@ -24,13 +18,21 @@ from intensity_normalization.cli import (
     kde_main,
     lsq_main,
     nyul_main,
-    preprocessor_main,
-    ravel_main,
-    register_main,
     tissue_main,
     ws_main,
     zs_main,
 )
+
+try:
+    import ants
+except (ImportError, ModuleNotFoundError):
+    ants = None
+else:
+    from intensity_normalization.cli import (
+        preprocessor_main,
+        ravel_main,
+        register_main,
+    )
 
 
 @pytest.fixture
@@ -116,7 +118,7 @@ def test_nyul_normalization_cli(base_cli_dir_args: List[str]) -> None:
     assert retval == 0
 
 
-@pytest.mark.skip("Not implemented.")
+@pytest.mark.skipif(ants is None, reason="Requires ANTsPy")
 def test_ravel_normalization_cli(base_cli_dir_args: List[str]) -> None:
     retval = ravel_main(base_cli_dir_args)
     assert retval == 0

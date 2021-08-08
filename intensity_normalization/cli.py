@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-intensity-normalization.cli
+intensity_normalization.cli
+
+main functions and parsers for
+all CLIs in intensity-normalization
 
 Author: Jacob Reinhold (jcreinhold@gmail.com)
 Created on: Jun 07, 2021
@@ -17,12 +20,6 @@ __all__ = [
     "lsq_parser",
     "nyul_main",
     "nyul_parser",
-    "preprocessor_main",
-    "preprocessor_parser",
-    "ravel_main",
-    "ravel_parser",
-    "register_main",
-    "register_parser",
     "tissue_main",
     "tissue_parser",
     "ws_main",
@@ -31,16 +28,15 @@ __all__ = [
     "zs_parser",
 ]
 
+import logging
+
 from intensity_normalization.normalize.fcm import FCMNormalize
 from intensity_normalization.normalize.kde import KDENormalize
 from intensity_normalization.normalize.lsq import LeastSquaresNormalize
 from intensity_normalization.normalize.nyul import NyulNormalize
-from intensity_normalization.normalize.ravel import RavelNormalize
 from intensity_normalization.normalize.whitestripe import WhiteStripeNormalize
 from intensity_normalization.normalize.zscore import ZScoreNormalize
 from intensity_normalization.plot.histogram import HistogramPlotter
-from intensity_normalization.util.coregister import Registrator
-from intensity_normalization.util.preprocess import Preprocessor
 from intensity_normalization.util.tissue_membership import TissueMembershipFinder
 
 
@@ -62,17 +58,38 @@ lsq_main = LeastSquaresNormalize.main(lsq_parser)
 nyul_parser = NyulNormalize.parser()
 nyul_main = NyulNormalize.main(nyul_parser)
 
-ravel_parser = RavelNormalize.parser()
-ravel_main = RavelNormalize.main(ravel_parser)
-
 histogram_parser = HistogramPlotter.parser()
 histogram_main = HistogramPlotter.main(histogram_parser)
-
-preprocessor_parser = Preprocessor.parser()
-preprocessor_main = Preprocessor.main(preprocessor_parser)
 
 tissue_parser = TissueMembershipFinder.parser()
 tissue_main = TissueMembershipFinder.main(tissue_parser)
 
-register_parser = Registrator.parser()
-register_main = Registrator.main(register_parser)
+
+try:
+    import ants
+except (ModuleNotFoundError, ImportError):
+    logging.info(
+        "ANTsPy not installed. Not loading preprocessor, co-registration, or RAVEL."
+    )
+else:
+    __all__ += [
+        "preprocessor_main",
+        "preprocessor_parser",
+        "ravel_main",
+        "ravel_parser",
+        "register_main",
+        "register_parser",
+    ]
+
+    from intensity_normalization.normalize.ravel import RavelNormalize
+    from intensity_normalization.util.preprocess import Preprocessor
+    from intensity_normalization.util.coregister import Registrator
+
+    ravel_parser = RavelNormalize.parser()
+    ravel_main = RavelNormalize.main(ravel_parser)
+
+    preprocessor_parser = Preprocessor.parser()
+    preprocessor_main = Preprocessor.main(preprocessor_parser)
+
+    register_parser = Registrator.parser()
+    register_main = Registrator.main(register_parser)

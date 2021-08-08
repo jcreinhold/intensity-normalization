@@ -8,7 +8,7 @@ Created on: Jun 01, 2021
 
 __all__ = [
     "NormalizeBase",
-    "NormalizeSetBase",
+    "NormalizeFitBase",
 ]
 
 from argparse import (
@@ -21,18 +21,16 @@ from typing import List, Optional, Tuple, Type, TypeVar
 import nibabel as nib
 
 from intensity_normalization import VALID_MODALITIES
-from intensity_normalization.parse import (
-    CLI,
-    dir_path,
-    file_path,
-    positive_float,
-    save_nifti_path,
-)
+from intensity_normalization.parse import CLI
 from intensity_normalization.type import (
     Array,
     ArrayOrNifti,
+    dir_path,
+    file_path,
     NiftiImage,
     PathLike,
+    positive_float,
+    save_nifti_path,
 )
 from intensity_normalization.util.io import gather_images_and_masks, glob_ext
 
@@ -50,13 +48,16 @@ class NormalizeBase(CLI):
         mask: Optional[ArrayOrNifti] = None,
         modality: Optional[str] = None,
     ) -> ArrayOrNifti:
-        if isinstance(data, nib.Nifti1Image):
+        if isinstance(data, NiftiImage):
             return self.normalize_nifti(data, mask, modality)
         else:
             return self.normalize_array(data, mask, modality)
 
     def normalize_array(
-        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None,
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
     ) -> Array:
         self.setup(data, mask, modality)
         loc = self.calculate_location(data, mask, modality)
@@ -91,21 +92,33 @@ class NormalizeBase(CLI):
 
     def call_from_argparse_args(self, args: Namespace) -> None:
         self.normalize_from_filenames(
-            args.image, args.mask, args.output, args.modality,
+            args.image,
+            args.mask,
+            args.output,
+            args.modality,
         )
 
     def calculate_location(
-        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
     ) -> float:
         raise NotImplementedError
 
     def calculate_scale(
-        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
     ) -> float:
         raise NotImplementedError
 
     def setup(
-        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
     ) -> None:
         return
 
@@ -121,14 +134,20 @@ class NormalizeBase(CLI):
         return data > 0.0
 
     def _get_mask(
-        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
     ) -> Array:
         if mask is None:
             mask = self.skull_stripped_foreground(data)
         return mask > 0.0
 
     def _get_voi(
-        self, data: Array, mask: Optional[Array] = None, modality: Optional[str] = None
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
     ) -> Array:
         return data[self._get_mask(data, mask, modality)]
 
@@ -138,10 +157,13 @@ class NormalizeBase(CLI):
     @staticmethod
     def get_parent_parser(desc: str) -> ArgumentParser:
         parser = ArgumentParser(
-            description=desc, formatter_class=ArgumentDefaultsHelpFormatter,
+            description=desc,
+            formatter_class=ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
-            "image", type=file_path(), help="Path of image to normalize.",
+            "image",
+            type=file_path(),
+            help="Path of image to normalize.",
         )
         parser.add_argument(
             "-m",
@@ -193,45 +215,14 @@ class NormalizeBase(CLI):
         return cls(args.norm_value)
 
 
-NSB = TypeVar("NSB", bound="NormalizeSetBase")
+NDB = TypeVar("NDB", bound="NormalizeDirectoryBase")
 
 
-class NormalizeSetBase(NormalizeBase):
-    def fit(  # type: ignore[no-untyped-def]
-        self,
-        images: List[ArrayOrNifti],
-        masks: Optional[List[ArrayOrNifti]] = None,
-        modality: Optional[str] = None,
-        **kwargs,
-    ) -> None:
-        images, masks = self.before_fit(images, masks, modality, **kwargs)
-        self._fit(images, masks, modality, **kwargs)
+class NormalizeDirectoryBase(NormalizeBase):
+    def fit(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        return None
 
-    def _fit(  # type: ignore[no-untyped-def]
-        self,
-        images: List[ArrayOrNifti],
-        masks: Optional[List[ArrayOrNifti]] = None,
-        modality: Optional[str] = None,
-        **kwargs,
-    ) -> None:
-        raise NotImplementedError
-
-    def before_fit(  # type: ignore[no-untyped-def]
-        self,
-        images: List[ArrayOrNifti],
-        masks: Optional[List[ArrayOrNifti]] = None,
-        modality: Optional[str] = None,
-        **kwargs,
-    ) -> Tuple[List[Array], Optional[List[Array]]]:
-        assert len(images) > 0
-        if hasattr(images[0], "get_fdata"):
-            images = [image.get_fdata() for image in images]
-        if masks is not None:
-            if hasattr(masks[0], "get_fdata"):
-                masks = [mask.get_fdata() for mask in masks]
-        return images, masks
-
-    def fit_from_directories(  # type: ignore[no-untyped-def]
+    def process_directories(  # type: ignore[no-untyped-def]
         self,
         image_dir: PathLike,
         mask_dir: Optional[PathLike] = None,
@@ -249,10 +240,25 @@ class NormalizeSetBase(NormalizeBase):
             return normalized
         return None
 
+    def call_from_argparse_args(self, args: Namespace) -> None:
+        normalized = self.process_directories(
+            args.image_dir,
+            args.mask_dir,
+            return_normalized=True,
+        )
+        assert isinstance(normalized, list)
+        image_filenames = glob_ext(args.image_dir)
+        output_filenames = [
+            self.append_name_to_file(fn, args.output_dir) for fn in image_filenames
+        ]
+        for norm_image, fn in zip(normalized, output_filenames):
+            norm_image.to_filename(fn)
+
     @staticmethod
     def get_parent_parser(desc: str) -> ArgumentParser:
         parser = ArgumentParser(
-            description=desc, formatter_class=ArgumentDefaultsHelpFormatter,
+            description=desc,
+            formatter_class=ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
             "image_dir",
@@ -298,17 +304,59 @@ class NormalizeSetBase(NormalizeBase):
         return parser
 
     @classmethod
-    def from_argparse_args(cls: Type[NSB], args: Namespace) -> NSB:
+    def from_argparse_args(cls: Type[NDB], args: Namespace) -> NDB:
         return cls()
 
-    def call_from_argparse_args(self, args: Namespace) -> None:
-        normalized = self.fit_from_directories(
-            args.image_dir, args.mask_dir, return_normalized=True,
+
+class NormalizeFitBase(NormalizeDirectoryBase):
+    def fit(  # type: ignore[no-untyped-def]
+        self,
+        images: List[ArrayOrNifti],
+        masks: Optional[List[ArrayOrNifti]] = None,
+        modality: Optional[str] = None,
+        **kwargs,
+    ) -> None:
+        images, masks = self.before_fit(images, masks, modality, **kwargs)
+        self._fit(images, masks, modality, **kwargs)
+
+    def _fit(  # type: ignore[no-untyped-def]
+        self,
+        images: List[ArrayOrNifti],
+        masks: Optional[List[ArrayOrNifti]] = None,
+        modality: Optional[str] = None,
+        **kwargs,
+    ) -> None:
+        raise NotImplementedError
+
+    def before_fit(  # type: ignore[no-untyped-def]
+        self,
+        images: List[ArrayOrNifti],
+        masks: Optional[List[ArrayOrNifti]] = None,
+        modality: Optional[str] = None,
+        **kwargs,
+    ) -> Tuple[List[Array], Optional[List[Array]]]:
+        assert len(images) > 0
+        if hasattr(images[0], "get_fdata"):
+            images = [image.get_fdata() for image in images]
+        if masks is not None:
+            if hasattr(masks[0], "get_fdata"):
+                masks = [mask.get_fdata() for mask in masks]
+        return images, masks
+
+    def fit_from_directories(  # type: ignore[no-untyped-def]
+        self,
+        image_dir: PathLike,
+        mask_dir: Optional[PathLike] = None,
+        modality: Optional[str] = None,
+        ext: str = "nii*",
+        return_normalized: bool = False,
+        **kwargs,
+    ) -> Optional[List[ArrayOrNifti]]:
+        return self.process_directories(
+            image_dir,
+            mask_dir,
+            modality,
+            ext,
+            return_normalized,
+            **kwargs,
         )
-        assert isinstance(normalized, list)
-        image_filenames = glob_ext(args.image_dir)
-        output_filenames = [
-            self.append_name_to_file(fn, args.output_dir) for fn in image_filenames
-        ]
-        for norm_image, fn in zip(normalized, output_filenames):
-            norm_image.to_filename(fn)
