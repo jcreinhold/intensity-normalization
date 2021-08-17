@@ -21,7 +21,8 @@ from typing import List, Optional, Tuple, Type, TypeVar
 import nibabel as nib
 
 from intensity_normalization import VALID_MODALITIES
-from intensity_normalization.parse import CLI
+from intensity_normalization.parse import CLIParser
+from intensity_normalization.plot.histogram import HistogramPlotter, plot_histogram
 from intensity_normalization.type import (
     Array,
     ArrayOrNifti,
@@ -38,7 +39,7 @@ from intensity_normalization.util.io import gather_images_and_masks, glob_ext
 NB = TypeVar("NB", bound="NormalizeBase")
 
 
-class NormalizeBase(CLI):
+class NormalizeBase(CLIParser):
     def __init__(self, norm_value: float = 1.0):
         self.norm_value = norm_value
 
@@ -82,21 +83,43 @@ class NormalizeBase(CLI):
         mask_path: Optional[PathLike] = None,
         out_path: Optional[PathLike] = None,
         modality: Optional[str] = None,
-    ) -> None:
+    ) -> NiftiImage:
         image = nib.load(image_path)
         mask = nib.load(mask_path) if mask_path is not None else None
         if out_path is None:
             out_path = self.append_name_to_file(image_path)
         normalized = self.normalize_nifti(image, mask, modality)
         normalized.to_filename(out_path)
+        return normalized, mask
+
+    def plot_histogram(
+        self,
+        args: Namespace,
+        normalized: NiftiImage,
+        mask: Optional[NiftiImage] = None,
+    ) -> None:
+        from pathlib import Path
+        import matplotlib.pyplot as plt
+
+        if args.output is None:
+            output = Path(args.image).parent / "hist.pdf"
+        else:
+            output = Path(args.output).parent / "hist.pdf"
+        normalized_data = normalized.get_fdata()
+        mask_data = mask and mask.get_fdata()
+        ax = plot_histogram(normalized_data, mask_data)
+        ax.set_title(self.fullname())
+        plt.savefig(output)
 
     def call_from_argparse_args(self, args: Namespace) -> None:
-        self.normalize_from_filenames(
+        normalized, mask = self.normalize_from_filenames(
             args.image,
             args.mask,
             args.output,
             args.modality,
         )
+        if args.plot_histogram:
+            self.plot_histogram(args, normalized, mask)
 
     def calculate_location(
         self,
@@ -151,7 +174,8 @@ class NormalizeBase(CLI):
     ) -> Array:
         return data[self._get_mask(data, mask, modality)]
 
-    def _get_modality(self, modality: Optional[str]) -> str:
+    @staticmethod
+    def _get_modality(modality: Optional[str]) -> str:
         return "t1" if modality is None else modality.lower()
 
     @staticmethod
@@ -194,14 +218,13 @@ class NormalizeBase(CLI):
             default=1.0,
             help="Reference value for normalization.",
         )
-        options = parser.add_argument_group("Options")
-        options.add_argument(
+        parser.add_argument(
             "-p",
             "--plot-histogram",
             action="store_true",
             help="Plot the histogram of the normalized image.",
         )
-        options.add_argument(
+        parser.add_argument(
             "-v",
             "--verbosity",
             action="count",
@@ -213,6 +236,18 @@ class NormalizeBase(CLI):
     @classmethod
     def from_argparse_args(cls: Type[NB], args: Namespace) -> NB:
         return cls(args.norm_value)
+
+    @staticmethod
+    def name() -> str:
+        raise NotImplementedError
+
+    @staticmethod
+    def fullname() -> str:
+        raise NotImplementedError
+
+    @staticmethod
+    def description() -> str:
+        raise NotImplementedError
 
 
 NDB = TypeVar("NDB", bound="NormalizeDirectoryBase")
@@ -228,23 +263,40 @@ class NormalizeDirectoryBase(NormalizeBase):
         mask_dir: Optional[PathLike] = None,
         modality: Optional[str] = None,
         ext: str = "nii*",
-        return_normalized: bool = False,
+        return_normalized_and_masks: bool = False,
         **kwargs,
-    ) -> Optional[List[ArrayOrNifti]]:
+    ) -> Optional[Tuple[List[ArrayOrNifti], List[Optional[ArrayOrNifti]]]]:
         images, masks = gather_images_and_masks(image_dir, mask_dir, ext)
         self.fit(images, masks, modality, **kwargs)
-        if return_normalized:
+        if return_normalized_and_masks:
             normalized = [
                 self(image, mask, modality) for image, mask in zip(images, masks)
             ]
-            return normalized
+            return normalized, masks
         return None
 
+    def plot_histogram(
+        self,
+        args: Namespace,
+        normalized: List[NiftiImage],
+        masks: List[Optional[NiftiImage]] = None,
+    ) -> None:
+        from pathlib import Path
+        import matplotlib.pyplot as plt
+
+        if args.output_dir is None:
+            output = Path(args.image_dir) / "hist.pdf"
+        else:
+            output = Path(args.output_dir) / "hist.pdf"
+        hp = HistogramPlotter(title=self.fullname())
+        _ = hp(normalized, masks)
+        plt.savefig(output)
+
     def call_from_argparse_args(self, args: Namespace) -> None:
-        normalized = self.process_directories(
+        normalized, masks = self.process_directories(
             args.image_dir,
             args.mask_dir,
-            return_normalized=True,
+            return_normalized_and_masks=True,
         )
         assert isinstance(normalized, list)
         image_filenames = glob_ext(args.image_dir)
@@ -253,6 +305,8 @@ class NormalizeDirectoryBase(NormalizeBase):
         ]
         for norm_image, fn in zip(normalized, output_filenames):
             norm_image.to_filename(fn)
+        if args.plot_histogram:
+            self.plot_histogram(args, normalized, masks)
 
     @staticmethod
     def get_parent_parser(desc: str) -> ArgumentParser:
@@ -287,14 +341,13 @@ class NormalizeDirectoryBase(NormalizeBase):
             choices=VALID_MODALITIES,
             help="Modality of the images.",
         )
-        options = parser.add_argument_group("Options")
-        options.add_argument(
+        parser.add_argument(
             "-p",
             "--plot-histogram",
             action="store_true",
             help="Plot the histogram of the normalized image.",
         )
-        options.add_argument(
+        parser.add_argument(
             "-v",
             "--verbosity",
             action="count",

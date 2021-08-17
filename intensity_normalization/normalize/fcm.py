@@ -86,6 +86,10 @@ class FCMNormalize(NormalizeBase):
         return "fcm"
 
     @staticmethod
+    def fullname() -> str:
+        return "Fuzzy C-Means"
+
+    @staticmethod
     def description() -> str:
         return (
             "Use fuzzy c-means to find memberships of CSF/GM/WM in the brain. "
@@ -125,14 +129,13 @@ class FCMNormalize(NormalizeBase):
             default=1.0,
             help="Reference value for normalization.",
         )
-        options = parser.add_argument_group("Options")
-        options.add_argument(
+        parser.add_argument(
             "-p",
             "--plot-histogram",
             action="store_true",
             help="Plot the histogram of the normalized image.",
         )
-        options.add_argument(
+        parser.add_argument(
             "-v",
             "--verbosity",
             action="count",
@@ -143,7 +146,7 @@ class FCMNormalize(NormalizeBase):
 
     @staticmethod
     def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
-        parser = parent_parser.add_argument_group("Method")
+        parser = parent_parser.add_argument_group("method-specific arguments")
         parser.add_argument(
             "--tissue-type",
             default="wm",
@@ -151,7 +154,10 @@ class FCMNormalize(NormalizeBase):
             choices=("wm", "gm", "csf"),
             help="Reference tissue to use for normalization.",
         )
-        group = parent_parser.add_mutually_exclusive_group(required=True)
+        exclusive = parent_parser.add_argument_group(
+            "mutually exclusive optional arguments"
+        )
+        group = exclusive.add_mutually_exclusive_group(required=False)
         group.add_argument(
             "-m",
             "--mask",
@@ -174,7 +180,7 @@ class FCMNormalize(NormalizeBase):
 
     def call_from_argparse_args(self, args: Namespace) -> None:
         if hasattr(args, "mask"):
-            mask = args.mask
+            args.mask = args.mask
             if args.modality is not None:
                 if args.modality.lower() != "t1":
                     msg = (
@@ -183,10 +189,5 @@ class FCMNormalize(NormalizeBase):
                     )
                     raise ValueError(msg)
         else:
-            mask = args.tissue_mask
-        self.normalize_from_filenames(
-            args.image,
-            mask,
-            args.output,
-            args.modality,
-        )
+            args.mask = args.tissue_mask
+        super().call_from_argparse_args(args)

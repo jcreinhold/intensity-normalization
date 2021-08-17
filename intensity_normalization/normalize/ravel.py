@@ -226,6 +226,10 @@ class RavelNormalize(NormalizeFitBase):
         return "ravel"
 
     @staticmethod
+    def fullname() -> str:
+        return "RAVEL"
+
+    @staticmethod
     def description() -> str:
         return (
             "Perform WhiteStripe and then correct for technical "
@@ -234,7 +238,7 @@ class RavelNormalize(NormalizeFitBase):
 
     @staticmethod
     def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
-        parser = parent_parser.add_argument_group("Method")
+        parser = parent_parser.add_argument_group("method-specific arguments")
         parser.add_argument(
             "-b",
             "--num-unwanted-factors",

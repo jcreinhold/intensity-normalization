@@ -10,14 +10,18 @@ __all__ = [
     "WhiteStripeNormalize",
 ]
 
-from argparse import ArgumentParser
-from typing import Optional
+from argparse import ArgumentParser, Namespace
+from typing import Optional, Type, TypeVar
 
+import nibabel as nib
 import numpy as np
 
-from intensity_normalization.type import Array
+from intensity_normalization.type import Array, NiftiImage
 from intensity_normalization.normalize.base import NormalizeBase
 from intensity_normalization.util.histogram_tools import get_tissue_mode
+
+
+WS = TypeVar("WS", bound="WhiteStripeNormalize")
 
 
 class WhiteStripeNormalize(NormalizeBase):
@@ -81,12 +85,16 @@ class WhiteStripeNormalize(NormalizeBase):
         return "ws"
 
     @staticmethod
+    def fullname() -> str:
+        return "WhiteStripe"
+
+    @staticmethod
     def description() -> str:
         return "Standardize the normal appearing WM of a NIfTI MR image."
 
     @staticmethod
     def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
-        parser = parent_parser.add_argument_group("Method")
+        parser = parent_parser.add_argument_group("method-specific arguments")
         parser.add_argument(
             "--width",
             default=0.05,
@@ -94,3 +102,18 @@ class WhiteStripeNormalize(NormalizeBase):
             help="width of the whitestripe",
         )
         return parent_parser
+
+    @classmethod
+    def from_argparse_args(cls: Type[WS], args: Namespace) -> WS:
+        return cls(args.width)
+
+    def plot_histogram(
+        self,
+        args: Namespace,
+        normalized: NiftiImage,
+        mask: Optional[NiftiImage] = None,
+    ) -> None:
+        if mask is None:
+            mask_data = self.estimate_foreground(normalized.get_fdata())
+            mask = nib.Nifti1Image(mask_data, normalized.affine, normalized.header)
+        super().plot_histogram(args, normalized, mask)

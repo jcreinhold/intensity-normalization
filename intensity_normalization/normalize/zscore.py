@@ -10,9 +10,12 @@ __all__ = [
     "ZScoreNormalize",
 ]
 
+from argparse import Namespace
 from typing import Optional
 
-from intensity_normalization.type import Array
+import nibabel as nib
+
+from intensity_normalization.type import Array, NiftiImage
 from intensity_normalization.normalize.base import NormalizeBase
 
 
@@ -51,5 +54,20 @@ class ZScoreNormalize(NormalizeBase):
         return "zscore"
 
     @staticmethod
+    def fullname() -> str:
+        return "Z-Score"
+
+    @staticmethod
     def description() -> str:
         return "Standardize an MR image by the foreground intensities."
+
+    def plot_histogram(
+        self,
+        args: Namespace,
+        normalized: NiftiImage,
+        mask: Optional[NiftiImage] = None,
+    ) -> None:
+        if mask is None:
+            mask_data = self.estimate_foreground(normalized.get_fdata())
+            mask = nib.Nifti1Image(mask_data, normalized.affine, normalized.header)
+        super().plot_histogram(args, normalized, mask)

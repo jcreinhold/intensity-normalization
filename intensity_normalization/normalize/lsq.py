@@ -73,6 +73,10 @@ class LeastSquaresNormalize(NormalizeFitBase):
         return "lsq"
 
     @staticmethod
+    def fullname() -> str:
+        return "Least Squares"
+
+    @staticmethod
     def description() -> str:
         return (
             "Minimize distance between tissue means (CSF/GM/WM) in a "

@@ -95,6 +95,10 @@ class NyulNormalize(NormalizeFitBase):
         return "nyul"
 
     @staticmethod
+    def fullname() -> str:
+        return "Nyul & Udupa"
+
+    @staticmethod
     def description() -> str:
         return (
             "Perform piecewise-linear histogram matching per "
