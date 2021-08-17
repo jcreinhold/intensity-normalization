@@ -22,7 +22,7 @@ from typing import Optional, Tuple, Type, TypeVar
 
 import nibabel as nib
 
-from intensity_normalization.parse import CLI
+from intensity_normalization.parse import CLIParser
 from intensity_normalization.type import (
     allowed_orientations,
     file_path,
@@ -115,7 +115,7 @@ def preprocess(
 PP = TypeVar("PP", bound="Preprocessor")
 
 
-class Preprocessor(CLI):
+class Preprocessor(CLIParser):
     def __init__(
         self,
         resolution: Optional[Tuple[float, float, float]] = None,

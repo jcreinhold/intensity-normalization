@@ -11,7 +11,7 @@ Created on: Jun 06, 2021
 """
 
 __all__ = [
-    "CLI",
+    "CLIParser",
     "setup_log",
 ]
 
@@ -39,10 +39,10 @@ def setup_log(verbosity: int) -> None:
     logging.captureWarnings(True)
 
 
-_CLI = TypeVar("_CLI", bound="CLI")
+CP = TypeVar("CP", bound="CLIParser")
 
 
-class CLI:
+class CLIParser:
     def __call__(self, *args, **kwargs):  # type: ignore[no-untyped-def]
         raise NotImplementedError
 
@@ -77,13 +77,13 @@ class CLI:
         return parent_parser
 
     @classmethod
-    def parser(cls: Type[_CLI]) -> ArgumentParser:
+    def parser(cls: Type[CP]) -> ArgumentParser:
         parser = cls.get_parent_parser(cls.description())
         parser = cls.add_method_specific_arguments(parser)
         return parser
 
     @classmethod
-    def main(cls: Type[_CLI], parser: ArgumentParser) -> Callable:
+    def main(cls: Type[CP], parser: ArgumentParser) -> Callable:
         def _main(args: ArgType = None) -> int:
             if args is None:
                 args = parser.parse_args()
@@ -99,7 +99,7 @@ class CLI:
         return _main
 
     @classmethod
-    def from_argparse_args(cls: Type[_CLI], args: Namespace) -> _CLI:
+    def from_argparse_args(cls: Type[CP], args: Namespace) -> CP:
         raise NotImplementedError
 
     def call_from_argparse_args(self, args: Namespace) -> None:

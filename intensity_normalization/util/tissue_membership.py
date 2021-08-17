@@ -18,7 +18,7 @@ import nibabel as nib
 import numpy as np
 from skfuzzy import cmeans
 
-from intensity_normalization.parse import CLI
+from intensity_normalization.parse import CLIParser
 from intensity_normalization.type import Array, file_path, NiftiImage, save_nifti_path
 
 
@@ -67,7 +67,7 @@ def find_tissue_memberships(
 TMF = TypeVar("TMF", bound="TissueMembershipFinder")
 
 
-class TissueMembershipFinder(CLI):
+class TissueMembershipFinder(CLIParser):
     def __init__(self, hard_segmentation: bool = False):
         self.hard_segmentation = hard_segmentation
 

@@ -15,9 +15,10 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 
-from intensity_normalization.parse import CLI
+from intensity_normalization.parse import CLIParser
 from intensity_normalization.type import (
     Array,
+    ArrayOrNifti,
     dir_path,
     PathLike,
     probability_float,
@@ -37,22 +38,31 @@ except ImportError:
 HP = TypeVar("HP", bound="HistogramPlotter")
 
 
-class HistogramPlotter(CLI):
+class HistogramPlotter(CLIParser):
     def __init__(
         self,
         figsize: Tuple[int, int] = (12, 10),
         alpha: float = 0.8,
+        title: Optional[str] = None,
     ):
         self.figsize = figsize
         self.alpha = alpha
+        self.title = title
 
     def __call__(  # type: ignore[no-untyped-def,override]
         self,
-        images: List[Array],
-        masks: List[Optional[Array]],
+        images: List[ArrayOrNifti],
+        masks: List[Optional[ArrayOrNifti]],
         **kwargs,
     ) -> plt.Axes:
-        return self.plot_all_histograms(images, masks, **kwargs)
+        assert len(images) > 0
+        assert len(images) == len(masks)
+        if hasattr(images[0], "get_fdata"):
+            images = [image.get_fdata() for image in images]
+        if hasattr(masks[0], "get_fdata"):
+            masks = [mask.get_fdata() for mask in masks]
+        ax = self.plot_all_histograms(images, masks, **kwargs)
+        return ax
 
     def plot_all_histograms(  # type: ignore[no-untyped-def]
         self,
@@ -68,6 +78,8 @@ class HistogramPlotter(CLI):
         ax.set_xlabel("Intensity")
         ax.set_ylabel(r"Log$_{10}$ Count")
         ax.set_ylim((0, None))
+        if self.title is not None:
+            ax.set_title(self.title)
         return ax
 
     def from_directories(  # type: ignore[no-untyped-def]
@@ -125,6 +137,13 @@ class HistogramPlotter(CLI):
             help="Alpha level for line representing histogram.",
         )
         parser.add_argument(
+            "-t",
+            "--title",
+            type=str,
+            default=None,
+            help="Title for histogram plot.",
+        )
+        parser.add_argument(
             "-v",
             "--verbosity",
             action="count",
@@ -135,7 +154,7 @@ class HistogramPlotter(CLI):
 
     @classmethod
     def from_argparse_args(cls: Type[HP], args: Namespace) -> HP:
-        return cls(args.figsize, args.alpha)
+        return cls(args.figsize, args.alpha, args.title)
 
     def call_from_argparse_args(self, args: Namespace) -> None:
         _ = self.from_directories(args.image_dir, args.mask_dir)
@@ -172,7 +191,7 @@ def plot_histogram(  # type: ignore[no-untyped-def]
     """
     if ax is None:
         _, ax = plt.subplots()
-    data = image[image > 0.0] if mask is None else image[mask > 0.0]
+    data = image[image > image.mean()] if mask is None else image[mask > 0.0]
     hist, bin_edges = np.histogram(data.flatten(), n_bins, **kwargs)
     bins = np.diff(bin_edges) / 2 + bin_edges[:-1]
     if log:

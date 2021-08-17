@@ -84,3 +84,6 @@ dist: clean ## builds source and wheel package
 
 install: clean ## install the package to the active Python's site-packages
 	python setup.py install
+
+develop: clean ## symlink the package to the active Python's site-packages
+	python setup.py develop
