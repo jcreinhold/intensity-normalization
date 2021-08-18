@@ -46,14 +46,14 @@ Individual time-point normalization methods
 - Z-score normalization (``zscore-normalize``)
 - Fuzzy C-means (FCM)-based tissue-based mean normalization (``fcm-normalize``)
 - Kernel Density Estimate (KDE) WM mode normalization (``kde-normalize``)
-- WhiteStripe [3] (``ws-normalize``)
+- WhiteStripe [1]_ (``ws-normalize``)
 
 Sample-based normalization methods
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Least squares (LSQ) tissue mean normalization (``lsq-normalize``)
-- Piecewise Linear Histogram Matching (Nyúl & Udupa) [1,2] (``nyul-normalize``)
-- RAVEL [4] (``ravel-normalize``)
+- Piecewise Linear Histogram Matching (Nyúl & Udupa) [2]_ [3]_ (``nyul-normalize``)
+- RAVEL [4]_ (``ravel-normalize``)
 
 **Individual image-based** methods normalize images based on one time-point of one subject.
 
@@ -183,15 +183,15 @@ corresponding `paper <https://arxiv.org/abs/1812.04652>`_::
 References
 ----------
 
-.. [1] N. Laszlo G and J. K. Udupa, “On Standardizing the MR Image Intensity Scale,” Magn. Reson. Med., vol. 42, pp.
-       1072–1081, 1999.
-
-.. [2] M. Shah, Y. Xiao, N. Subbanna, S. Francis, D. L. Arnold, D. L. Collins, and T. Arbel, “Evaluating intensity
-       normalization on MRIs of human brain with multiple sclerosis,” Med. Image Anal., vol. 15, no. 2, pp. 267–282, 2011.
-
-.. [3] R. T. Shinohara, E. M. Sweeney, J. Goldsmith, N. Shiee, F. J. Mateen, P. A. Calabresi, S. Jarso, D. L. Pham, D. S.
+.. [1] R. T. Shinohara, E. M. Sweeney, J. Goldsmith, N. Shiee, F. J. Mateen, P. A. Calabresi, S. Jarso, D. L. Pham, D. S.
        Reich, and C. M. Crainiceanu, “Statistical normalization techniques for magnetic resonance imaging,” NeuroImage Clin.,
        vol. 6, pp. 9–19, 2014.
+
+.. [2] N. Laszlo G and J. K. Udupa, “On Standardizing the MR Image Intensity Scale,” Magn. Reson. Med., vol. 42, pp.
+       1072–1081, 1999.
+
+.. [3] M. Shah, Y. Xiao, N. Subbanna, S. Francis, D. L. Arnold, D. L. Collins, and T. Arbel, “Evaluating intensity
+       normalization on MRIs of human brain with multiple sclerosis,” Med. Image Anal., vol. 15, no. 2, pp. 267–282, 2011.
 
 .. [4] J. P. Fortin, E. M. Sweeney, J. Muschelli, C. M. Crainiceanu, and R. T. Shinohara, “Removing inter-subject technical
        variability in magnetic resonance imaging studies,” NeuroImage, vol. 132, pp. 198–212, 2016.
