@@ -78,11 +78,11 @@ class RavelNormalize(NormalizeFitBase):
         return 1.0
 
     @property
-    def template(self):
+    def template(self) -> Optional[ants.ANTsImage]:
         return self._template
 
     @property
-    def template_mask(self):
+    def template_mask(self) -> Optional[ants.ANTsImage]:
         return self._template_mask
 
     def set_template(
@@ -103,6 +103,7 @@ class RavelNormalize(NormalizeFitBase):
     def use_mni_as_template(self) -> None:
         standard_mni = ants.get_ants_data("mni")
         self.set_template(ants.image_read(standard_mni))
+        assert self.template is not None
         self.set_template_mask(self.template > 0.0)
 
     def _find_csf_mask(self, image: Array, mask: Optional[Array]) -> Array:
@@ -110,7 +111,7 @@ class RavelNormalize(NormalizeFitBase):
             assert mask is not None
             return mask
         tissue_mask = find_tissue_memberships(image, mask, True)
-        csf_mask = tissue_mask == 1
+        csf_mask: Array = tissue_mask == 1
         return csf_mask
 
     @staticmethod
@@ -130,7 +131,7 @@ class RavelNormalize(NormalizeFitBase):
         fitted = (unwanted_factors @ gamma).T
         residuals = control_voxels - fitted
         voxel_means = np.mean(control_voxels, axis=1, keepdims=True)
-        normalized = residuals + voxel_means
+        normalized: Array = residuals + voxel_means
         return normalized
 
     def _register(self, image: ants.ANTsImage) -> Array:
@@ -140,12 +141,13 @@ class RavelNormalize(NormalizeFitBase):
             type_of_transform="SyN",
             template_mask=self.template_mask,
         )
-        return registered.numpy()
+        out: Array = registered.numpy()
+        return out
 
     def create_image_matrix_and_control_voxels(
         self,
         images: List[Array],
-        masks: Optional[List[Array]] = None,
+        masks: Optional[List[Optional[Array]]] = None,
         modality: Optional[str] = None,
     ) -> Tuple[Array, Array]:
         """creates an matrix of images; rows correspond to voxels, columns are images
@@ -166,6 +168,8 @@ class RavelNormalize(NormalizeFitBase):
         image_matrix = np.zeros((image_size, len(images)))
         whitestripe_norm = WhiteStripeNormalize(**self.whitestripe_kwargs)
         control_masks = []
+        masks = [None] * len(images) if masks is None else masks
+        assert len(masks) == len(images)
 
         for i, (image, mask) in enumerate(zip(images, masks)):
             image = whitestripe_norm(image)
@@ -202,16 +206,18 @@ class RavelNormalize(NormalizeFitBase):
                 return_singular_vectors="vh",
             )
         )
-        unwanted_factors = all_unwanted_factors.T[:, 0 : self.num_unwanted_factors]
+        unwanted_factors: Array = all_unwanted_factors.T[
+            :, 0 : self.num_unwanted_factors
+        ]
         return unwanted_factors
 
-    def _fit(  # type: ignore[no-untyped-def]
+    def _fit(  # type: ignore[no-untyped-def,override]
         self,
         images: List[ArrayOrNifti],
         masks: Optional[List[ArrayOrNifti]] = None,
         modality: Optional[str] = None,
         **kwargs,
-    ) -> None:
+    ) -> Array:
         image_matrix, control_voxels = self.create_image_matrix_and_control_voxels(
             images,
             masks,

@@ -48,16 +48,18 @@ class NyulNormalize(NormalizeFitBase):
         voi = self._get_voi(data, mask, modality)
         landmarks = self.get_landmarks(voi)
         f = interp1d(landmarks, self.standard_scale, fill_value="extrapolate")
-        normalized = f(data)
+        normalized: Array = f(data)
         return normalized
 
     @property
     def percentiles(self) -> Vector:
         percs = np.arange(self.l_percentile, self.u_percentile + self.step, self.step)
-        return np.concatenate(([self.i_min], percs, [self.i_max]))
+        all_percs: Vector = np.concatenate(([self.i_min], percs, [self.i_max]))
+        return all_percs
 
     def get_landmarks(self, image: Array) -> Vector:
-        return np.percentile(image, self.percentiles)
+        landmarks: Vector = np.percentile(image, self.percentiles)
+        return landmarks
 
     def _fit(  # type: ignore[no-untyped-def]
         self,

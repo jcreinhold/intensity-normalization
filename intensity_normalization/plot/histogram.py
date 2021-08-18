@@ -58,9 +58,9 @@ class HistogramPlotter(CLIParser):
         assert len(images) > 0
         assert len(images) == len(masks)
         if hasattr(images[0], "get_fdata"):
-            images = [image.get_fdata() for image in images]
+            images = [img.get_fdata() for img in images]  # type: ignore[union-attr]
         if hasattr(masks[0], "get_fdata"):
-            masks = [mask.get_fdata() for mask in masks]
+            masks = [msk.get_fdata() for msk in masks]  # type: ignore[union-attr]
         ax = self.plot_all_histograms(images, masks, **kwargs)
         return ax
 

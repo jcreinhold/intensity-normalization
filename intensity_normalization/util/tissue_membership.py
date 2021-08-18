@@ -42,6 +42,7 @@ def find_tissue_memberships(
         mask = image > 0.0
     else:
         mask = mask > 0.0
+    assert isinstance(mask, Array)
     foreground_size = mask.sum()
     foreground = image[mask].reshape(-1, foreground_size)
     centers, memberships_, *_ = cmeans(foreground, 3, 2, 0.005, 50)

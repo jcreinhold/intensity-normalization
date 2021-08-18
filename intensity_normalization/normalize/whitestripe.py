@@ -71,9 +71,9 @@ class WhiteStripeNormalize(NormalizeBase):
         masked = data * mask
         voi = data[mask]
         wm_mode = get_tissue_mode(voi, modality)
-        wm_mode_quantile = np.mean(voi < wm_mode)
-        lower_bound = max(wm_mode_quantile - self.width_l, 0)
-        upper_bound = min(wm_mode_quantile + self.width_u, 1)
+        wm_mode_quantile: float = np.mean(voi < wm_mode).item()
+        lower_bound = max(wm_mode_quantile - self.width_l, 0.0)
+        upper_bound = min(wm_mode_quantile + self.width_u, 1.0)
         ws_l, ws_u = np.quantile(voi, (lower_bound, upper_bound))
         self.whitestripe = (masked > ws_l) & (masked < ws_u)
 

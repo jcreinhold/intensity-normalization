@@ -83,12 +83,12 @@ Piecewise Linear Histogram Matching (Nyul & Udupa)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Piecewise (affine) histogram-based normalization (which we will denote as HM for
-brevity)—proposed by Nyul and Udupa [1]—addresses the normalization problem by learning a
+brevity)—proposed by Nyul and Udupa [1]_—addresses the normalization problem by learning a
 standard histogram for a set of contrast images and mapping the intensities of each
 image to this standard histogram. The standard histogram is learned through the
 demarcation of pre-defined landmarks of interest.
 
-For instance, Shah et al. [2] defined landmarks as intensity percentiles at
+For instance, Shah et al. [2]_ defined landmarks as intensity percentiles at
 $1,10,20,\\ldots,90,99$ percent (where the intensity values below 1% and above 99% are
 discarded as outliers). We use these landmarks as the default in our implementation. The
 standard scale must be have a pre-defined range, i.e., $[m_{\\text{min}}^s, m_{\\text{max}}^s]$.
@@ -129,7 +129,7 @@ $$ I_{\\text{nu}} = \\bigcup_{\\substack{i,j \\in \\{1,10,20,\\ldots,90,99\\}\\n
 WhiteStripe
 ~~~~~~~~~~~
 
-WhiteStripe intensity normalization [3] attempts to do a Z-score normalization based on the
+WhiteStripe intensity normalization [3]_ attempts to do a Z-score normalization based on the
 intensity values of normal appearing white matter (NAWM). The NAWM is found by smoothing the
 histogram of the image (i.e., KDE) and selecting the mode of the distribution (for T1-w images).
 Let $p$ be the intensity associated with the mode. The "white stripe" is then defined as the 10%
@@ -144,7 +144,7 @@ $$ I_{\\text{ws}}(\\mathbf x) = \\frac{I(\\mathbf x) - \\mu}{\\sigma}. $$
 RAVEL
 ~~~~~
 
-RAVEL normalization [4] attempts to improve upon the result of WhiteStripe by
+RAVEL normalization [4]_ attempts to improve upon the result of WhiteStripe by
 removing unwanted technical variation, e.g., scanner effects. RAVEL assumes the
 set of images can be expressed in the additive model
 $$ V = \\alpha 1^T + \\beta X^T + \\gamma Z^T + R $$
@@ -166,26 +166,26 @@ Note that we can rewrite $V_c$ as
 $$ V_c = U \\Sigma W^T $$
 through the SVD. If $W$ is an $n\\times n$ matrix of right singular vectors.
 Then we can use $b<n$ right singular vectors to form an orthogonal basis for the
-unwanted factors $Z$ [5]. That is, we use $W_b$ as the estimate of
+unwanted factors $Z$ [5]_. That is, we use $W_b$ as the estimate of
 $Z$, where $W_b$ are the select $b$ right singular vectors. We then do
 voxel-wise linear regression to estimate the coefficients $\\gamma$. Then the
 RAVEL normalized image is simply
 $$ I_{\\text{ravel}}(\\mathbf x) = I_{\\text{ws}}(\\mathbf x) - \\gamma_{\\mathbf x} Z^T. $$
 where $\\gamma_{\\mathbf x}$ are the coefficients of unwanted variation associated
 with the voxel $\\mathbf x$ found via linear regression. In our experiments, we follow the original
-paper [4] and set $b=1$ to be the first singular
+paper [4]_ and set $b=1$ to be the first singular
 vector (the first right singular vector is highly correlated (>95%)
 with the mean intensity of the CSF).
 
 References
 ~~~~~~~~~~
 
-[1] L. G. Nyúl, J. K. Udupa, and X. Zhang, “New Variants of a Method of MRI Scale Standardization,” IEEE Trans. Med. Imaging, vol. 19, no. 2, pp. 143–150, 2000.
+.. [1] L. G. Nyúl, J. K. Udupa, and X. Zhang, “New Variants of a Method of MRI Scale Standardization,” IEEE Trans. Med. Imaging, vol. 19, no. 2, pp. 143–150, 2000.
 
-[2] M. Shah, Y. Xiao, N. Subbanna, S. Francis, D. L. Arnold, D. L. Collins, and T. Arbel, “Evaluating intensity normalization on MRIs of human brain with multiple sclerosis,” Med. Image Anal., vol. 15, no. 2, pp. 267–282, 2011.
+.. [2] M. Shah, Y. Xiao, N. Subbanna, S. Francis, D. L. Arnold, D. L. Collins, and T. Arbel, “Evaluating intensity normalization on MRIs of human brain with multiple sclerosis,” Med. Image Anal., vol. 15, no. 2, pp. 267–282, 2011.
 
-[3] R. T. Shinohara, E. M. Sweeney, J. Goldsmith, N. Shiee, F. J. Mateen, P. A. Calabresi, S. Jarso, D. L. Pham, D. S. Reich, and C. M. Crainiceanu, “Statistical normalization techniques for magnetic resonance imaging,” NeuroImage Clin., vol. 6, pp. 9–19, 2014.
+.. [3] R. T. Shinohara, E. M. Sweeney, J. Goldsmith, N. Shiee, F. J. Mateen, P. A. Calabresi, S. Jarso, D. L. Pham, D. S. Reich, and C. M. Crainiceanu, “Statistical normalization techniques for magnetic resonance imaging,” NeuroImage Clin., vol. 6, pp. 9–19, 2014.
 
-[4] J. P. Fortin, E. M. Sweeney, J. Muschelli, C. M. Crainiceanu, and R. T. Shinohara, “Removing inter-subject technical variability in magnetic resonance imaging studies,” Neuroimage, vol. 132, pp. 198–212, 2016.
+.. [4] J. P. Fortin, E. M. Sweeney, J. Muschelli, C. M. Crainiceanu, and R. T. Shinohara, “Removing inter-subject technical variability in magnetic resonance imaging studies,” Neuroimage, vol. 132, pp. 198–212, 2016.
 
-[5] J. T. Leek and J. D. Storey, “Capturing heterogeneity in gene expression studies by surrogate variable analysis,” PLoS Genet., vol. 3, no. 9, pp. 1724–1735, 2007.
+.. [5] J. T. Leek and J. D. Storey, “Capturing heterogeneity in gene expression studies by surrogate variable analysis,” PLoS Genet., vol. 3, no. 9, pp. 1724–1735, 2007.

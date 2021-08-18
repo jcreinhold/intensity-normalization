@@ -57,7 +57,7 @@ def gather_images_and_masks(
         masks = gather_images(mask_dir, ext, return_data)
     else:
         masks = [None] * len(images)
-    return images, masks
+    return images, masks  # type: ignore[return-value]
 
 
 def glob_ext(dirpath: PathLike, ext: str = "nii*") -> List[Path]:
@@ -69,9 +69,14 @@ def glob_ext(dirpath: PathLike, ext: str = "nii*") -> List[Path]:
     return filenames
 
 
-def split_filename(filepath: Union[str, Path]) -> Tuple[Path, str, str]:
+def split_filename(
+    filepath: Union[str, Path],
+    resolve: bool = False,
+) -> Tuple[Path, str, str]:
     """split a filepath into the directory, base, and extension"""
-    filepath = Path(filepath).resolve()
+    filepath = Path(filepath)
+    if resolve:
+        filepath = filepath.resolve()
     path = filepath.parent
     _base = Path(filepath.stem)
     ext = filepath.suffix

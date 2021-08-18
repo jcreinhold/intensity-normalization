@@ -5,6 +5,10 @@ intensity_normalization.cli
 main functions and parsers for
 all CLIs in intensity-normalization
 
+** see parse.py for the CLI mix-in class! **
+the mix-in class is placed in parse.py to
+avoid circular imports.
+
 Author: Jacob Reinhold (jcreinhold@gmail.com)
 Created on: Jun 07, 2021
 """

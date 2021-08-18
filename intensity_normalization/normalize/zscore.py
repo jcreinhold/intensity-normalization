@@ -26,7 +26,7 @@ class ZScoreNormalize(NormalizeBase):
         mask: Optional[Array] = None,
         modality: Optional[str] = None,
     ) -> float:
-        loc: float = self.voi.mean()
+        loc: float = self.voi.mean().item()
         return loc
 
     def calculate_scale(
@@ -35,7 +35,7 @@ class ZScoreNormalize(NormalizeBase):
         mask: Optional[Array] = None,
         modality: Optional[str] = None,
     ) -> float:
-        scale: float = self.voi.std()
+        scale: float = self.voi.std().item()
         return scale
 
     def setup(

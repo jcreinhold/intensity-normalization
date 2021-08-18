@@ -48,6 +48,7 @@ class LeastSquaresNormalize(NormalizeFitBase):
     ) -> None:
         image = images[0]  # only need one image to fit this method
         mask = masks and masks[0]
+        assert isinstance(mask, Array)
         tissue_membership = find_tissue_memberships(image, mask)
         csf_mean = np.average(image, weights=tissue_membership[..., 0])
         norm_image = (image / csf_mean) * self.norm_value
