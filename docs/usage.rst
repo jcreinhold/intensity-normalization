@@ -1,7 +1,1 @@
-=====
-Usage
-=====
-
-To use intensity-normalization in a project::
-
-    import intensity_normalization
+.. include:: ../tutorials/5min_tutorial.rst

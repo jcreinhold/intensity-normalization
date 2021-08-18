@@ -64,7 +64,8 @@ class NormalizeBase(CLIParser):
         loc = self.calculate_location(data, mask, modality)
         scale = self.calculate_scale(data, mask, modality)
         self.teardown()
-        return ((data - loc) / scale) * self.norm_value
+        normalized: Array = ((data - loc) / scale) * self.norm_value
+        return normalized
 
     def normalize_nifti(
         self,
@@ -120,6 +121,7 @@ class NormalizeBase(CLIParser):
         )
         if args.plot_histogram:
             self.plot_histogram(args, normalized, mask)
+        self.save_additional_info(args, normalized, mask)
 
     def calculate_location(
         self,
@@ -150,11 +152,13 @@ class NormalizeBase(CLIParser):
 
     @staticmethod
     def estimate_foreground(data: Array) -> Array:
-        return data > data.mean()
+        foreground: Array = data > data.mean()
+        return foreground
 
     @staticmethod
     def skull_stripped_foreground(data: Array) -> Array:
-        return data > 0.0
+        ss_foreground: Array = data > 0.0
+        return ss_foreground
 
     def _get_mask(
         self,
@@ -164,7 +168,8 @@ class NormalizeBase(CLIParser):
     ) -> Array:
         if mask is None:
             mask = self.skull_stripped_foreground(data)
-        return mask > 0.0
+        out: Array = mask > 0.0
+        return out
 
     def _get_voi(
         self,
@@ -172,7 +177,8 @@ class NormalizeBase(CLIParser):
         mask: Optional[Array] = None,
         modality: Optional[str] = None,
     ) -> Array:
-        return data[self._get_mask(data, mask, modality)]
+        voi: Array = data[self._get_mask(data, mask, modality)]
+        return voi
 
     @staticmethod
     def _get_modality(modality: Optional[str]) -> str:
@@ -237,23 +243,19 @@ class NormalizeBase(CLIParser):
     def from_argparse_args(cls: Type[NB], args: Namespace) -> NB:
         return cls(args.norm_value)
 
-    @staticmethod
-    def name() -> str:
-        raise NotImplementedError
-
-    @staticmethod
-    def fullname() -> str:
-        raise NotImplementedError
-
-    @staticmethod
-    def description() -> str:
-        raise NotImplementedError
+    def save_additional_info(
+        self,
+        args: Namespace,
+        normalized: NiftiImage,
+        mask: Optional[NiftiImage] = None,
+    ) -> None:
+        return
 
 
-NDB = TypeVar("NDB", bound="NormalizeDirectoryBase")
+NSB = TypeVar("NSB", bound="NormalizeSampleBase")
 
 
-class NormalizeDirectoryBase(NormalizeBase):
+class NormalizeSampleBase(NormalizeBase):
     def fit(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         return None
 
@@ -275,11 +277,11 @@ class NormalizeDirectoryBase(NormalizeBase):
             return normalized, masks
         return None
 
-    def plot_histogram(
+    def plot_histograms(
         self,
         args: Namespace,
         normalized: List[NiftiImage],
-        masks: List[Optional[NiftiImage]] = None,
+        masks: List[Optional[NiftiImage]],
     ) -> None:
         from pathlib import Path
         import matplotlib.pyplot as plt
@@ -293,7 +295,7 @@ class NormalizeDirectoryBase(NormalizeBase):
         plt.savefig(output)
 
     def call_from_argparse_args(self, args: Namespace) -> None:
-        normalized, masks = self.process_directories(
+        normalized, masks = self.process_directories(  # type: ignore[misc]
             args.image_dir,
             args.mask_dir,
             return_normalized_and_masks=True,
@@ -304,9 +306,10 @@ class NormalizeDirectoryBase(NormalizeBase):
             self.append_name_to_file(fn, args.output_dir) for fn in image_filenames
         ]
         for norm_image, fn in zip(normalized, output_filenames):
+            assert isinstance(norm_image, NiftiImage)
             norm_image.to_filename(fn)
         if args.plot_histogram:
-            self.plot_histogram(args, normalized, masks)
+            self.plot_histograms(args, normalized, masks)
 
     @staticmethod
     def get_parent_parser(desc: str) -> ArgumentParser:
@@ -357,12 +360,13 @@ class NormalizeDirectoryBase(NormalizeBase):
         return parser
 
     @classmethod
-    def from_argparse_args(cls: Type[NDB], args: Namespace) -> NDB:
-        return cls()
+    def from_argparse_args(cls: Type[NSB], args: Namespace) -> NSB:
+        out: NSB = cls()
+        return out
 
 
-class NormalizeFitBase(NormalizeDirectoryBase):
-    def fit(  # type: ignore[no-untyped-def]
+class NormalizeFitBase(NormalizeSampleBase):
+    def fit(  # type: ignore[no-untyped-def,override]
         self,
         images: List[ArrayOrNifti],
         masks: Optional[List[ArrayOrNifti]] = None,
@@ -390,10 +394,10 @@ class NormalizeFitBase(NormalizeDirectoryBase):
     ) -> Tuple[List[Array], Optional[List[Array]]]:
         assert len(images) > 0
         if hasattr(images[0], "get_fdata"):
-            images = [image.get_fdata() for image in images]
+            images = [img.get_fdata() for img in images]  # type: ignore[union-attr]
         if masks is not None:
             if hasattr(masks[0], "get_fdata"):
-                masks = [mask.get_fdata() for mask in masks]
+                masks = [msk.get_fdata() for msk in masks]  # type: ignore[union-attr]
         return images, masks
 
     def fit_from_directories(  # type: ignore[no-untyped-def]
@@ -402,14 +406,14 @@ class NormalizeFitBase(NormalizeDirectoryBase):
         mask_dir: Optional[PathLike] = None,
         modality: Optional[str] = None,
         ext: str = "nii*",
-        return_normalized: bool = False,
+        return_normalized_and_masks: bool = False,
         **kwargs,
-    ) -> Optional[List[ArrayOrNifti]]:
+    ) -> Optional[Tuple[List[ArrayOrNifti], List[Optional[ArrayOrNifti]]]]:
         return self.process_directories(
-            image_dir,
-            mask_dir,
-            modality,
-            ext,
-            return_normalized,
+            image_dir=image_dir,
+            mask_dir=mask_dir,
+            modality=modality,
+            ext=ext,
+            return_normalized_and_masks=return_normalized_and_masks,
             **kwargs,
         )

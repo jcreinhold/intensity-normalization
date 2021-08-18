@@ -11,19 +11,22 @@ __all__ = [
 ]
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
+from pathlib import Path
 from typing import Optional, Type, TypeVar
 
+import nibabel as nib
 import numpy as np
 
 from intensity_normalization import VALID_MODALITIES
 from intensity_normalization.type import (
     Array,
-    dir_path,
     file_path,
+    NiftiImage,
     positive_float,
     save_nifti_path,
 )
-from intensity_normalization.normalize.base import NormalizeBase, NormalizeDirectoryBase
+from intensity_normalization.normalize.base import NormalizeBase
+from intensity_normalization.util.io import split_filename
 from intensity_normalization.util.tissue_membership import find_tissue_memberships
 
 FCM = TypeVar("FCM", bound="FCMNormalize")
@@ -163,7 +166,8 @@ class FCMNormalize(NormalizeBase):
             "--mask",
             type=file_path(),
             help="Path to a foreground mask for the image. "
-            "Provide this if not providing a tissue mask.",
+            "Provide this if not providing a tissue mask "
+            "(if image is not skull-stripped).",
         )
         group.add_argument(
             "-tm",
@@ -191,3 +195,22 @@ class FCMNormalize(NormalizeBase):
         else:
             args.mask = args.tissue_mask
         super().call_from_argparse_args(args)
+
+    def save_additional_info(
+        self,
+        args: Namespace,
+        normalized: NiftiImage,
+        mask: Optional[NiftiImage] = None,
+    ) -> None:
+        tissue_membership = nib.Nifti1Image(
+            self.tissue_membership,
+            normalized.affine,
+            normalized.header,
+        )
+        base, name, ext = split_filename(args.image)
+        new_name = name + f"_{self.tissue_type}_membership" + ext
+        if args.output is None:
+            output = base / new_name
+        else:
+            output = Path(args.output).parent / new_name
+        tissue_membership.to_filename(output)

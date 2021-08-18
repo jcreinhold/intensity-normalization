@@ -5,7 +5,7 @@ Welcome to intensity-normalization's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   readme
+   README
    installation
    usage
    modules
@@ -13,7 +13,6 @@ Welcome to intensity-normalization's documentation!
    authors
    history
    algorithm
-   cli
 
 Indices and tables
 ==================

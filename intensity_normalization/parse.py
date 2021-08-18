@@ -57,6 +57,10 @@ class CLIParser:
     def name() -> str:
         raise NotImplementedError
 
+    @staticmethod
+    def fullname() -> str:
+        raise NotImplementedError
+
     def append_name_to_file(
         self,
         filepath: PathLike,

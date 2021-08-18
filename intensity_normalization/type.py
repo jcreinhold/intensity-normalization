@@ -262,7 +262,7 @@ class file_path(_ParseType):
         if not path.is_file():
             msg = f"{string} is not a valid file path."
             raise ArgumentTypeError(msg)
-        return str(path.resolve())
+        return str(path)
 
 
 class positive_float(_ParseType):
