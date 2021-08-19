@@ -94,7 +94,7 @@ To install from the source directory, clone the repo and run::
 
     python setup.py install
 
-Note the package [antspy](https://github.com/ANTsX/ANTsPy) is required for the RAVEL normalization routine, the
+Note the package `antspy <https://github.com/ANTsX/ANTsPy>`_ is required for the RAVEL normalization routine, the
 preprocessing tool as well as the co-registration tool, but all other normalization and processing tools work without
 it. To install the antspy package along with the RAVEL, preprocessing, and co-registration CLI, install with::
 
