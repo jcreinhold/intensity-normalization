@@ -10,9 +10,9 @@ __all__ = [
     "RavelNormalize",
 ]
 
+import logging
 from argparse import ArgumentParser
 from functools import reduce
-import logging
 from operator import add
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -20,11 +20,11 @@ import numpy as np
 from scipy.sparse import bsr_matrix
 from scipy.sparse.linalg import svds
 
-from intensity_normalization.type import Array, ArrayOrNifti
 from intensity_normalization.normalize.base import NormalizeFitBase
 from intensity_normalization.normalize.whitestripe import WhiteStripeNormalize
+from intensity_normalization.type import Array, ArrayOrNifti
+from intensity_normalization.util.coregister import register, to_ants
 from intensity_normalization.util.tissue_membership import find_tissue_memberships
-from intensity_normalization.util.coregister import to_ants, register
 
 try:
     import ants

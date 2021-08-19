@@ -11,7 +11,7 @@ __all__ = [
     "TissueMembershipFinder",
 ]
 
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from typing import Optional, Tuple, Type, TypeVar
 
 import nibabel as nib
@@ -19,7 +19,7 @@ import numpy as np
 from skfuzzy import cmeans
 
 from intensity_normalization.parse import CLIParser
-from intensity_normalization.type import Array, file_path, NiftiImage, save_nifti_path
+from intensity_normalization.type import Array, NiftiImage, file_path, save_nifti_path
 
 
 def find_tissue_memberships(

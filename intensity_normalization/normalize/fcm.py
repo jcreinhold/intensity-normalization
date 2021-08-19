@@ -10,7 +10,7 @@ __all__ = [
     "FCMNormalize",
 ]
 
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from pathlib import Path
 from typing import Optional, Type, TypeVar
 
@@ -18,14 +18,14 @@ import nibabel as nib
 import numpy as np
 
 from intensity_normalization import VALID_MODALITIES
+from intensity_normalization.normalize.base import NormalizeBase
 from intensity_normalization.type import (
     Array,
-    file_path,
     NiftiImage,
+    file_path,
     positive_float,
     save_nifti_path,
 )
-from intensity_normalization.normalize.base import NormalizeBase
 from intensity_normalization.util.io import split_filename
 from intensity_normalization.util.tissue_membership import find_tissue_memberships
 

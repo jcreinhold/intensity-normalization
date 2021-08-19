@@ -11,11 +11,7 @@ __all__ = [
     "NormalizeFitBase",
 ]
 
-from argparse import (
-    ArgumentParser,
-    ArgumentDefaultsHelpFormatter,
-    Namespace,
-)
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from typing import List, Optional, Tuple, Type, TypeVar
 
 import nibabel as nib
@@ -26,15 +22,14 @@ from intensity_normalization.plot.histogram import HistogramPlotter, plot_histog
 from intensity_normalization.type import (
     Array,
     ArrayOrNifti,
-    dir_path,
-    file_path,
     NiftiImage,
     PathLike,
+    dir_path,
+    file_path,
     positive_float,
     save_nifti_path,
 )
 from intensity_normalization.util.io import gather_images_and_masks, glob_ext
-
 
 NB = TypeVar("NB", bound="NormalizeBase")
 
@@ -100,6 +95,7 @@ class NormalizeBase(CLIParser):
         mask: Optional[NiftiImage] = None,
     ) -> None:
         from pathlib import Path
+
         import matplotlib.pyplot as plt
 
         if args.output is None:
@@ -284,6 +280,7 @@ class NormalizeSampleBase(NormalizeBase):
         masks: List[Optional[NiftiImage]],
     ) -> None:
         from pathlib import Path
+
         import matplotlib.pyplot as plt
 
         if args.output_dir is None:

@@ -11,22 +11,21 @@ __all__ = [
     "Registrator",
 ]
 
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
 import logging
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from typing import List, Optional, Type, TypeVar, Union
 
 from intensity_normalization.parse import CLIParser
 from intensity_normalization.type import (
     Array,
     ArrayOrNifti,
+    NiftiImage,
+    PathLike,
     allowed_interpolators,
     allowed_transforms,
     file_path,
-    NiftiImage,
-    PathLike,
     save_nifti_path,
 )
-
 
 try:
     import ants

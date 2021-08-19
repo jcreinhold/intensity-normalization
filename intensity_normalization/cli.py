@@ -43,7 +43,6 @@ from intensity_normalization.normalize.zscore import ZScoreNormalize
 from intensity_normalization.plot.histogram import HistogramPlotter
 from intensity_normalization.util.tissue_membership import TissueMembershipFinder
 
-
 fcm_parser = FCMNormalize.parser()
 fcm_main = FCMNormalize.main(fcm_parser)
 
@@ -86,8 +85,8 @@ else:
     ]
 
     from intensity_normalization.normalize.ravel import RavelNormalize
-    from intensity_normalization.util.preprocess import Preprocessor
     from intensity_normalization.util.coregister import Registrator
+    from intensity_normalization.util.preprocess import Preprocessor
 
     ravel_parser = RavelNormalize.parser()
     ravel_main = RavelNormalize.main(ravel_parser)
