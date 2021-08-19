@@ -1,5 +1,5 @@
-intensity_normalization
-=======================
+Python API
+==========
 
 .. toctree::
    :maxdepth: 4
