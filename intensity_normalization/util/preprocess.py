@@ -16,19 +16,19 @@ __all__ = [
     "Preprocessor",
 ]
 
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
 import logging
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from typing import Optional, Tuple, Type, TypeVar
 
 import nibabel as nib
 
 from intensity_normalization.parse import CLIParser
 from intensity_normalization.type import (
+    NiftiImage,
+    PathLike,
     allowed_orientations,
     file_path,
     interp_type_dict,
-    NiftiImage,
-    PathLike,
     positive_float,
     save_nifti_path,
 )

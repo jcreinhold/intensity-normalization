@@ -12,8 +12,8 @@ __all__ = [
 
 from typing import Optional
 
-from intensity_normalization.type import Array
 from intensity_normalization.normalize.base import NormalizeBase
+from intensity_normalization.type import Array
 from intensity_normalization.util.histogram_tools import get_tissue_mode
 
 

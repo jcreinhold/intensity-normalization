@@ -15,8 +15,8 @@ from typing import List, Optional
 import numpy as np
 from scipy.interpolate import interp1d
 
-from intensity_normalization.type import Array, ArrayOrNifti, PathLike, Vector
 from intensity_normalization.normalize.base import NormalizeFitBase
+from intensity_normalization.type import Array, ArrayOrNifti, PathLike, Vector
 
 
 class NyulNormalize(NormalizeFitBase):

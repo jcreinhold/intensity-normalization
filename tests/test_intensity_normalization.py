@@ -5,8 +5,8 @@
 from pathlib import Path
 from typing import List
 
-import numpy as np
 import nibabel as nib
+import numpy as np
 import pytest
 
 ANTSPY_DIR = Path.home() / ".antspy"
@@ -28,11 +28,7 @@ try:
 except (ImportError, ModuleNotFoundError):
     ants = None
 else:
-    from intensity_normalization.cli import (
-        preprocessor_main,
-        ravel_main,
-        register_main,
-    )
+    from intensity_normalization.cli import preprocessor_main, ravel_main, register_main
 
 
 @pytest.fixture

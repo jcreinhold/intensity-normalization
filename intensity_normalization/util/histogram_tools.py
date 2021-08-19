@@ -19,8 +19,8 @@ __all__ = [
 from typing import Tuple
 
 import numpy as np
-from scipy.signal import argrelmax
 import statsmodels.api as sm
+from scipy.signal import argrelmax
 
 from intensity_normalization import PEAK, VALID_PEAKS
 from intensity_normalization.errors import NormalizationError

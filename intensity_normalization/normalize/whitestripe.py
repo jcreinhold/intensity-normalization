@@ -16,10 +16,9 @@ from typing import Optional, Type, TypeVar
 import nibabel as nib
 import numpy as np
 
-from intensity_normalization.type import Array, NiftiImage
 from intensity_normalization.normalize.base import NormalizeBase
+from intensity_normalization.type import Array, NiftiImage
 from intensity_normalization.util.histogram_tools import get_tissue_mode
-
 
 WS = TypeVar("WS", bound="WhiteStripeNormalize")
 

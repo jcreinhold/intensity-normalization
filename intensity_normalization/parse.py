@@ -15,8 +15,8 @@ __all__ = [
     "setup_log",
 ]
 
-from argparse import ArgumentParser, Namespace
 import logging
+from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from typing import Callable, Optional, Type, TypeVar
 

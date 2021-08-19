@@ -6,11 +6,11 @@ Author: Jacob Reinhold (jcreinhold@gmail.com)
 Created on: Jun 02, 2021
 """
 
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
 import logging
+import warnings
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from pathlib import Path
 from typing import List, Optional, Tuple, Type, TypeVar
-import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,8 +19,8 @@ from intensity_normalization.parse import CLIParser
 from intensity_normalization.type import (
     Array,
     ArrayOrNifti,
-    dir_path,
     PathLike,
+    dir_path,
     probability_float,
     save_file_path,
 )

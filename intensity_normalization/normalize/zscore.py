@@ -15,8 +15,8 @@ from typing import Optional
 
 import nibabel as nib
 
-from intensity_normalization.type import Array, NiftiImage
 from intensity_normalization.normalize.base import NormalizeBase
+from intensity_normalization.type import Array, NiftiImage
 
 
 class ZScoreNormalize(NormalizeBase):

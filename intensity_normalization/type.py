@@ -33,11 +33,11 @@ __all__ = [
 ]
 
 from argparse import ArgumentTypeError, Namespace
+from pathlib import Path
 from typing import Any, Callable, List, Optional, Union
 
 import nibabel as nib
 import numpy as np
-from pathlib import Path
 
 ArgType = Optional[Union[Namespace, List[str]]]
 Array = np.ndarray
