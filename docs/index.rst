@@ -5,7 +5,7 @@ Welcome to intensity-normalization's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   README
+   readme
    installation
    usage
    modules
