@@ -26,10 +26,12 @@ from intensity_normalization.type import Array, ArrayOrNifti
 from intensity_normalization.util.coregister import register, to_ants
 from intensity_normalization.util.tissue_membership import find_tissue_memberships
 
+logger = logging.getLogger(__name__)
+
 try:
     import ants
 except (ModuleNotFoundError, ImportError):
-    logging.warning("ANTsPy not installed. Install antspyx to use RAVEL.")
+    logger.error("ANTsPy not installed. Install antspyx to use RAVEL.")
     raise
 
 

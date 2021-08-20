@@ -10,6 +10,7 @@ __all__ = [
     "FCMNormalize",
 ]
 
+import logging
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from pathlib import Path
 from typing import Optional, Type, TypeVar
@@ -21,7 +22,6 @@ from intensity_normalization import VALID_MODALITIES
 from intensity_normalization.normalize.base import NormalizeBase
 from intensity_normalization.type import (
     Array,
-    NiftiImage,
     file_path,
     positive_float,
     save_nifti_path,
@@ -31,6 +31,8 @@ from intensity_normalization.util.tissue_membership import find_tissue_membershi
 
 FCM = TypeVar("FCM", bound="FCMNormalize")
 
+logger = logging.getLogger(__name__)
+
 
 class FCMNormalize(NormalizeBase):
     """
@@ -39,6 +41,7 @@ class FCMNormalize(NormalizeBase):
     """
 
     tissue_to_int = {"csf": 0, "gm": 1, "wm": 2}
+    tissue_to_fullname = {"csf": "CSF", "gm": "grey matter", "wm": "white matter"}
 
     def __init__(self, norm_value: float = 1.0, tissue_type: str = "wm"):
         super().__init__(norm_value)
@@ -63,10 +66,13 @@ class FCMNormalize(NormalizeBase):
         tissue_mean: float
         if modality == "t1":
             mask = self._get_mask(data, mask, modality)
+            tissue_name = self.tissue_to_fullname[self.tissue_type]
+            logger.debug(f"Finding {tissue_name} membership")
             tissue_memberships = find_tissue_memberships(data, mask)
             self.tissue_membership = tissue_memberships[
                 ..., self.tissue_to_int[self.tissue_type]
             ]
+            logger.debug(f"Calculated {tissue_name} membership")
             tissue_mean = np.average(data, weights=self.tissue_membership)
         elif modality != "t1" and mask is None and self.is_fit:
             tissue_mean = np.average(data, weights=self.tissue_membership)
@@ -151,6 +157,7 @@ class FCMNormalize(NormalizeBase):
     def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
         parser = parent_parser.add_argument_group("method-specific arguments")
         parser.add_argument(
+            "-tt",
             "--tissue-type",
             default="wm",
             type=str,
@@ -183,8 +190,7 @@ class FCMNormalize(NormalizeBase):
         return cls(args.norm_value, args.tissue_type)
 
     def call_from_argparse_args(self, args: Namespace) -> None:
-        if hasattr(args, "mask"):
-            args.mask = args.mask
+        if args.mask is not None:
             if args.modality is not None:
                 if args.modality.lower() != "t1":
                     msg = (
@@ -192,7 +198,7 @@ class FCMNormalize(NormalizeBase):
                         f"Got {args.modality}."
                     )
                     raise ValueError(msg)
-        else:
+        elif args.tissue_mask is not None:
             args.mask = args.tissue_mask
         super().call_from_argparse_args(args)
 
@@ -201,15 +207,17 @@ class FCMNormalize(NormalizeBase):
         args: Namespace,
         **kwargs,
     ) -> None:
-        tissue_membership = nib.Nifti1Image(
-            self.tissue_membership,
-            kwargs["normalized"].affine,
-            kwargs["normalized"].header,
-        )
-        base, name, ext = split_filename(args.image)
-        new_name = name + f"_{self.tissue_type}_membership" + ext
-        if args.output is None:
-            output = base / new_name
-        else:
-            output = Path(args.output).parent / new_name
-        tissue_membership.to_filename(output)
+        if self.is_fit and args.tissue_mask is None:
+            tissue_membership = nib.Nifti1Image(
+                self.tissue_membership,
+                kwargs["normalized"].affine,
+                kwargs["normalized"].header,
+            )
+            base, name, ext = split_filename(args.image)
+            new_name = name + f"_{self.tissue_type}_membership" + ext
+            if args.output is None:
+                output = base / new_name
+            else:
+                output = Path(args.output).parent / new_name
+            logger.info(f"Saving tissue membership: {output}")
+            tissue_membership.to_filename(output)

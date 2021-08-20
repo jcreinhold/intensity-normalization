@@ -32,8 +32,6 @@ __all__ = [
     "zs_parser",
 ]
 
-import logging
-
 from intensity_normalization.normalize.fcm import FCMNormalize
 from intensity_normalization.normalize.kde import KDENormalize
 from intensity_normalization.normalize.lsq import LeastSquaresNormalize
@@ -71,9 +69,8 @@ tissue_main = TissueMembershipFinder.main(tissue_parser)
 try:
     import ants
 except (ModuleNotFoundError, ImportError):
-    logging.info(
-        "ANTsPy not installed. Not loading preprocessor, co-registration, or RAVEL."
-    )
+    # ANTsPy not installed. Not loading preprocessor, co-registration, or RAVEL.
+    pass
 else:
     __all__ += [
         "preprocessor_main",

@@ -33,10 +33,12 @@ from intensity_normalization.type import (
     save_nifti_path,
 )
 
+logger = logging.getLogger(__name__)
+
 try:
     import ants
 except (ModuleNotFoundError, ImportError):
-    logging.warning("ANTsPy not installed. Install antspyx to use preprocessor.")
+    logger.error("ANTsPy not installed. Install antspyx to use preprocessor.")
     raise
 
 
@@ -73,7 +75,7 @@ def preprocess(
 
     if n4_convergence_options is None:
         n4_convergence_options = {"iters": [200, 200, 200, 200], "tol": 1e-7}
-    logging.debug(f"N4 Options are: {n4_convergence_options}")
+    logger.debug(f"N4 Options are: {n4_convergence_options}")
 
     if isinstance(image, nib.Nifti1Image):
         image = ants.from_nibabel(image)
@@ -82,9 +84,11 @@ def preprocess(
             mask = ants.from_nibabel(mask)
     else:
         mask = image.get_mask()
+    logger.debug("Starting bias field correction")
     image = ants.n4_bias_field_correction(image, convergence=n4_convergence_options)
     if second_n4_with_smoothed_mask:
         smoothed_mask = ants.smooth_image(mask, 1.0)
+        logger.debug("Starting 2nd bias field correction")
         image = ants.n4_bias_field_correction(
             image,
             convergence=n4_convergence_options,
@@ -92,6 +96,7 @@ def preprocess(
         )
     if resolution is not None:
         if resolution != mask.spacing:
+            logger.debug(f"Resampling mask to {resolution}")
             mask = ants.resample_image(
                 mask,
                 resolution,
@@ -99,6 +104,7 @@ def preprocess(
                 interp_type=interp_type_dict["nearest_neighbor"],
             )
         if resolution != image.spacing:
+            logger.debug(f"Resampling image to {resolution}")
             image = ants.resample_image(
                 image,
                 resolution,

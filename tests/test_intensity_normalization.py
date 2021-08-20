@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Tests for `intensity_normalization` package."""
 
+import os
 from pathlib import Path
 from typing import List
 
@@ -64,6 +65,13 @@ def mask_dir(temp_dir: Path) -> Path:
     return mask_dir
 
 
+@pytest.fixture
+def out_dir(temp_dir: Path) -> Path:
+    mask_dir = temp_dir / "normalized"
+    mask_dir.mkdir()
+    return mask_dir
+
+
 @pytest.fixture()
 def mask(mask_dir: Path) -> Path:
     mask_data = np.random.randint(0, 2, (5, 5, 5)).astype(float)
@@ -80,11 +88,18 @@ def base_cli_image_args(image: Path, mask: Path) -> List[str]:
 
 @pytest.fixture
 def base_cli_dir_args(image: Path, mask: Path) -> List[str]:
+    # use image, mask instead of image_dir, mask_dir so they are created
     return f"{image.parent} -m {mask.parent}".split()
 
 
 def test_fcm_normalization_cli(base_cli_image_args: List[str]) -> None:
     args = base_cli_image_args
+    retval = fcm_main(args)
+    assert retval == 0
+
+
+def test_fcm_normalization_nont1w_cli(image: Path, mask: Path) -> None:
+    args = f"{image} -tm {mask} -mo t2".split()
     retval = fcm_main(args)
     assert retval == 0
 
@@ -104,8 +119,13 @@ def test_zscore_normalization_cli(base_cli_image_args: List[str]) -> None:
     assert retval == 0
 
 
-def test_lsq_normalization_cli(base_cli_dir_args: List[str]) -> None:
-    retval = lsq_main(base_cli_dir_args)
+def test_lsq_normalization_cli(image: Path, mask: Path, out_dir: Path) -> None:
+    args = f"{image.parent} -m {mask.parent} -o {out_dir}".split()
+    retval = lsq_main(args)
+    assert retval == 0
+    os.remove(out_dir / "test_image_lsq.nii")
+    args = f"{image.parent} -tm {out_dir} -mo t2".split()
+    retval = lsq_main(args)
     assert retval == 0
 
 
