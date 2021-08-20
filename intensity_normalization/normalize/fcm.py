@@ -196,16 +196,15 @@ class FCMNormalize(NormalizeBase):
             args.mask = args.tissue_mask
         super().call_from_argparse_args(args)
 
-    def save_additional_info(
+    def save_additional_info(  # type: ignore[no-untyped-def]
         self,
         args: Namespace,
-        normalized: NiftiImage,
-        mask: Optional[NiftiImage] = None,
+        **kwargs,
     ) -> None:
         tissue_membership = nib.Nifti1Image(
             self.tissue_membership,
-            normalized.affine,
-            normalized.header,
+            kwargs["normalized"].affine,
+            kwargs["normalized"].header,
         )
         base, name, ext = split_filename(args.image)
         new_name = name + f"_{self.tissue_type}_membership" + ext

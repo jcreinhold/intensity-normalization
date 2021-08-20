@@ -57,7 +57,7 @@ def gather_images_and_masks(
         masks = gather_images(mask_dir, ext, return_data)
     else:
         masks = [None] * len(images)
-    return images, masks  # type: ignore[return-value]
+    return images, masks
 
 
 def glob_ext(dirpath: PathLike, ext: str = "nii*") -> List[Path]:

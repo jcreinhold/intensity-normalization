@@ -10,16 +10,26 @@ __all__ = [
     "LeastSquaresNormalize",
 ]
 
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
+import logging
+from pathlib import Path
 from typing import List, Optional
 
+import nibabel as nib
 import numpy as np
 
+from intensity_normalization import VALID_MODALITIES
 from intensity_normalization.normalize.base import NormalizeFitBase
-from intensity_normalization.type import Array, Vector
+from intensity_normalization.type import Array, Vector, dir_path
+from intensity_normalization.util.io import split_filename
 from intensity_normalization.util.tissue_membership import find_tissue_memberships
 
 
 class LeastSquaresNormalize(NormalizeFitBase):
+    def __init__(self, norm_value: float = 1.0):
+        super().__init__(norm_value)
+        self.tissue_memberships: List[Array] = []
+
     def calculate_location(
         self,
         data: Array,
@@ -49,10 +59,20 @@ class LeastSquaresNormalize(NormalizeFitBase):
         image = images[0]  # only need one image to fit this method
         mask = masks and masks[0]
         assert isinstance(mask, Array)
-        tissue_membership = find_tissue_memberships(image, mask)
+        if modality is None:
+            modality = "t1"
+        if modality.lower() == "t1":
+            tissue_membership = find_tissue_memberships(image, mask)
+            self.tissue_memberships.append(tissue_membership)
+        else:
+            logging.debug("Assuming --mask-dir contains tissue memberships.")
+            tissue_membership = mask
         csf_mean = np.average(image, weights=tissue_membership[..., 0])
         norm_image = (image / csf_mean) * self.norm_value
-        self.standard_tissue_means = self.tissue_means(norm_image, tissue_membership)
+        self.standard_tissue_means = self.tissue_means(
+            norm_image,
+            tissue_membership,
+        )
 
     @staticmethod
     def tissue_means(image: Array, tissue_membership: Array) -> Vector:
@@ -83,3 +103,101 @@ class LeastSquaresNormalize(NormalizeFitBase):
             "Minimize distance between tissue means (CSF/GM/WM) in a "
             "least squares-sense within a set of NIfTI MR images."
         )
+
+    def save_additional_info(  # type: ignore[no-untyped-def]
+        self,
+        args: Namespace,
+        **kwargs,
+    ) -> None:
+        for memberships, fn in zip(self.tissue_memberships, kwargs["image_filenames"]):
+            tissue_memberships = nib.Nifti1Image(
+                memberships,
+                None,
+            )
+            base, name, ext = split_filename(fn)
+            new_name = name + f"_tissue_memberships" + ext
+            if args.output_dir is None:
+                output = base / new_name
+            else:
+                output = Path(args.output_dir) / new_name
+            tissue_memberships.to_filename(output)
+        del tissue_memberships
+
+    def call_from_argparse_args(self, args: Namespace) -> None:
+        if hasattr(args, "mask_dir"):
+            args.mask_dir = args.mask_dir
+            if args.modality is not None:
+                if args.modality.lower() != "t1":
+                    msg = (
+                        "If brain masks provided, modality must be `t1`. "
+                        f"Got {args.modality}."
+                    )
+                    raise ValueError(msg)
+        else:
+            args.mask_dir = args.tissue_membership_dir
+        super().call_from_argparse_args(args)
+
+    @staticmethod
+    def get_parent_parser(desc: str) -> ArgumentParser:
+        parser = ArgumentParser(
+            description=desc,
+            formatter_class=ArgumentDefaultsHelpFormatter,
+        )
+        parser.add_argument(
+            "image_dir",
+            type=dir_path(),
+            help="Path of directory of images to normalize.",
+        )
+        parser.add_argument(
+            "-o",
+            "--output-dir",
+            type=dir_path(),
+            default=None,
+            help="Path of directory in which to save normalized images.",
+        )
+        parser.add_argument(
+            "-mo",
+            "--modality",
+            type=str,
+            default=None,
+            choices=VALID_MODALITIES,
+            help="Modality of the images.",
+        )
+        parser.add_argument(
+            "-p",
+            "--plot-histogram",
+            action="store_true",
+            help="Plot the histogram of the normalized image.",
+        )
+        parser.add_argument(
+            "-v",
+            "--verbosity",
+            action="count",
+            default=0,
+            help="Increase output verbosity (e.g., -vv is more than -v).",
+        )
+        return parser
+
+    @staticmethod
+    def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
+        exclusive = parent_parser.add_argument_group(
+            "mutually exclusive optional arguments"
+        )
+        group = exclusive.add_mutually_exclusive_group(required=False)
+        group.add_argument(
+            "-m",
+            "--mask-dir",
+            type=dir_path(),
+            default=None,
+            help="Path to a foreground mask for the image. "
+            "Provide this if not providing a tissue mask "
+            "(if image is not skull-stripped).",
+        )
+        group.add_argument(
+            "-tm",
+            "--tissue-membership-dir",
+            type=dir_path(),
+            help="Path to a mask of a tissue memberships. "
+            "Provide this if not providing the foreground mask.",
+        )
+        return parent_parser
