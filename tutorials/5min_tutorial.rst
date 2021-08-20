@@ -94,17 +94,21 @@ Additional Provided Routines
 
 There a variety of other routines provided for analysis and preprocessing. The CLI names are:
 
-1) ``coregister`` - coregister via a rigid and affine transformation
-2) ``plot-histograms`` - plot the histograms of a directory of images on one figure for comparison
-3) ``tissue-mask`` - create a tissue mask of an input image
-4) ``preprocess`` - resample, N4-correct, and reorient the image and mask
+1) ``plot-histograms`` - plot the histograms of a directory of images on one figure for comparison
+2) ``tissue-membership`` - find and output tissue membership of an input image
 
-Importing normalization methods
-===============================
+The following (along with ``ravel-normalize``) are available only if you install
+``intensity-normalization`` with ``pip install "intensity-normalization[ants]"``.
+
+1) ``coregister`` - coregister via a rigid and affine transformation
+2) ``preprocess`` - resample, N4-correct, and reorient the image and mask
+
+Python API for normalization methods
+====================================
 
 While in this tutorial we discussed interfacing with the package through command line interfaces (CLIs),
-it is worth noting that the normalization routines (and other utilities) are available as importable python functions
-which you can import, e.g.
+it is worth noting that the normalization routines (and other utilities) are available as via a Python API
+which you can import into your project or script, e.g.,
 
 .. code-block:: python
 
@@ -134,3 +138,74 @@ list of images (and, optionally, corresponding masks), like so:
 where ``init_args`` is a dictionary of method dependent keyword arguments, ``image`` is either a nibabel NIfTI image or
 a numpy array; ``mask`` is one of ``None`` (or not provided), a nibabel NIfTI image, or a numpy array; ``modality`` is a
 string representing the modality.
+
+Another Python API example (co-registration)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``intensity-normalization`` relies on `ANTsPy <https://github.com/ANTsX/ANTsPy>`_ to do registration, so,
+for this example, you'll need to install ANTsPy first. You'll likely need to let it compile from source
+(~40 minutes) which requires `CMake <https://cmake.org/>`_ [*]_.
+
+Once you have ANTsPy installed, you can co-register an image like:
+
+.. code-block:: python
+
+   # load the images
+   import nibabel as nib
+   image = nib.load("path/to/image.nii")
+   target = nib.load("path/to/target.nii")
+
+   # setup up registration
+   from intensity_normalization.util.coregister import register
+   transformation = "Affine"
+   interpolator = "bSpline"
+   initial_rigid = True  # do initial rigid transformation before transformation
+
+   # verify this is a supported transformation, interpolator
+   from intensity_normalization.type import (
+       allowed_transformations, allowed_interpolators
+   )
+   assert transformation in allowed_transformations
+   assert interpolator in allowed_interpolators
+
+   # register the image to the target
+   registered = register(
+       image,
+       target,
+       type_of_transform=transformation,
+       interpolator=interpolator,
+       initial_rigid=initial_rigid
+   )
+
+   # save the image or get the registered image out
+   registered.to_filename("registered.nii")
+   registered_data = registered.get_fdata()
+
+Alternatively, if you want to co-register many images to the same target, you can do:
+
+.. code-block:: python
+
+   # setup up registration
+   from intensity_normalization.util.coregister import Registrator
+   transformation = "Affine"
+   interpolator = "bSpline"
+   initial_rigid = True
+
+   registrator = Registrator(
+       target,
+       type_of_transform=transformation,
+       interpolator=interpolator,
+       initial_rigid=initial_rigid
+   )
+
+   registered = registrator(image)
+   registered.to_filename("registered.nii")
+   registered_data = registered.get_fdata()
+
+   # or if you have many images
+   images = [nib.load(path_to_image) for path_to_image in image_paths]
+   registered_images = registrator.register_images(images)
+
+.. [*] If you're on a Mac, ``brew install cmake`` and then ``pip install antspyx`` in the environment you want to
+       run ``intensity-normalization`` from or install ``intensity-normalization`` with
+       ``pip install "intensity-normalization[ants]"``
