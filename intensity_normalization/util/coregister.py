@@ -27,10 +27,12 @@ from intensity_normalization.type import (
     save_nifti_path,
 )
 
+logger = logging.getLogger(__name__)
+
 try:
     import ants
 except (ModuleNotFoundError, ImportError):
-    logging.warning("ANTsPy not installed. Install antspyx to use co-registration.")
+    logger.error("ANTsPy not installed. Install antspyx to use co-registration.")
     raise
 
 

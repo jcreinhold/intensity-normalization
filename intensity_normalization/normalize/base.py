@@ -11,6 +11,7 @@ __all__ = [
     "NormalizeFitBase",
 ]
 
+import logging
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from typing import List, Optional, Tuple, Type, TypeVar
 
@@ -32,6 +33,8 @@ from intensity_normalization.type import (
 from intensity_normalization.util.io import gather_images_and_masks, glob_ext
 
 NB = TypeVar("NB", bound="NormalizeBase")
+
+logger = logging.getLogger(__name__)
 
 
 class NormalizeBase(CLIParser):
@@ -84,7 +87,9 @@ class NormalizeBase(CLIParser):
         mask = nib.load(mask_path) if mask_path is not None else None
         if out_path is None:
             out_path = self.append_name_to_file(image_path)
+        logger.info(f"Normalizing image: {image_path}")
         normalized = self.normalize_nifti(image, mask, modality)
+        logger.info(f"Saving normalized image: {out_path}")
         normalized.to_filename(out_path)
         return normalized, mask
 
@@ -153,6 +158,14 @@ class NormalizeBase(CLIParser):
 
     @staticmethod
     def skull_stripped_foreground(data: Array) -> Array:
+        if data.min() < 0.0:
+            msg = (
+                "Data contains negative values; "
+                "skull-stripped functionality assumes "
+                "the foreground is all positive. "
+                "Provide the brain mask if otherwise."
+            )
+            logger.warning(msg)
         ss_foreground: Array = data > 0.0
         return ss_foreground
 
@@ -263,12 +276,16 @@ class NormalizeSampleBase(NormalizeBase):
         return_normalized_and_masks: bool = False,
         **kwargs,
     ) -> Optional[Tuple[List[ArrayOrNifti], List[Optional[ArrayOrNifti]]]]:
+        logger.debug("Grabbing images")
         images, masks = gather_images_and_masks(image_dir, mask_dir, ext)
         self.fit(images, masks, modality, **kwargs)
         if return_normalized_and_masks:
-            normalized = [
-                self(image, mask, modality) for image, mask in zip(images, masks)
-            ]
+            normalized: List[ArrayOrNifti] = []
+            n_images = len(images)
+            assert n_images == len(masks)
+            for i, (image, mask) in enumerate(zip(images, masks), 1):
+                logger.info(f"Normalizing image {i}/{n_images}")
+                normalized.append(self(image, mask, modality))
             return normalized, masks
         return None
 
@@ -292,8 +309,10 @@ class NormalizeSampleBase(NormalizeBase):
 
     def call_from_argparse_args(self, args: Namespace) -> None:
         normalized, masks = self.process_directories(  # type: ignore[misc]
-            args.image_dir,
-            args.mask_dir,
+            image_dir=args.image_dir,
+            mask_dir=args.mask_dir,
+            modality=args.modality,
+            ext=args.extension,
             return_normalized_and_masks=True,
         )
         assert isinstance(normalized, list)
@@ -301,8 +320,11 @@ class NormalizeSampleBase(NormalizeBase):
         output_filenames = [
             self.append_name_to_file(fn, args.output_dir) for fn in image_filenames
         ]
-        for norm_image, fn in zip(normalized, output_filenames):
+        n_images = len(normalized)
+        assert n_images == len(output_filenames)
+        for i, (norm_image, fn) in enumerate(zip(normalized, output_filenames), 1):
             assert isinstance(norm_image, NiftiImage)
+            logger.info(f"Saving normalized image: {fn} ({i}/{n_images})")
             norm_image.to_filename(fn)
         self.save_additional_info(
             args,
@@ -347,6 +369,13 @@ class NormalizeSampleBase(NormalizeBase):
             help="Modality of the images.",
         )
         parser.add_argument(
+            "-e",
+            "--extension",
+            type=str,
+            default="nii*",
+            help="Extension of images (must be nibabel readable).",
+        )
+        parser.add_argument(
             "-p",
             "--plot-histogram",
             action="store_true",
@@ -376,7 +405,9 @@ class NormalizeFitBase(NormalizeSampleBase):
         **kwargs,
     ) -> None:
         images, masks = self.before_fit(images, masks, modality, **kwargs)
+        logger.info("Fitting")
         self._fit(images, masks, modality, **kwargs)
+        logger.debug("Done fitting")
 
     def _fit(  # type: ignore[no-untyped-def]
         self,
@@ -395,11 +426,13 @@ class NormalizeFitBase(NormalizeSampleBase):
         **kwargs,
     ) -> Tuple[List[Array], Optional[List[Array]]]:
         assert len(images) > 0
+        logger.info("Loading data")
         if hasattr(images[0], "get_fdata"):
             images = [img.get_fdata() for img in images]
         if masks is not None:
             if hasattr(masks[0], "get_fdata"):
                 masks = [msk.get_fdata() for msk in masks]
+        logger.debug("Loaded data")
         return images, masks
 
     def fit_from_directories(  # type: ignore[no-untyped-def]

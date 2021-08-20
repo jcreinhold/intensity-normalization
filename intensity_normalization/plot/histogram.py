@@ -160,6 +160,7 @@ class HistogramPlotter(CLIParser):
         _ = self.from_directories(args.image_dir, args.mask_dir)
         if args.output is None:
             args.output = Path.cwd().resolve() / "hist.pdf"
+        logger.info(f"Saving histogram: {args.output}")
         plt.savefig(args.output)
 
 

@@ -10,19 +10,23 @@ __all__ = [
     "LeastSquaresNormalize",
 ]
 
-from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 import logging
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Type, TypeVar
 
 import nibabel as nib
 import numpy as np
 
 from intensity_normalization import VALID_MODALITIES
 from intensity_normalization.normalize.base import NormalizeFitBase
-from intensity_normalization.type import Array, Vector, dir_path
+from intensity_normalization.type import Array, Vector, dir_path, positive_float
 from intensity_normalization.util.io import split_filename
 from intensity_normalization.util.tissue_membership import find_tissue_memberships
+
+LSQN = TypeVar("LSQN", bound="LeastSquaresNormalize")
+
+logger = logging.getLogger(__name__)
 
 
 class LeastSquaresNormalize(NormalizeFitBase):
@@ -44,7 +48,13 @@ class LeastSquaresNormalize(NormalizeFitBase):
         mask: Optional[Array] = None,
         modality: Optional[str] = None,
     ) -> float:
-        tissue_membership = find_tissue_memberships(data, mask)
+        if modality is None:
+            modality = "t1"
+        if modality == "t1":
+            tissue_membership = find_tissue_memberships(data, mask)
+            self.tissue_memberships.append(tissue_membership)
+        else:
+            tissue_membership = mask
         tissue_means = self.tissue_means(data, tissue_membership)
         sf = self.scaling_factor(tissue_means)
         return sf
@@ -58,14 +68,13 @@ class LeastSquaresNormalize(NormalizeFitBase):
     ) -> None:
         image = images[0]  # only need one image to fit this method
         mask = masks and masks[0]
-        assert isinstance(mask, Array)
+        assert isinstance(mask, Array) or mask is None
         if modality is None:
             modality = "t1"
         if modality.lower() == "t1":
             tissue_membership = find_tissue_memberships(image, mask)
-            self.tissue_memberships.append(tissue_membership)
         else:
-            logging.debug("Assuming --mask-dir contains tissue memberships.")
+            logger.debug("Assuming --mask-dir contains tissue memberships.")
             tissue_membership = mask
         csf_mean = np.average(image, weights=tissue_membership[..., 0])
         norm_image = (image / csf_mean) * self.norm_value
@@ -121,11 +130,15 @@ class LeastSquaresNormalize(NormalizeFitBase):
             else:
                 output = Path(args.output_dir) / new_name
             tissue_memberships.to_filename(output)
-        del tissue_memberships
+        del self.tissue_memberships
+
+    @classmethod
+    def from_argparse_args(cls: Type[LSQN], args: Namespace) -> LSQN:
+        out: LSQN = cls(args.norm_value)
+        return out
 
     def call_from_argparse_args(self, args: Namespace) -> None:
-        if hasattr(args, "mask_dir"):
-            args.mask_dir = args.mask_dir
+        if args.mask_dir is not None:
             if args.modality is not None:
                 if args.modality.lower() != "t1":
                     msg = (
@@ -133,7 +146,7 @@ class LeastSquaresNormalize(NormalizeFitBase):
                         f"Got {args.modality}."
                     )
                     raise ValueError(msg)
-        else:
+        elif args.tissue_membership_dir is not None:
             args.mask_dir = args.tissue_membership_dir
         super().call_from_argparse_args(args)
 
@@ -162,6 +175,20 @@ class LeastSquaresNormalize(NormalizeFitBase):
             default=None,
             choices=VALID_MODALITIES,
             help="Modality of the images.",
+        )
+        parser.add_argument(
+            "-n",
+            "--norm-value",
+            type=positive_float(),
+            default=1.0,
+            help="Reference value for normalization.",
+        )
+        parser.add_argument(
+            "-e",
+            "--extension",
+            type=str,
+            default="nii*",
+            help="Extension of images (must be nibabel readable).",
         )
         parser.add_argument(
             "-p",
