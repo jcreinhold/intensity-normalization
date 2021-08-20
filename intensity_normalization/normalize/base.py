@@ -117,7 +117,7 @@ class NormalizeBase(CLIParser):
         )
         if args.plot_histogram:
             self.plot_histogram(args, normalized, mask)
-        self.save_additional_info(args, normalized, mask)
+        self.save_additional_info(args, normalized=normalized, mask=mask)
 
     def calculate_location(
         self,
@@ -239,11 +239,10 @@ class NormalizeBase(CLIParser):
     def from_argparse_args(cls: Type[NB], args: Namespace) -> NB:
         return cls(args.norm_value)
 
-    def save_additional_info(
+    def save_additional_info(  # type: ignore[no-untyped-def]
         self,
         args: Namespace,
-        normalized: NiftiImage,
-        mask: Optional[NiftiImage] = None,
+        **kwargs,
     ) -> None:
         return
 
@@ -305,6 +304,12 @@ class NormalizeSampleBase(NormalizeBase):
         for norm_image, fn in zip(normalized, output_filenames):
             assert isinstance(norm_image, NiftiImage)
             norm_image.to_filename(fn)
+        self.save_additional_info(
+            args,
+            normalized=normalized,
+            masks=masks,
+            image_filenames=image_filenames,
+        )
         if args.plot_histogram:
             self.plot_histograms(args, normalized, masks)
 
@@ -391,10 +396,10 @@ class NormalizeFitBase(NormalizeSampleBase):
     ) -> Tuple[List[Array], Optional[List[Array]]]:
         assert len(images) > 0
         if hasattr(images[0], "get_fdata"):
-            images = [img.get_fdata() for img in images]  # type: ignore[union-attr]
+            images = [img.get_fdata() for img in images]
         if masks is not None:
             if hasattr(masks[0], "get_fdata"):
-                masks = [msk.get_fdata() for msk in masks]  # type: ignore[union-attr]
+                masks = [msk.get_fdata() for msk in masks]
         return images, masks
 
     def fit_from_directories(  # type: ignore[no-untyped-def]
