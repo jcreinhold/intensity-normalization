@@ -1,45 +1,73 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 intensity_normalization.normalize.zscore
 
-normalize an image by simply subtracting the mean
-and dividing by the standard deviation of the whole brain
-
-Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
-
-Created on: May 30, 2018
+Author: Jacob Reinhold (jcreinhold@gmail.com)
+Created on: Jun 01, 2021
 """
 
-import logging
+__all__ = [
+    "ZScoreNormalize",
+]
+
+from argparse import Namespace
+from typing import Optional
 
 import nibabel as nib
 
-logger = logging.getLogger(__name__)
+from intensity_normalization.normalize.base import NormalizeBase
+from intensity_normalization.type import Array, NiftiImage
 
 
-def zscore_normalize(img, mask=None):
-    """
-    normalize a target image by subtracting the mean of the whole brain
-    and dividing by the standard deviation
+class ZScoreNormalize(NormalizeBase):
+    def calculate_location(
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
+    ) -> float:
+        loc: float = self.voi.mean().item()
+        return loc
 
-    Args:
-        img (nibabel.nifti1.Nifti1Image): target MR brain image
-        mask (nibabel.nifti1.Nifti1Image): brain mask for img
+    def calculate_scale(
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
+    ) -> float:
+        scale: float = self.voi.std().item()
+        return scale
 
-    Returns:
-        normalized (nibabel.nifti1.Nifti1Image): img with WM mean at norm_value
-    """
+    def setup(
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
+    ) -> None:
+        self.voi = self._get_voi(data, mask, modality)
 
-    img_data = img.get_fdata()
-    if mask is not None and not isinstance(mask, str):
-        mask_data = mask.get_fdata()
-    elif mask == 'nomask':
-        mask_data = img_data == img_data
-    else:
-        mask_data = img_data > img_data.mean()
-    logical_mask = mask_data > 0.  # force the mask to be logical type
-    mean = img_data[logical_mask].mean()
-    std = img_data[logical_mask].std()
-    normalized = nib.Nifti1Image((img_data - mean) / std, img.affine, img.header)
-    return normalized
+    def teardown(self) -> None:
+        del self.voi
+
+    @staticmethod
+    def name() -> str:
+        return "zscore"
+
+    @staticmethod
+    def fullname() -> str:
+        return "Z-Score"
+
+    @staticmethod
+    def description() -> str:
+        return "Standardize an MR image by the foreground intensities."
+
+    def plot_histogram(
+        self,
+        args: Namespace,
+        normalized: NiftiImage,
+        mask: Optional[NiftiImage] = None,
+    ) -> None:
+        if mask is None:
+            mask_data = self.estimate_foreground(normalized.get_fdata())
+            mask = nib.Nifti1Image(mask_data, normalized.affine, normalized.header)
+        super().plot_histogram(args, normalized, mask)

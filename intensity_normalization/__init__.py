@@ -1,5 +1,13 @@
-__author__ = """Jacob C Reinhold"""
-__email__ = 'jcreinhold@gmail.com'
-__version__ = '1.4.5'
+"""Top-level package for intensity-normalization."""
 
-from intensity_normalization import errors, normalize, utilities, plot, exec
+__author__ = """Jacob Reinhold"""
+__email__ = "jcreinhold@gmail.com"
+__version__ = "2.0.0"
+
+PEAK = {
+    "last": ["t1", "last"],
+    "largest": ["t2", "flair", "largest"],
+    "first": ["pd", "md", "first"],
+}
+VALID_PEAKS = {m for modalities in PEAK.values() for m in modalities}
+VALID_MODALITIES = VALID_PEAKS - {"last", "largest", "first"}
