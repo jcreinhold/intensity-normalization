@@ -31,9 +31,6 @@ available `here <https://arxiv.org/abs/1812.04652>`_).
 *Note that while this release was carefully inspected, there may be bugs. Please submit an issue if you encounter a
 problem.*
 
-This package was developed by `Jacob Reinhold <https://www.jcreinhold.com>`_ and the other students and researchers of
-the `Image Analysis and Communication Lab (IACL) <http://iacl.ece.jhu.edu/index.php/Main_Page>`_.
-
 Methods
 -------
 
