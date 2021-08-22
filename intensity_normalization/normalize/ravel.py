@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 import nibabel
 import numpy as np
-from numpy.linalg import inv, solve
+from numpy.linalg import solve
 from scipy.sparse import bsr_matrix
 from scipy.sparse.linalg import svds
 
@@ -124,7 +124,7 @@ class RavelNormalize(NormalizeFitBase):
             return mask
         elif self._get_modality(modality) != "t1":
             raise NotImplementedError(
-                f"Non-T1-w RAVEL normalization w/o CSF masks not supported."
+                "Non-T1-w RAVEL normalization w/o CSF masks not supported."
             )
         tissue_membership = find_tissue_memberships(image, mask)
         csf_mask: Array = tissue_membership[..., 0] > self.membership_threshold
@@ -202,10 +202,10 @@ class RavelNormalize(NormalizeFitBase):
             image_matrix[:, i - 1] = image_ws.flatten()
             logger.info(f"Processing image {i}/{n_images}")
             if i == 1 and self.template is None:
-                logger.debug(f"Setting template to first image")
+                logger.debug("Setting template to first image")
                 self.set_template(image)
                 self.set_template_mask(mask)
-                logger.debug(f"Finding CSF mask")
+                logger.debug("Finding CSF mask")
                 # csf found on original b/c assume foreground positive
                 csf_mask = self._find_csf_mask(image, mask, modality)
                 control_masks.append(csf_mask)
@@ -213,12 +213,12 @@ class RavelNormalize(NormalizeFitBase):
                     registered_images.append(image_ws)
             else:
                 if self.register:
-                    logger.debug(f"Deformably co-registering image to template")
+                    logger.debug("Deformably co-registering image to template")
                     image = to_ants(image)
                     image = self._register(image)
                     image_ws = whitestripe_norm(image)
                     registered_images.append(image_ws)
-                logger.debug(f"Finding CSF mask")
+                logger.debug("Finding CSF mask")
                 csf_mask = self._find_csf_mask(image, mask, modality)
                 control_masks.append(csf_mask)
 

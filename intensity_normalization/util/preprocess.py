@@ -46,7 +46,7 @@ def preprocess(
     image: NiftiImage,
     mask: Optional[NiftiImage] = None,
     resolution: Optional[Tuple[float, float, float]] = None,
-    orientation: str = "RAI",
+    orientation: str = "RAS",
     n4_convergence_options: Optional[dict] = None,
     interp_type: str = "linear",
     second_n4_with_smoothed_mask: bool = True,
@@ -203,6 +203,7 @@ class Preprocessor(CLIParser):
             choices=allowed_orientations,
             default="RAI",
             help="Reorient image to this specification.",
+            metavar="",
         )
         parser.add_argument(
             "-it",
@@ -211,6 +212,7 @@ class Preprocessor(CLIParser):
             choices=set(interp_type_dict.keys()),
             default="linear",
             help="Use this interpolator for resampling.",
+            metavar="",
         )
         parser.add_argument(
             "-2n4",

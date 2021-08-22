@@ -8,6 +8,7 @@ Created on: Jun 01, 2021
 
 __all__ = [
     "allowed_interpolators",
+    "allowed_metrics",
     "allowed_orientations",
     "allowed_transforms",
     "ArgType",
@@ -197,6 +198,17 @@ allowed_interpolators = frozenset(
         "hammingWindowedSinc",
         "lanczosWindowedSinc",
         "genericLabel",
+    }
+)
+
+# copied from : (https://github.com/ANTsX/ANTsPy/blob/
+# f2aec7283d26d914d98e2b440e4d2badff78da38/ants/registration/interface.py)
+allowed_metrics = frozenset(
+    {
+        "CC",
+        "mattes",
+        "meansquares",
+        "demons",
     }
 )
 
