@@ -1,271 +1,393 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 intensity_normalization.normalize.ravel
 
-Use RAVEL [1] to intensity normalize a population of MR images
-
-References:
-   ﻿[1] J. P. Fortin, E. M. Sweeney, J. Muschelli, C. M. Crainiceanu,
-        and R. T. Shinohara, “Removing inter-subject technical variability
-        in magnetic resonance imaging studies,” NeuroImage, vol. 132,
-        pp. 198–212, 2016.
-
-Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
-
-Created on: Apr 27, 2018
+Author: Jacob Reinhold (jcreinhold@gmail.com)
+Created on: Jun 02, 2021
 """
 
-from functools import reduce
-import gc
-import logging
-from operator import add
-import os
+__all__ = [
+    "RavelNormalize",
+]
 
-import ants
-import nibabel as nib
+import logging
+from argparse import ArgumentParser, Namespace
+from functools import reduce
+from operator import add
+from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
+
+import nibabel
 import numpy as np
+from numpy.linalg import solve
 from scipy.sparse import bsr_matrix
 from scipy.sparse.linalg import svds
 
-from intensity_normalization.errors import NormalizationError
-from intensity_normalization.normalize.whitestripe import whitestripe, whitestripe_norm
-from intensity_normalization.utilities import csf
-from intensity_normalization.utilities import io
+from intensity_normalization.normalize.base import NormalizeFitBase
+from intensity_normalization.normalize.whitestripe import WhiteStripeNormalize
+from intensity_normalization.type import Array, ArrayOrNifti, NiftiImage, PathLike
+from intensity_normalization.util.coregister import register, to_ants
+from intensity_normalization.util.io import gather_images_and_masks
+from intensity_normalization.util.tissue_membership import find_tissue_memberships
 
 logger = logging.getLogger(__name__)
 
+try:
+    import ants
+except (ModuleNotFoundError, ImportError):
+    logger.error("ANTsPy not installed. Install antspyx to use RAVEL.")
+    raise
 
-def ravel_normalize(img_dir, mask_dir, contrast, output_dir=None, write_to_disk=False,
-                    do_whitestripe=True, b=1, membership_thresh=0.99, segmentation_smoothness=0.25,
-                    do_registration=False, use_fcm=True, sparse_svd=False, csf_masks=False):
-    """
-    Use RAVEL [1] to normalize the intensities of a set of MR images to eliminate
-    unwanted technical variation in images (but, hopefully, preserve biological variation)
-
-    this function has an option that is modified from [1] in where no registration is done,
-    the control mask is defined dynamically by finding a tissue segmentation of the brain and
-    thresholding the membership at a very high level (this seems to work well and is *much* faster)
-    but there seems to be some more inconsistency in the results
-
-    Args:
-        img_dir (str): directory containing MR images to be normalized
-        mask_dir (str): brain masks for imgs (or csf masks if csf_masks is True)
-        contrast (str): contrast of MR images to be normalized (T1, T2, or FLAIR)
-        output_dir (str): directory to save images if you do not want them saved in
-            same directory as data_dir
-        write_to_disk (bool): write the normalized data to disk or nah
-        do_whitestripe (bool): whitestripe normalize the images before applying RAVEL correction
-        b (int): number of unwanted factors to estimate
-        membership_thresh (float): threshold of membership for control voxels
-        segmentation_smoothness (float): segmentation smoothness parameter for atropos ANTsPy
-            segmentation scheme (i.e., mrf parameter)
-        do_registration (bool): deformably register images to find control mask
-        use_fcm (bool): use FCM for segmentation instead of atropos (may be less accurate)
-        sparse_svd (bool): use traditional SVD (LAPACK) to calculate right singular vectors
-            else use ARPACK
-        csf_masks (bool): provided masks are the control masks (not brain masks)
-            assumes that images are deformably co-registered
-
-    Returns:
-        Z (np.ndarray): unwanted factors (used in ravel correction)
-        normalized (np.ndarray): set of normalized images from data_dir
-
-    References:
-        [1] J. P. Fortin, E. M. Sweeney, J. Muschelli, C. M. Crainiceanu,
-            and R. T. Shinohara, “Removing inter-subject technical variability
-            in magnetic resonance imaging studies,” Neuroimage, vol. 132,
-            pp. 198–212, 2016.
-    """
-    img_fns = io.glob_nii(img_dir)
-    mask_fns = io.glob_nii(mask_dir)
-
-    if output_dir is None or not write_to_disk:
-        out_fns = None
-    else:
-        out_fns = []
-        for fn in img_fns:
-            _, base, ext = io.split_filename(fn)
-            out_fns.append(os.path.join(output_dir, base + ext))
-        if not os.path.exists(output_dir):
-            os.mkdir(output_dir)
-
-    # get parameters necessary and setup the V array
-    V, Vc = image_matrix(img_fns, contrast, masks=mask_fns, do_whitestripe=do_whitestripe,
-                         return_ctrl_matrix=True, membership_thresh=membership_thresh,
-                         do_registration=do_registration, smoothness=segmentation_smoothness,
-                         use_fcm=use_fcm, csf_masks=csf_masks)
-
-    # estimate the unwanted factors Z
-    _, _, vh = np.linalg.svd(Vc, full_matrices=False) if not sparse_svd else \
-               svds(bsr_matrix(Vc), k=b, return_singular_vectors='vh')
-    Z = vh.T[:, 0:b]
-
-    # perform the ravel correction
-    V_norm = ravel_correction(V, Z)
-
-    # save the results to disk if desired
-    if write_to_disk:
-        for i, (img_fn, out_fn) in enumerate(zip(img_fns, out_fns)):
-            img = io.open_nii(img_fn)
-            norm = V_norm[:, i].reshape(img.get_fdata().shape)
-            io.save_nii(img, out_fn, data=norm)
-
-    return Z, V_norm
+RN = TypeVar("RN", bound="RavelNormalize")
 
 
-def ravel_correction(V, Z):
-    """
-    correct the images (in the image matrix V) by removing the trend
-    found in Z
+class RavelNormalize(NormalizeFitBase):
+    def __init__(
+        self,
+        membership_threshold: float = 0.99,
+        register: bool = True,
+        num_unwanted_factors: int = 1,
+        sparse_svd: bool = False,
+        whitestripe_kwargs: Optional[Dict[str, Any]] = None,
+        proportion_of_intersection_to_label_csf: float = 1.0,
+        masks_are_csf: bool = False,
+    ):
+        super().__init__()
+        self.membership_threshold = membership_threshold
+        self.register = register
+        self.num_unwanted_factors = num_unwanted_factors
+        self.sparse_svd = sparse_svd
+        self.whitestripe_kwargs = whitestripe_kwargs or dict()
+        self.proportion_of_intersection_to_label_csf = (
+            proportion_of_intersection_to_label_csf
+        )
+        self.masks_are_csf = masks_are_csf
+        if register and masks_are_csf:
+            raise ValueError(
+                "If masks_are_csf, then images are assumed to be co-registered."
+            )
+        self._template = None
+        self._template_mask = None
 
-    Args:
-        V (np.ndarray): image matrix (rows are voxels, columns are images)
-        Z (np.ndarray): unwanted factors (see ravel_normalize.py and the orig paper)
+    def calculate_location(
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
+    ) -> float:
+        return 0.0
 
-    Returns:
-        res (np.ndarray): normalized images
-    """
-    means = np.mean(V, axis=1)  # row means
-    beta = np.matmul(np.matmul(np.linalg.inv(np.matmul(Z.T, Z)), Z.T), V.T)
-    fitted = np.matmul(Z, beta).T  # this line (alone) gives slightly diff answer than R ver, otherwise exactly same
-    res = V - fitted
-    res = res + means[:, np.newaxis]
-    return res
+    def calculate_scale(
+        self,
+        data: Array,
+        mask: Optional[Array] = None,
+        modality: Optional[str] = None,
+    ) -> float:
+        return 1.0
 
+    @property
+    def template(self) -> Optional[ants.ANTsImage]:
+        return self._template
 
-def image_matrix(imgs, contrast, masks=None, do_whitestripe=True, return_ctrl_matrix=False,
-                 membership_thresh=0.99, smoothness=0.25, max_ctrl_vox=10000, do_registration=False,
-                 ctrl_prob=1, use_fcm=False, csf_masks=False):
-    """
-    creates an matrix of images where the rows correspond the the voxels of
-    each image and the columns are the images
+    @property
+    def template_mask(self) -> Optional[ants.ANTsImage]:
+        return self._template_mask
 
-    Args:
-        imgs (list): list of paths to MR images of interest
-        contrast (str): contrast of the set of imgs (e.g., T1)
-        masks (list or str): list of corresponding brain masks or just one (template) mask
-        do_whitestripe (bool): do whitestripe on the images before storing in matrix or nah
-        return_ctrl_matrix (bool): return control matrix for imgs (i.e., a subset of V's rows)
-        membership_thresh (float): threshold of membership for control voxels (want this very high)
-            this option is only used if the registration is turned off
-        smoothness (float): smoothness parameter for segmentation for control voxels
-            this option is only used if the registration is turned off
-        max_ctrl_vox (int): maximum number of control voxels (if too high, everything
-            crashes depending on available memory) only used if do_registration is false
-        do_registration (bool): register the images together and take the intersection of the csf
-            masks (as done in the original paper, note that this takes much longer)
-        ctrl_prob (float): given all data, proportion of data labeled as csf to be
-            used for intersection (i.e., when do_registration is true)
-        use_fcm (bool): use FCM for segmentation instead of atropos (may be less accurate)
-        csf_masks (bool): provided masks are the control masks (not brain masks)
-            assumes that images are deformably co-registered
+    def set_template(
+        self,
+        template: Union[ArrayOrNifti, ants.ANTsImage],
+    ) -> None:
+        self._template = to_ants(template)
 
-    Returns:
-        V (np.ndarray): image matrix (rows are voxels, columns are images)
-        Vc (np.ndarray): image matrix of control voxels (rows are voxels, columns are images)
-            Vc only returned if return_ctrl_matrix is True
-    """
-    img_shape = io.open_nii(imgs[0]).get_fdata().shape
-    V = np.zeros((int(np.prod(img_shape)), len(imgs)))
+    def set_template_mask(
+        self,
+        template_mask: Optional[Union[ArrayOrNifti, ants.ANTsImage]],
+    ) -> None:
+        if template_mask is None:
+            self._template_mask = None
+        else:
+            self._template_mask = to_ants(template_mask)
 
-    if return_ctrl_matrix:
-        ctrl_vox = []
+    def use_mni_as_template(self) -> None:
+        standard_mni = ants.get_ants_data("mni")
+        self.set_template(ants.image_read(standard_mni))
+        assert self.template is not None
+        self.set_template_mask(self.template > 0.0)
 
-    if masks is None and return_ctrl_matrix:
-        raise NormalizationError('Brain masks must be provided if returning control memberships')
-    if masks is None:
-        masks = [None] * len(imgs)
+    def _find_csf_mask(
+        self,
+        image: Array,
+        mask: Optional[Array],
+        modality: Optional[str] = None,
+    ) -> Array:
+        if self.masks_are_csf:
+            assert mask is not None
+            return mask
+        elif self._get_modality(modality) != "t1":
+            raise NotImplementedError(
+                "Non-T1-w RAVEL normalization w/o CSF masks not supported."
+            )
+        tissue_membership = find_tissue_memberships(image, mask)
+        csf_mask: Array = tissue_membership[..., 0] > self.membership_threshold
+        csf_mask = csf_mask.astype(np.uint8)  # convert to integer for intersection
+        return csf_mask
 
-    do_registration = do_registration and not csf_masks
+    @staticmethod
+    def _ravel_correction(control_voxels: Array, unwanted_factors: Array) -> Array:
+        """Correct control voxels by removing trend from unwanted factors
 
-    for i, (img_fn, mask_fn) in enumerate(zip(imgs, masks)):
-        _, base, _ = io.split_filename(img_fn)
-        img = io.open_nii(img_fn)
-        mask = io.open_nii(mask_fn) if mask_fn is not None else None
-        # do whitestripe on the image before applying RAVEL (if desired)
-        if do_whitestripe:
-            logger.info('Applying WhiteStripe to image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
-            inds = whitestripe(img, contrast, mask)
-            img = whitestripe_norm(img, inds)
-        img_data = img.get_fdata()
-        if img_data.shape != img_shape:
-            raise NormalizationError('Cannot normalize because image {} needs to have same dimension '
-                                     'as all other images ({} != {})'.format(base, img_data.shape, img_shape))
-        V[:, i] = img_data.flatten()
-        if return_ctrl_matrix:
-            if do_registration and i == 0:
-                logger.info('Creating control mask for image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
-                verbose = True if logger.getEffectiveLevel() == logging.getLevelName('DEBUG') else False
-                ctrl_masks = []
-                reg_imgs = []
-                reg_imgs.append(csf.nibabel_to_ants(img))
-                ctrl_masks.append(csf.csf_mask(img, mask, contrast=contrast, csf_thresh=membership_thresh,
-                                               mrf=smoothness, use_fcm=use_fcm))
-            elif do_registration and i != 0:
-                template = ants.image_read(imgs[0])
-                tmask = ants.image_read(masks[0])
-                img = csf.nibabel_to_ants(img)
-                logger.info('Starting registration for image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
-                reg_result = ants.registration(template, img, type_of_transform='SyN', mask=tmask, verbose=verbose)
-                img = reg_result['warpedmovout']
-                mask = csf.nibabel_to_ants(mask)
-                reg_imgs.append(img)
-                logger.info('Creating control mask for image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
-                ctrl_masks.append(csf.csf_mask(img, mask, contrast=contrast, csf_thresh=membership_thresh,
-                                               mrf=smoothness, use_fcm=use_fcm))
-            else:  # assume pre-registered
-                logger.info('Finding control voxels for image {} ({:d}/{:d})'.format(base, i + 1, len(imgs)))
-                ctrl_mask = csf.csf_mask(img, mask, contrast=contrast, csf_thresh=membership_thresh,
-                                         mrf=smoothness, use_fcm=use_fcm) if csf_masks else mask.get_fdata()
-                if np.sum(ctrl_mask) == 0:
-                    raise NormalizationError('No control voxels found for image ({}) at threshold ({})'
-                                             .format(base, membership_thresh))
-                elif np.sum(ctrl_mask) < 100:
-                    logger.warning('Few control voxels found ({:d}) (potentially a problematic image ({}) or '
-                                   'threshold ({}) too high)'.format(int(np.sum(ctrl_mask)), base, membership_thresh))
-                ctrl_vox.append(img_data[ctrl_mask == 1].flatten())
+        Args:
+            control_voxels: rows are voxels, columns are images
+                (see V matrix in the paper)
+            unwanted_factors: unwanted factors
+                (see Z matrix in the paper)
 
-    if return_ctrl_matrix and not do_registration:
-        min_len = min(min(map(len, ctrl_vox)), max_ctrl_vox)
-        logger.info('Using {:d} control voxels'.format(min_len))
-        Vc = np.zeros((min_len, len(imgs)))
-        for i in range(len(imgs)):
-            ctrl_voxs = ctrl_vox[i][:min_len]
-            logger.info('Image {:d} control voxel stats -  mean: {:.3f}, std: {:.3f}'
-                        .format(i + 1, np.mean(ctrl_voxs), np.std(ctrl_voxs)))
-            Vc[:, i] = ctrl_voxs
-    elif return_ctrl_matrix and do_registration:
-        ctrl_sum = reduce(add, ctrl_masks)  # need to use reduce instead of sum b/c data structure
-        intersection = np.zeros(ctrl_sum.shape)
-        intersection[ctrl_sum >= np.floor(len(ctrl_masks) * ctrl_prob)] = 1
-        num_ctrl_vox = int(np.sum(intersection))
-        Vc = np.zeros((num_ctrl_vox, len(imgs)))
-        for i, img in enumerate(reg_imgs):
-            ctrl_voxs = img.numpy()[intersection == 1]
-            logger.info('Image {:d} control voxel stats -  mean: {:.3f}, std: {:.3f}'
-                        .format(i + 1, np.mean(ctrl_voxs), np.std(ctrl_voxs)))
-            Vc[:, i] = ctrl_voxs
-        del ctrl_masks, reg_imgs
-        gc.collect()  # force a garbage collection, since we just used the majority of the system memory
+        Returns:
+            normalized: normalized images
+        """
+        logger.debug("Performing RAVEL correction")
+        logger.debug(f"Unwanted factors shape: {unwanted_factors.shape}")
+        logger.debug(f"Control voxels shape: {control_voxels.shape}")
+        beta = solve(
+            unwanted_factors.T @ unwanted_factors,
+            unwanted_factors.T @ control_voxels.T,
+        )
+        fitted = (unwanted_factors @ beta).T
+        residuals = control_voxels - fitted
+        voxel_means = np.mean(control_voxels, axis=1, keepdims=True)
+        normalized: Array = residuals + voxel_means
+        return normalized
 
-    return V if not return_ctrl_matrix else (V, Vc)
+    def _register(self, image: ants.ANTsImage) -> Array:
+        registered = register(
+            image=image,
+            template=self.template,
+            type_of_transform="SyN",
+            interpolator="linear",
+            template_mask=self.template_mask,
+        )
+        out: Array = registered.numpy()
+        return out
 
+    def create_image_matrix_and_control_voxels(
+        self,
+        images: List[Array],
+        masks: Optional[List[Optional[Array]]] = None,
+        modality: Optional[str] = None,
+    ) -> Tuple[Array, Array]:
+        """creates an matrix of images; rows correspond to voxels, columns are images
 
-def image_matrix_to_images(V, imgs):
-    """
-    convert an image matrix to a list of the correctly formated nifti images
+        Args:
+            images: list of MR images of interest
+            masks: list of corresponding brain masks
+            modality: modality of the set of images (e.g., t1)
 
-    Args:
-        V (np.ndarray): image matrix (rows are voxels, columns are images)
-        imgs (list): list of paths to corresponding MR images in V
+        Returns:
+            image_matrix: rows are voxels, columns are images
+            control_voxels: rows are csf intersection voxels, columns are images
+        """
+        n_images = len(images)
+        image_shapes = [image.shape for image in images]
+        image_shape = image_shapes[0]
+        image_size = int(np.prod(image_shape))
+        assert all([shape == image_shape for shape in image_shapes])
+        image_matrix = np.zeros((image_size, n_images))
+        whitestripe_norm = WhiteStripeNormalize(**self.whitestripe_kwargs)
+        control_masks = []
+        registered_images = []
+        masks = ([None] * n_images) if masks is None else masks
+        assert n_images == len(masks)
 
-    Returns:
-        img_list (list): list of nifti images extracted from V
-    """
-    img_list = []
-    for i, img_fn in enumerate(imgs):
-        img = io.open_nii(img_fn)
-        nimg = nib.Nifti1Image(V[:, i].reshape(img.get_fdata().shape), img.affine, img.header)
-        img_list.append(nimg)
-    return img_list
+        for i, (image, mask) in enumerate(zip(images, masks), 1):
+            image_ws = whitestripe_norm(image)
+            image_matrix[:, i - 1] = image_ws.flatten()
+            logger.info(f"Processing image {i}/{n_images}")
+            if i == 1 and self.template is None:
+                logger.debug("Setting template to first image")
+                self.set_template(image)
+                self.set_template_mask(mask)
+                logger.debug("Finding CSF mask")
+                # csf found on original b/c assume foreground positive
+                csf_mask = self._find_csf_mask(image, mask, modality)
+                control_masks.append(csf_mask)
+                if self.register:
+                    registered_images.append(image_ws)
+            else:
+                if self.register:
+                    logger.debug("Deformably co-registering image to template")
+                    image = to_ants(image)
+                    image = self._register(image)
+                    image_ws = whitestripe_norm(image)
+                    registered_images.append(image_ws)
+                logger.debug("Finding CSF mask")
+                csf_mask = self._find_csf_mask(image, mask, modality)
+                control_masks.append(csf_mask)
+
+        control_mask_sum = reduce(add, control_masks)
+        threshold = np.floor(
+            len(control_masks) * self.proportion_of_intersection_to_label_csf
+        )
+        intersection = control_mask_sum >= threshold
+        num_control_voxels = int(intersection.sum())
+        if num_control_voxels == 0:
+            raise RuntimeError(
+                "No common control voxels were found. "
+                "Lower the membership threshold."
+            )
+        if self.register:
+            assert n_images == len(registered_images)
+            control_voxels = np.zeros((num_control_voxels, n_images))
+            for i, registered in enumerate(registered_images):
+                ctrl_vox = registered[intersection]
+                control_voxels[:, i] = ctrl_vox
+                logger.info(
+                    f"Image {i+1} control voxels - "
+                    f"mean: {ctrl_vox.mean():.3f}; "
+                    f"std: {ctrl_vox.std():.3f}"
+                )
+        else:
+            control_voxels = image_matrix[intersection.flatten(), :]
+
+        return image_matrix, control_voxels
+
+    def estimate_unwanted_factors(self, control_voxels: Array) -> Array:
+        logger.debug("Estimating unwanted factors")
+        _, _, all_unwanted_factors = (
+            np.linalg.svd(control_voxels, full_matrices=False)
+            if not self.sparse_svd
+            else svds(
+                bsr_matrix(control_voxels),
+                k=self.num_unwanted_factors,
+                return_singular_vectors="vh",
+            )
+        )
+        unwanted_factors: Array = all_unwanted_factors.T[
+            :, 0 : self.num_unwanted_factors
+        ]
+        return unwanted_factors
+
+    def fit(  # type: ignore[no-untyped-def,override]
+        self,
+        images: List[ArrayOrNifti],
+        masks: Optional[List[ArrayOrNifti]] = None,
+        modality: Optional[str] = None,
+        **kwargs,
+    ) -> Array:
+        images, masks = self.before_fit(images, masks, modality, **kwargs)
+        logger.info("Fitting")
+        normalized = self._fit(images, masks, modality, **kwargs)
+        logger.debug("Done fitting")
+        return normalized
+
+    def _fit(  # type: ignore[no-untyped-def,override]
+        self,
+        images: List[ArrayOrNifti],
+        masks: Optional[List[ArrayOrNifti]] = None,
+        modality: Optional[str] = None,
+        **kwargs,
+    ) -> Array:
+        image_matrix, control_voxels = self.create_image_matrix_and_control_voxels(
+            images,
+            masks,
+            modality,
+        )
+        unwanted_factors = self.estimate_unwanted_factors(control_voxels)
+        normalized = self._ravel_correction(image_matrix, unwanted_factors)
+        return normalized.T  # transpose so images on 0th axis
+
+    def process_directories(  # type: ignore[no-untyped-def]
+        self,
+        image_dir: PathLike,
+        mask_dir: Optional[PathLike] = None,
+        modality: Optional[str] = None,
+        ext: str = "nii*",
+        return_normalized_and_masks: bool = False,
+        **kwargs,
+    ) -> Optional[Tuple[List[ArrayOrNifti], List[Optional[ArrayOrNifti]]]]:
+        logger.debug("Grabbing images")
+        images, masks = gather_images_and_masks(image_dir, mask_dir, ext)
+        normalized = self.fit(images, masks, modality, **kwargs)
+        if return_normalized_and_masks:
+            normalized_list: List[NiftiImage] = []
+            for normed, image in zip(normalized, images):
+                shape = image.get_fdata().shape
+                normalized_list.append(
+                    nibabel.Nifti1Image(
+                        normed.reshape(shape),
+                        image.affine,
+                        image.header,
+                    )
+                )
+            return normalized_list, masks
+        return None
+
+    @staticmethod
+    def name() -> str:
+        return "ravel"
+
+    @staticmethod
+    def fullname() -> str:
+        return "RAVEL"
+
+    @staticmethod
+    def description() -> str:
+        return (
+            "Perform WhiteStripe and then correct for technical "
+            "variation with RAVEL on a set of NIfTI MR images."
+        )
+
+    @staticmethod
+    def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
+        parser = parent_parser.add_argument_group("method-specific arguments")
+        parser.add_argument(
+            "-b",
+            "--num-unwanted-factors",
+            type=int,
+            default=1,
+            help="number of unwanted factors to eliminate (see b in RAVEL paper)",
+        )
+        parser.add_argument(
+            "-mt",
+            "--membership-threshold",
+            type=float,
+            default=0.99,
+            help="threshold for the membership of the control (CSF) voxels",
+        )
+        parser.add_argument(
+            "--no-registration",
+            action="store_false",
+            dest="register",
+            default=True,
+            help="do not do deformable registration to find control mask",
+        )
+        parser.add_argument(
+            "--sparse-svd",
+            action="store_true",
+            default=False,
+            help="use a sparse version of the svd (lower memory requirements)",
+        )
+        parser.add_argument(
+            "--masks-are-csf",
+            action="store_true",
+            default=False,
+            help="mask directory corresponds to csf masks instead of brain masks, "
+            "assumes images are deformably co-registered",
+        )
+        parser.add_argument(
+            "--prop-intersection-csf",
+            default=1.0,
+            help="control how intersection calculated "
+            "(1.0 means normal intersection, 0.5 means only "
+            "half of the images need the voxel labeled as csf)",
+        )
+        return parent_parser
+
+    @classmethod
+    def from_argparse_args(cls: Type[RN], args: Namespace) -> RN:
+        return cls(
+            membership_threshold=args.membership_threshold,
+            register=args.register,
+            num_unwanted_factors=args.num_unwanted_factors,
+            sparse_svd=args.sparse_svd,
+            proportion_of_intersection_to_label_csf=args.prop_intersection_csf,
+            masks_are_csf=args.masks_are_csf,
+        )
