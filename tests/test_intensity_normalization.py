@@ -10,9 +10,6 @@ import nibabel as nib
 import numpy as np
 import pytest
 
-ANTSPY_DIR = Path.home() / ".antspy"
-ANTSPY_DIR_EXISTS = ANTSPY_DIR.is_dir()
-
 from intensity_normalization.cli import (
     fcm_main,
     histogram_main,
@@ -30,6 +27,9 @@ except (ImportError, ModuleNotFoundError):
     ants = None
 else:
     from intensity_normalization.cli import preprocessor_main, ravel_main, register_main
+
+ANTSPY_DIR = Path.home() / ".antspy"
+ANTSPY_DIR_EXISTS = ANTSPY_DIR.is_dir()
 
 
 @pytest.fixture
@@ -178,7 +178,7 @@ def preprocess_cli_args(image: Path) -> List[str]:
     return f"{image} -2n4".split()
 
 
-@pytest.mark.skip("Test images do not work.")
+@pytest.mark.skip("Takes too long.")
 def test_preprocess_cli(preprocess_cli_args: List[str]) -> None:
     retval = preprocessor_main(preprocess_cli_args)
     assert retval == 0

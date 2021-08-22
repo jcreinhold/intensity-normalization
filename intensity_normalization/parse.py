@@ -25,6 +25,8 @@ import nibabel as nib
 from intensity_normalization.type import ArgType, NiftiImage, PathLike
 from intensity_normalization.util.io import split_filename
 
+logger = logging.getLogger(__name__)
+
 
 def setup_log(verbosity: int) -> None:
     """set logger with verbosity logging level and message"""
@@ -115,6 +117,7 @@ class CLIParser:
         out = self(image, mask)
         if args.output is None:
             args.output = self.append_name_to_file(args.image)
+        logger.debug(f"Saving output: {args.output}")
         out.to_filename(args.output)
 
     @staticmethod

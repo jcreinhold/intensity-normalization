@@ -22,6 +22,7 @@ from intensity_normalization.type import (
     NiftiImage,
     PathLike,
     allowed_interpolators,
+    allowed_metrics,
     allowed_transforms,
     file_path,
     save_nifti_path,
@@ -56,6 +57,7 @@ def register(
     template: Optional[Union[NiftiImage, ants.ANTsImage]] = None,
     type_of_transform: str = "Affine",
     interpolator: str = "bSpline",
+    metric: str = "mattes",
     initial_rigid: bool = True,
     template_mask: Optional[Union[NiftiImage, ants.ANTsImage]] = None,
 ) -> Union[NiftiImage, ants.ANTsImage]:
@@ -67,21 +69,28 @@ def register(
     is_nibabel = isinstance(image, NiftiImage)
     image = to_ants(image)
     if initial_rigid:
+        logger.debug("Doing initial rigid registration")
         transforms = ants.registration(
             fixed=template,
             moving=image,
             type_of_transform="Rigid",
+            aff_metric=metric,
+            syn_metric=metric,
         )
         rigid_transform = transforms["fwdtransforms"][0]
     else:
         rigid_transform = None
+    logger.debug(f"Doing {type_of_transform} registration")
     transform = ants.registration(
         fixed=template,
         moving=image,
         initial_transform=rigid_transform,
         type_of_transform=type_of_transform,
         mask=template_mask,
+        aff_metric=metric,
+        syn_metric=metric,
     )["fwdtransforms"]
+    logger.debug("Applying transformations")
     registered = ants.apply_transforms(
         template,
         image,
@@ -100,15 +109,19 @@ class Registrator(CLIParser):
         template: Optional[NiftiImage] = None,
         type_of_transform: str = "Affine",
         interpolator: str = "bSpline",
+        metric: str = "mattes",
         initial_rigid: bool = True,
     ):
         if template is None:
+            logger.info("Using MNI (in RAS orientation) as template")
             standard_mni = ants.get_ants_data("mni")
-            self.template = ants.image_read(standard_mni)
+            self.template = ants.image_read(standard_mni).reorient_image2("RAS")
         else:
+            logger.debug("Loading template")
             self.template = ants.from_nibabel(template)
         self.type_of_transform = type_of_transform
         self.interpolator = interpolator
+        self.metric = metric
         self.initial_rigid = initial_rigid
 
     def __call__(  # type: ignore[no-untyped-def,override]
@@ -118,11 +131,12 @@ class Registrator(CLIParser):
         **kwargs,
     ) -> NiftiImage:
         return register(
-            image,
-            self.template,
-            self.type_of_transform,
-            self.interpolator,
-            self.initial_rigid,
+            image=image,
+            template=self.template,
+            type_of_transform=self.type_of_transform,
+            interpolator=self.interpolator,
+            metric=self.metric,
+            initial_rigid=self.initial_rigid,
         )
 
     def register_images(self, images: List[NiftiImage]) -> List[NiftiImage]:
@@ -182,6 +196,7 @@ class Registrator(CLIParser):
             default="Affine",
             choices=allowed_transforms,
             help="Type of registration transform to perform.",
+            metavar="",
         )
         parser.add_argument(
             "-i",
@@ -190,6 +205,16 @@ class Registrator(CLIParser):
             default="bSpline",
             choices=allowed_interpolators,
             help="Type of interpolator to use.",
+            metavar="",
+        )
+        parser.add_argument(
+            "-mc",
+            "--metric",
+            type=str,
+            default="mattes",
+            choices=allowed_metrics,
+            help="Metric to use for registration loss function.",
+            metavar="",
         )
         parser.add_argument(
             "-ir",
@@ -214,10 +239,11 @@ class Registrator(CLIParser):
         if args.template is not None:
             args.template = ants.image_read(args.template)
         return cls(
-            args.template,
-            args.type_of_transform,
-            args.interpolator,
-            args.initial_rigid,
+            template=args.template,
+            type_of_transform=args.type_of_transform,
+            interpolator=args.interpolator,
+            metric=args.metric,
+            initial_rigid=args.initial_rigid,
         )
 
     @staticmethod

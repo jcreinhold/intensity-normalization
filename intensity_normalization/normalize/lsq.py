@@ -124,7 +124,7 @@ class LeastSquaresNormalize(NormalizeFitBase):
                 None,
             )
             base, name, ext = split_filename(fn)
-            new_name = name + f"_tissue_memberships" + ext
+            new_name = name + "_tissue_memberships" + ext
             if args.output_dir is None:
                 output = base / new_name
             else:
