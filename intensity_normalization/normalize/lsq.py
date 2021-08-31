@@ -20,7 +20,15 @@ import numpy as np
 
 from intensity_normalization import VALID_MODALITIES
 from intensity_normalization.normalize.base import NormalizeFitBase
-from intensity_normalization.type import Array, Vector, dir_path, positive_float
+from intensity_normalization.type import (
+    Array,
+    PathLike,
+    Vector,
+    dir_path,
+    file_path,
+    positive_float,
+    save_file_path,
+)
 from intensity_normalization.util.io import split_filename
 from intensity_normalization.util.tissue_membership import find_tissue_memberships
 
@@ -131,6 +139,15 @@ class LeastSquaresNormalize(NormalizeFitBase):
                 output = Path(args.output_dir) / new_name
             tissue_memberships.to_filename(output)
         del self.tissue_memberships
+        if args.save_standard_tissue_means is not None:
+            self.save_standard_tissue_means(args.save_standard_tissue_means)
+
+    def save_standard_tissue_means(self, filename: PathLike) -> None:
+        np.save(filename, self.standard_tissue_means)
+
+    def load_standard_tissue_means(self, filename: PathLike) -> None:
+        data = np.load(filename)
+        self.standard_tissue_means = data
 
     @classmethod
     def from_argparse_args(cls: Type[LSQN], args: Namespace) -> LSQN:
@@ -138,6 +155,10 @@ class LeastSquaresNormalize(NormalizeFitBase):
         return out
 
     def call_from_argparse_args(self, args: Namespace) -> None:
+        if args.load_standard_tissue_means is not None:
+            self.load_standard_tissue_means(args.load_standard_tissue_means)
+            self.fit = lambda *args, **kwargs: None  # type: ignore[assignment]
+
         if args.mask_dir is not None:
             if args.modality is not None:
                 if args.modality.lower() != "t1":
@@ -207,6 +228,21 @@ class LeastSquaresNormalize(NormalizeFitBase):
 
     @staticmethod
     def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
+        parser = parent_parser.add_argument_group("method-specific arguments")
+        parser.add_argument(
+            "-sstm",
+            "--save-standard-tissue-means",
+            default=None,
+            type=save_file_path(),
+            help="save the standard tissue means fit by the method",
+        )
+        parser.add_argument(
+            "-lstm",
+            "--load-standard-tissue-means",
+            default=None,
+            type=file_path(),
+            help="load a standard tissue means previously fit by the method",
+        )
         exclusive = parent_parser.add_argument_group(
             "mutually exclusive optional arguments"
         )
