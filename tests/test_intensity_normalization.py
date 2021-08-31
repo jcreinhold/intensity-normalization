@@ -129,8 +129,38 @@ def test_lsq_normalization_cli(image: Path, mask: Path, out_dir: Path) -> None:
     assert retval == 0
 
 
+def test_lsq_normalization_save_load_cli(
+    image: Path,
+    mask: Path,
+    out_dir: Path,
+    temp_dir: Path,
+) -> None:
+    base_args = f"{image.parent} -m {mask.parent} -o {out_dir}".split()
+    args = base_args + ["-sstm", f"{temp_dir}/test.npy"]
+    retval = lsq_main(args)
+    assert retval == 0
+    args = base_args + ["-lstm", f"{temp_dir}/test.npy"]
+    retval = lsq_main(args)
+    assert retval == 0
+
+
 def test_nyul_normalization_cli(base_cli_dir_args: List[str]) -> None:
     retval = nyul_main(base_cli_dir_args)
+    assert retval == 0
+
+
+def test_nyul_normalization_save_load_cli(
+    image: Path,
+    mask: Path,
+    out_dir: Path,
+    temp_dir: Path,
+) -> None:
+    base_args = f"{image.parent} -m {mask.parent} -o {out_dir}".split()
+    args = base_args + ["-ssh", f"{temp_dir}/test.npy"]
+    retval = nyul_main(args)
+    assert retval == 0
+    args = base_args + ["-lsh", f"{temp_dir}/test.npy"]
+    retval = nyul_main(args)
     assert retval == 0
 
 
