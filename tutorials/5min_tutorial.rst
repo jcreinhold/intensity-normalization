@@ -206,6 +206,56 @@ Alternatively, if you want to co-register many images to the same target, you ca
    images = [nib.load(path_to_image) for path_to_image in image_paths]
    registered_images = registrator.register_images(images)
 
+Saving fit information for sample-based methods
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Fitting and using the resultant fit for new images is supported in the Python API. For example, you can run:
+
+.. code-block:: python
+
+   # load images
+   import nibabel as nib
+   image_paths = ["path/to/image1.nii", "path/to/image2.nii", ...]
+   images = [nib.load(image_path) for image_path in image_paths]
+
+   # normalize the images and save the standard histogram
+   from intensity_normalization.normalize.nyul import NyulNormalize
+   nyul_normalizer = NyulNormalize()
+   nyul_normalizer.fit(images)
+   normalized = [nyul_normalizer(image) for image in images]
+   nyul_normalizer.save_standard_histogram("standard_histogram.npy")
+
+   # load new images and normalize those
+   new_image_paths = ["path/to/another/image1.nii", "path/to/another/image2.nii", ...]
+   new_images = [nib.load(image_path) for image_path in new_image_paths]
+   normalized = [nyul_normalizer(image) for image in images]
+
+   # load the standard histogram
+   new_nyul_normalizer = NyulNormalize()
+   new_nyul_normalizer.load_standard_histogram("standard_histogram.npy")
+   normalized = [new_nyul_normalizer(image) for image in images]
+
+For LSQ:
+
+.. code-block:: python
+
+   from intensity_normalization.normalize.lsq import LSQNormalize
+   lsq_normalizer = LSQNormalize()
+   lsq_normalizer.fit(images)
+   normalized = [lsq_normalizer(image) for image in images]
+   lsq_normalizer.save_standard_tissue_means("tissue_means.npy")
+
+   # reload the tissue means and use
+   lsq_normalizer = LSQNormalize()
+   lsq_normalizer.load_standard_tissue_means("tissue_means.npy")
+   normalized = [lsq_normalizer(image) for image in images]
+
+RAVEL is only meant to work on a particular batch, so you need to refit it if you add new data to your batch or want to
+use it to normalize new data.
+
+Similar options are added to the CLI. For ``nyul-normalize`` the relevant new options are ``--save-standard-histogram``
+and ``--load-standard-histogram``. For LSQ, ``--save-standard-tissue-means`` and ``--load-standard-tissue-means``.
+
 .. [*] If you're on a Mac, ``brew install cmake`` and then ``pip install antspyx`` in the environment you want to
        run ``intensity-normalization`` from or install ``intensity-normalization`` with
        ``pip install "intensity-normalization[ants]"``
