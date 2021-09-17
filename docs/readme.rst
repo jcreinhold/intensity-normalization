@@ -100,7 +100,7 @@ it. To install the antspy package along with the RAVEL, preprocessing, and co-re
 Basic Usage
 -----------
 
-See the `5 minute overview <https://github.com/jcreinhold/intensity-normalization/blob/master/tutorials/5min_tutorial.md>`_
+See the `5 minute overview <https://github.com/jcreinhold/intensity-normalization/blob/master/tutorials/5min_tutorial.rst>`_
 for a more detailed tutorial.
 
 In addition to the above small tutorial, here is consolidated
