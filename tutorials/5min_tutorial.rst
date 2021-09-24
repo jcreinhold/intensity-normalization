@@ -127,6 +127,18 @@ which you can import into your project or script, e.g.,
    t2w_image = nib.load("test_t2w_image.nii")
    t2w_normalized = fcm_norm(t2w_image, modality="t2")
 
+   # to use a brain mask instead of a skull-stripped image do this:
+   mask = nib.load("brain_mask.nii")
+   normalized_t1w = fcm_norm(image, mask)
+   # the WM mask is an attribute in the class, so normalize the t2 with:
+   normalized_t2w = fcm_norm(t2w_image, modality="t2")
+
+   # make a new instance of the normalizer to normalize a new image, i.e.:
+   new_image = nib.load("test_t1w_image_2.nii")
+   fcm_norm = FCMNormalizer(tissue_type="wm")
+   normalized = fcm_norm(new_image)
+
+
 Generally, the normalization methods have a similar interface, although some methods (RAVEL, Nyul, and LSQ) require a
 list of images (and, optionally, corresponding masks), like so:
 
