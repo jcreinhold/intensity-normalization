@@ -62,6 +62,11 @@ normalization (assuming you have access to a T1-w image for all the time-points)
 non-WM tissues, try least squares tissue normalization (which minimizes the least squares distance between CSF, GM, and
 WM tissue means within a set).
 
+`Read about the methods and how they work <https://intensity-normalization.readthedocs.io/en/latest/algorithm.html>`_.
+If you have a non-standard modality, e.g., a contrast-enhanced image, read about how the methods work and
+determine which method would work for your use case. Make sure you plot the foreground intensities (with
+the ``-p`` option in the CLI or the ``HistogramPlotter`` in the Python API) to validate the normalization results.
+
 *All algorithms except Z-score* (``zscore-normalize``) *and the Piecewise Linear Histogram Matching*
 (``nyul-normalize``) *are specific to images of the brain.*
 
@@ -154,6 +159,10 @@ Potential Pitfalls
    normalize contrast images with this package is to 1) find a tissue that is not affected by the contrast (e.g., grey
    matter) and normalize based on some summary statistic of that (where the tissue mask was found on a non-contrast
    image); 2) use a simplistic (but non-robust) method like Z-score normalization.
+
+   `Read about the methods <https://intensity-normalization.readthedocs.io/en/latest/algorithm.html>`_ and how they work
+   to decide which method would work best for your contrast-enhanced images.
+
 
 Test Package
 ------------
