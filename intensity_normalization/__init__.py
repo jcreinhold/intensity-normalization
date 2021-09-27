@@ -5,7 +5,7 @@ __email__ = "jcreinhold@gmail.com"
 __version__ = "2.0.1"
 
 PEAK = {
-    "last": ["t1", "last"],
+    "last": ["t1", "other", "last"],
     "largest": ["t2", "flair", "largest"],
     "first": ["pd", "md", "first"],
 }

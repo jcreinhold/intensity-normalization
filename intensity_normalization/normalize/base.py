@@ -194,7 +194,10 @@ class NormalizeBase(CLIParser):
         return "t1" if modality is None else modality.lower()
 
     @staticmethod
-    def get_parent_parser(desc: str) -> ArgumentParser:
+    def get_parent_parser(
+        desc: str,
+        valid_modalities: List[str] = VALID_MODALITIES,
+    ) -> ArgumentParser:
         parser = ArgumentParser(
             description=desc,
             formatter_class=ArgumentDefaultsHelpFormatter,
@@ -223,7 +226,7 @@ class NormalizeBase(CLIParser):
             "--modality",
             type=str,
             default=None,
-            choices=VALID_MODALITIES,
+            choices=valid_modalities,
             help="Modality of the image.",
         )
         parser.add_argument(

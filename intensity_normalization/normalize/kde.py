@@ -10,8 +10,10 @@ __all__ = [
     "KDENormalize",
 ]
 
-from typing import Optional
+from argparse import ArgumentParser
+from typing import List, Optional
 
+from intensity_normalization import VALID_PEAKS
 from intensity_normalization.normalize.base import NormalizeBase
 from intensity_normalization.type import Array
 from intensity_normalization.util.histogram_tools import get_tissue_mode
@@ -56,4 +58,13 @@ class KDENormalize(NormalizeBase):
         return (
             "Use kernel density estimation to find the WM mode from "
             "a smoothed histogram and normalize an NIfTI MR image."
+        )
+
+    @staticmethod
+    def get_parent_parser(
+        desc: str,
+        valid_modalities: List[str] = VALID_PEAKS,
+    ) -> ArgumentParser:
+        return super(KDENormalize, KDENormalize).get_parent_parser(
+            desc, valid_modalities
         )
