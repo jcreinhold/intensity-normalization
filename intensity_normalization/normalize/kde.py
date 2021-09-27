@@ -11,7 +11,7 @@ __all__ = [
 ]
 
 from argparse import ArgumentParser
-from typing import List, Optional
+from typing import Optional, Set
 
 from intensity_normalization import VALID_PEAKS
 from intensity_normalization.normalize.base import NormalizeBase
@@ -63,7 +63,7 @@ class KDENormalize(NormalizeBase):
     @staticmethod
     def get_parent_parser(
         desc: str,
-        valid_modalities: List[str] = VALID_PEAKS,
+        valid_modalities: Set[str] = VALID_PEAKS,
     ) -> ArgumentParser:
         return super(KDENormalize, KDENormalize).get_parent_parser(
             desc, valid_modalities

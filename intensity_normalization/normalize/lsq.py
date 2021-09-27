@@ -13,7 +13,7 @@ __all__ = [
 import logging
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from pathlib import Path
-from typing import List, Optional, Type, TypeVar
+from typing import List, Optional, Set, Type, TypeVar
 
 import nibabel as nib
 import numpy as np
@@ -172,7 +172,10 @@ class LeastSquaresNormalize(NormalizeFitBase):
         super().call_from_argparse_args(args)
 
     @staticmethod
-    def get_parent_parser(desc: str) -> ArgumentParser:
+    def get_parent_parser(
+        desc: str,
+        valid_modalities: Set[str] = VALID_MODALITIES,
+    ) -> ArgumentParser:
         parser = ArgumentParser(
             description=desc,
             formatter_class=ArgumentDefaultsHelpFormatter,
