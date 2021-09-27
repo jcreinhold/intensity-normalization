@@ -151,6 +151,45 @@ where ``init_args`` is a dictionary of method dependent keyword arguments, ``ima
 a numpy array; ``mask`` is one of ``None`` (or not provided), a nibabel NIfTI image, or a numpy array; ``modality`` is a
 string representing the modality.
 
+Validating normalization results
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You should validate the results of normalization by plotting the histograms of the
+foreground image intensities before and after normalization, e.g.,
+
+.. code-block:: python
+
+   from intensity_normalization.plot.histogram import HistogramPlotter, plot_histogram
+
+   import matplotlib.pyplot as plt
+   import nibabel as nib
+   from intensity_normalization.normalize.fcm import FCMNormalize
+
+   image = nib.load("test_t1w_image.nii")
+   mask = nib.load("test_t1w_brain_mask.nii")
+
+   fcm_norm = FCMNormalize(tissue_type="wm")
+   normalized = fcm_norm(image, mask, modality="t1")
+   image_data = image.get_fdata()
+   norm_data = normalized.get_fdata()
+   mask_data = mask.get_fdata()
+
+   plot_histogram(image_data, mask_data)
+   plt.title("Unnormalized")
+   plt.show()
+
+   plot_histogram(norm_data, mask_data)
+   plt.title("FCM Normalized")
+   plt.show()
+
+   # or if you have a set of images
+   images = [nib.load(fn) for fn in filenames]
+   masks = [nib.load(fn) for fn in mask_filenames]
+   normed = [fcm_norm(img, msk) for img, msk in zip(images, masks)]
+   hp = HistogramPlotter(title="FCM Normalized")
+   _ = hp(images, masks)
+   plt.show()
+
 Another Python API example (co-registration)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
