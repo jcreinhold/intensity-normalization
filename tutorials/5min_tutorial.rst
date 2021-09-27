@@ -113,11 +113,11 @@ which you can import into your project or script, e.g.,
 .. code-block:: python
 
    import nibabel as nib
-   from intensity_normalization.normalize.fcm import FCMNormalizer
+   from intensity_normalization.normalize.fcm import FCMNormalize
 
    image = nib.load("test_t1w_image.nii")  # assume skull-stripped otherwise load mask too
 
-   fcm_norm = FCMNormalizer(tissue_type="wm")
+   fcm_norm = FCMNormalize(tissue_type="wm")
    normalized = fcm_norm(image) # alternatively, you can pass in a numpy array which will return a numpy array
    normalized.to_filename("normalized_test_t1w_image.nii")  # this works if you passed in a nibabel Nifti image
    # or if you want to do further processing on the data array
@@ -135,7 +135,7 @@ which you can import into your project or script, e.g.,
 
    # make a new instance of the normalizer to normalize a new image, i.e.:
    new_image = nib.load("test_t1w_image_2.nii")
-   fcm_norm = FCMNormalizer(tissue_type="wm")
+   fcm_norm = FCMNormalize(tissue_type="wm")
    normalized = fcm_norm(new_image)
 
 

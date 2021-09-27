@@ -2,6 +2,13 @@
 History
 =======
 
+2.0.2 (2021-09-27)
+------------------
+
+* Fix and improve documentation
+* Add an escape-hatch "other" modality
+* Add peak types as modalities in KDE & WS
+
 2.0.1 (2021-08-31)
 ------------------
 

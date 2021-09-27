@@ -11,11 +11,12 @@ __all__ = [
 ]
 
 from argparse import ArgumentParser, Namespace
-from typing import Optional, Type, TypeVar
+from typing import List, Optional, Type, TypeVar
 
 import nibabel as nib
 import numpy as np
 
+from intensity_normalization import VALID_PEAKS
 from intensity_normalization.normalize.base import NormalizeBase
 from intensity_normalization.type import Array, NiftiImage
 from intensity_normalization.util.histogram_tools import get_tissue_mode
@@ -101,6 +102,15 @@ class WhiteStripeNormalize(NormalizeBase):
             help="width of the whitestripe",
         )
         return parent_parser
+
+    @staticmethod
+    def get_parent_parser(
+        desc: str,
+        valid_modalities: List[str] = VALID_PEAKS,
+    ) -> ArgumentParser:
+        return super(WhiteStripeNormalize, WhiteStripeNormalize).get_parent_parser(
+            desc, valid_modalities
+        )
 
     @classmethod
     def from_argparse_args(cls: Type[WS], args: Namespace) -> WS:
