@@ -11,7 +11,7 @@ __all__ = [
 ]
 
 from argparse import ArgumentParser, Namespace
-from typing import List, Optional, Type, TypeVar
+from typing import Optional, Set, Type, TypeVar
 
 import nibabel as nib
 import numpy as np
@@ -106,7 +106,7 @@ class WhiteStripeNormalize(NormalizeBase):
     @staticmethod
     def get_parent_parser(
         desc: str,
-        valid_modalities: List[str] = VALID_PEAKS,
+        valid_modalities: Set[str] = VALID_PEAKS,
     ) -> ArgumentParser:
         return super(WhiteStripeNormalize, WhiteStripeNormalize).get_parent_parser(
             desc, valid_modalities

@@ -13,7 +13,7 @@ __all__ = [
 
 import logging
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
-from typing import List, Optional, Tuple, Type, TypeVar
+from typing import List, Optional, Set, Tuple, Type, TypeVar
 
 import nibabel as nib
 
@@ -196,7 +196,7 @@ class NormalizeBase(CLIParser):
     @staticmethod
     def get_parent_parser(
         desc: str,
-        valid_modalities: List[str] = VALID_MODALITIES,
+        valid_modalities: Set[str] = VALID_MODALITIES,
     ) -> ArgumentParser:
         parser = ArgumentParser(
             description=desc,
@@ -339,7 +339,10 @@ class NormalizeSampleBase(NormalizeBase):
             self.plot_histograms(args, normalized, masks)
 
     @staticmethod
-    def get_parent_parser(desc: str) -> ArgumentParser:
+    def get_parent_parser(
+        desc: str,
+        valid_modalities: Set[str] = VALID_MODALITIES,
+    ) -> ArgumentParser:
         parser = ArgumentParser(
             description=desc,
             formatter_class=ArgumentDefaultsHelpFormatter,

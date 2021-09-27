@@ -13,7 +13,7 @@ __all__ = [
 import logging
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from pathlib import Path
-from typing import Optional, Type, TypeVar
+from typing import Optional, Set, Type, TypeVar
 
 import nibabel as nib
 import numpy as np
@@ -106,7 +106,10 @@ class FCMNormalize(NormalizeBase):
         )
 
     @staticmethod
-    def get_parent_parser(desc: str) -> ArgumentParser:
+    def get_parent_parser(
+        desc: str,
+        valid_modalities: Set[str] = VALID_MODALITIES,
+    ) -> ArgumentParser:
         parser = ArgumentParser(
             description=desc,
             formatter_class=ArgumentDefaultsHelpFormatter,
@@ -128,7 +131,7 @@ class FCMNormalize(NormalizeBase):
             "--modality",
             type=str,
             default=None,
-            choices=VALID_MODALITIES,
+            choices=valid_modalities,
             help="Modality of the image.",
         )
         parser.add_argument(
