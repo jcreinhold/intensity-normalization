@@ -11,7 +11,7 @@ __all__ = [
 ]
 
 from argparse import ArgumentParser, Namespace
-from typing import List, Optional
+from typing import List, Optional, Type, TypeVar
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -26,26 +26,45 @@ from intensity_normalization.type import (
     save_file_path,
 )
 
+NN = TypeVar("NN", bound="NyulNormalize")
+
 
 class NyulNormalize(NormalizeFitBase):
+    """
+    Args:
+        output_min_value: where min-percentile mapped for output normalized image
+        output_max_value: where max-percentile mapped for output normalized image
+        min_percentile: min percentile to account for while finding
+            standard histogram
+        max_percentile: max percentile to account for while finding
+            standard histogram
+        next_percentile_after_min: next percentile after min for finding
+            standard histogram (percentile-step creates intermediate percentiles)
+        prev_percentile_before_max: previous percentile before max for finding
+            standard histogram (percentile-step creates intermediate percentiles)
+        percentile_step: percentile steps btwn next-percentile-after-min and
+             prev-percentile-before-max for finding standard histogram
+    """
+
     def __init__(
         self,
-        i_min: float = 1.0,
-        i_max: float = 99.0,
-        i_s_min: float = 1.0,
-        i_s_max: float = 100.0,
-        l_percentile: float = 10.0,
-        u_percentile: float = 90.0,
-        step: float = 10.0,
+        *,
+        output_min_value: float = 1.0,
+        output_max_value: float = 100.0,
+        min_percentile: float = 1.0,
+        max_percentile: float = 99.0,
+        next_percentile_after_min: float = 10.0,
+        prev_percentile_before_max: float = 90.0,
+        percentile_step: float = 10.0,
     ):
         super().__init__()
-        self.i_min = i_min
-        self.i_max = i_max
-        self.i_s_min = i_s_min
-        self.i_s_max = i_s_max
-        self.l_percentile = l_percentile
-        self.u_percentile = u_percentile
-        self.step = step
+        self.output_min_value = output_min_value
+        self.output_max_value = output_max_value
+        self.min_percentile = min_percentile
+        self.max_percentile = max_percentile
+        self.next_percentile_after_min = next_percentile_after_min
+        self.prev_percentile_before_max = prev_percentile_before_max
+        self.percentile_step = percentile_step
         self._percentiles = None
 
     def normalize_array(
@@ -64,12 +83,12 @@ class NyulNormalize(NormalizeFitBase):
     def percentiles(self) -> Vector:
         if self._percentiles is None:
             percs = np.arange(
-                self.l_percentile,
-                self.u_percentile + self.step,
-                self.step,
+                self.next_percentile_after_min,
+                self.prev_percentile_before_max + self.percentile_step,
+                self.percentile_step,
             )
             self._percentiles: Vector = np.concatenate(  # type: ignore[no-redef]
-                ([self.i_min], percs, [self.i_max])
+                ([self.min_percentile], percs, [self.max_percentile])
             )
         return self._percentiles
 
@@ -98,9 +117,9 @@ class NyulNormalize(NormalizeFitBase):
         for i, (image, mask) in enumerate(zip(images, masks)):
             voi = self._get_voi(image, mask, modality)
             landmarks = self.get_landmarks(voi)
-            min_p = np.percentile(voi, self.i_min)
-            max_p = np.percentile(voi, self.i_max)
-            f = interp1d([min_p, max_p], [self.i_s_min, self.i_s_max])
+            min_p = np.percentile(voi, self.min_percentile)
+            max_p = np.percentile(voi, self.max_percentile)
+            f = interp1d([min_p, max_p], [self.output_min_value, self.output_max_value])
             landmarks = np.array(f(landmarks))
             standard_scale += landmarks
         self.standard_scale = standard_scale / n_images
@@ -153,6 +172,51 @@ class NyulNormalize(NormalizeFitBase):
             type=file_path(),
             help="load a standard histogram previously fit by the method",
         )
+        parser.add_argument(
+            "--output-min-value",
+            type=float,
+            default=1.0,
+            help="where min-percentile mapped for output normalized image",
+        )
+        parser.add_argument(
+            "--output-max-value",
+            type=float,
+            default=100.0,
+            help="where max-percentile mapped for output normalized image",
+        )
+        parser.add_argument(
+            "--min-percentile",
+            type=float,
+            default=1.0,
+            help="min percentile to account for while finding standard histogram",
+        )
+        parser.add_argument(
+            "--max-percentile",
+            type=float,
+            default=99.0,
+            help="max percentile to account for while finding standard histogram",
+        )
+        parser.add_argument(
+            "--next-percentile-after-min",
+            type=float,
+            default=10.0,
+            help="next percentile after min for finding standard histogram "
+            "(percentile-step creates intermediate percentiles)",
+        )
+        parser.add_argument(
+            "--prev-percentile-before-max",
+            type=float,
+            default=90.0,
+            help="previous percentile before max for finding standard histogram "
+            "(percentile-step creates intermediate percentiles)",
+        )
+        parser.add_argument(
+            "--percentile-step",
+            type=float,
+            default=10.0,
+            help="percentile steps btwn next-percentile-after-min and "
+            "prev-percentile-before-max for finding standard histogram",
+        )
         return parent_parser
 
     def call_from_argparse_args(self, args: Namespace) -> None:
@@ -160,3 +224,16 @@ class NyulNormalize(NormalizeFitBase):
             self.load_standard_histogram(args.load_standard_histogram)
             self.fit = lambda *args, **kwargs: None  # type: ignore[assignment]
         super().call_from_argparse_args(args)
+
+    @classmethod
+    def from_argparse_args(cls: Type[NN], args: Namespace) -> NN:
+        out: NN = cls(
+            output_min_value=args.output_min_value,
+            output_max_value=args.output_max_value,
+            min_percentile=args.min_percentile,
+            max_percentile=args.max_percentile,
+            next_percentile_after_min=args.next_percentile_after_min,
+            prev_percentile_before_max=args.prev_percentile_before_max,
+            percentile_step=args.percentile_step,
+        )
+        return out
