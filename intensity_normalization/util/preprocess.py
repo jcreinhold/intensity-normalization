@@ -22,7 +22,7 @@ from typing import Optional, Tuple, Type, TypeVar
 
 import nibabel as nib
 
-from intensity_normalization.parse import CLIParser
+from intensity_normalization.base_cli import CLI
 from intensity_normalization.type import (
     NiftiImage,
     PathLike,
@@ -121,7 +121,7 @@ def preprocess(
 PP = TypeVar("PP", bound="Preprocessor")
 
 
-class Preprocessor(CLIParser):
+class Preprocessor(CLI):
     def __init__(
         self,
         resolution: Optional[Tuple[float, float, float]] = None,

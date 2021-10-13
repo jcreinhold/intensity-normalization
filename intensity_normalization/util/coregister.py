@@ -15,7 +15,7 @@ import logging
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from typing import List, Optional, Type, TypeVar, Union
 
-from intensity_normalization.parse import CLIParser
+from intensity_normalization.base_cli import CLI
 from intensity_normalization.type import (
     Array,
     ArrayOrNifti,
@@ -103,7 +103,7 @@ def register(
 R = TypeVar("R", bound="Registrator")
 
 
-class Registrator(CLIParser):
+class Registrator(CLI):
     def __init__(
         self,
         template: Optional[NiftiImage] = None,

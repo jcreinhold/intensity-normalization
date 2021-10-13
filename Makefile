@@ -87,3 +87,11 @@ install: clean ## install the package to the active Python's site-packages
 
 develop: clean ## symlink the package to the active Python's site-packages
 	python setup.py develop
+
+check:  ## run various code quality checks
+	black intensity_normalization
+	isort intensity_normalization
+	mypy intensity_normalization
+	black tests
+	isort tests
+	mypy tests

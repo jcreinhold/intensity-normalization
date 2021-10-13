@@ -10,23 +10,25 @@ import nibabel as nib
 import numpy as np
 import pytest
 
-from intensity_normalization.cli import (
-    fcm_main,
-    histogram_main,
-    kde_main,
-    lsq_main,
-    nyul_main,
-    tissue_main,
-    ws_main,
-    zs_main,
+from intensity_normalization.cli.fcm import fcm_main
+from intensity_normalization.cli.histogram import histogram_main as hist_main
+from intensity_normalization.cli.kde import kde_main
+from intensity_normalization.cli.lsq import lsq_main
+from intensity_normalization.cli.nyul import nyul_main
+from intensity_normalization.cli.tissue_membership import (
+    tissue_membership_main as tm_main,
 )
+from intensity_normalization.cli.whitestripe import whitestripe_main as ws_main
+from intensity_normalization.cli.zscore import zscore_main as zs_main
 
 try:
     import ants
 except (ImportError, ModuleNotFoundError):
     ants = None
 else:
-    from intensity_normalization.cli import preprocessor_main, ravel_main, register_main
+    from intensity_normalization.cli.coregister import coregister_main
+    from intensity_normalization.cli.preprocess import preprocess_main
+    from intensity_normalization.cli.ravel import ravel_main
 
 ANTSPY_DIR = Path.home() / ".antspy"
 ANTSPY_DIR_EXISTS = ANTSPY_DIR.is_dir()
@@ -178,7 +180,7 @@ def coregister_cli_args(image: Path) -> List[str]:
 @pytest.mark.skipif(ants is None, reason="Requires ANTsPy")
 @pytest.mark.skipif(not ANTSPY_DIR_EXISTS, reason="ANTsPy directory wasn't found.")
 def test_coregister_mni_cli(coregister_cli_args: List[str]) -> None:
-    retval = register_main(coregister_cli_args)
+    retval = coregister_main(coregister_cli_args)
     assert retval == 0
 
 
@@ -189,7 +191,7 @@ def coregister_template_cli_args(image: Path, mask: Path) -> List[str]:
 
 @pytest.mark.skip("Test images are problematic.")
 def test_coregister_template_cli(coregister_template_cli_args: List[str]) -> None:
-    retval = register_main(coregister_template_cli_args)
+    retval = coregister_main(coregister_template_cli_args)
     assert retval == 0
 
 
@@ -199,7 +201,7 @@ def histogram_cli_args(base_cli_dir_args: List[str], temp_dir: Path) -> List[str
 
 
 def test_histogram_cli(histogram_cli_args: List[str]) -> None:
-    retval = histogram_main(histogram_cli_args)
+    retval = hist_main(histogram_cli_args)
     assert retval == 0
 
 
@@ -210,7 +212,7 @@ def preprocess_cli_args(image: Path) -> List[str]:
 
 @pytest.mark.skip("Takes too long.")
 def test_preprocess_cli(preprocess_cli_args: List[str]) -> None:
-    retval = preprocessor_main(preprocess_cli_args)
+    retval = preprocess_main(preprocess_cli_args)
     assert retval == 0
 
 
@@ -220,11 +222,11 @@ def tissue_membership_cli_args(image: Path) -> List[str]:
 
 
 def test_tissue_membership_cli(tissue_membership_cli_args: List[str]) -> None:
-    retval = tissue_main(tissue_membership_cli_args)
+    retval = tm_main(tissue_membership_cli_args)
     assert retval == 0
 
 
 def test_tissue_membership_hard_seg_cli(tissue_membership_cli_args: List[str]) -> None:
     tissue_membership_cli_args.append("-hs")
-    retval = tissue_main(tissue_membership_cli_args)
+    retval = tm_main(tissue_membership_cli_args)
     assert retval == 0

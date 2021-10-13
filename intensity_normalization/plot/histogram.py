@@ -15,7 +15,7 @@ from typing import List, Optional, Tuple, Type, TypeVar
 import matplotlib.pyplot as plt
 import numpy as np
 
-from intensity_normalization.parse import CLIParser
+from intensity_normalization.base_cli import CLI
 from intensity_normalization.type import (
     Array,
     ArrayOrNifti,
@@ -38,7 +38,7 @@ except ImportError:
 HP = TypeVar("HP", bound="HistogramPlotter")
 
 
-class HistogramPlotter(CLIParser):
+class HistogramPlotter(CLI):
     def __init__(
         self,
         figsize: Tuple[int, int] = (12, 10),

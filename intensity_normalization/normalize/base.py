@@ -18,7 +18,7 @@ from typing import List, Optional, Set, Tuple, Type, TypeVar
 import nibabel as nib
 
 from intensity_normalization import VALID_MODALITIES
-from intensity_normalization.parse import CLIParser
+from intensity_normalization.base_cli import CLI
 from intensity_normalization.plot.histogram import HistogramPlotter, plot_histogram
 from intensity_normalization.type import (
     Array,
@@ -37,7 +37,7 @@ NB = TypeVar("NB", bound="NormalizeBase")
 logger = logging.getLogger(__name__)
 
 
-class NormalizeBase(CLIParser):
+class NormalizeBase(CLI):
     def __init__(self, norm_value: float = 1.0):
         self.norm_value = norm_value
 
@@ -248,6 +248,11 @@ class NormalizeBase(CLIParser):
             action="count",
             default=0,
             help="Increase output verbosity (e.g., -vv is more than -v).",
+        )
+        parser.add_argument(
+            "--version",
+            action="store_true",
+            help="print the version of intensity-normalization",
         )
         return parser
 
