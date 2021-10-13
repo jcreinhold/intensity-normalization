@@ -102,7 +102,7 @@ class FCMNormalize(NormalizeBase):
     def description() -> str:
         return (
             "Use fuzzy c-means to find memberships of CSF/GM/WM in the brain. "
-            "Use the found and specified tissue mean to normalize a NIfTI MRI."
+            "Use the specified tissue's mean to normalize a NIfTI MRI."
         )
 
     @staticmethod
@@ -153,6 +153,11 @@ class FCMNormalize(NormalizeBase):
             action="count",
             default=0,
             help="Increase output verbosity (e.g., -vv is more than -v).",
+        )
+        parser.add_argument(
+            "--version",
+            action="store_true",
+            help="print the version of intensity-normalization",
         )
         return parser
 

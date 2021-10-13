@@ -394,6 +394,11 @@ class NormalizeSampleBase(NormalizeBase):
             default=0,
             help="Increase output verbosity (e.g., -vv is more than -v).",
         )
+        parser.add_argument(
+            "--version",
+            action="store_true",
+            help="print the version of intensity-normalization",
+        )
         return parser
 
     @classmethod
