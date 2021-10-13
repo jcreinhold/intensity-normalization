@@ -2,6 +2,17 @@
 History
 =======
 
+2.1.0 (2021-10-13)
+------------------
+
+* Restructure CLIs for faster startup and improve handling of missing antspy
+* add option to CLIs to print version
+
+2.0.3 (2021-10-11)
+------------------
+
+* Improve Nyul docs and argument/keyword names
+
 2.0.2 (2021-09-27)
 ------------------
 
