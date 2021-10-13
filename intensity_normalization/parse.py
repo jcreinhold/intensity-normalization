@@ -18,10 +18,12 @@ __all__ = [
 import logging
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
+import sys
 from typing import Callable, Optional, Type, TypeVar
 
 import nibabel as nib
 
+from intensity_normalization import __version__
 from intensity_normalization.type import ArgType, NiftiImage, PathLike
 from intensity_normalization.util.io import split_filename
 
@@ -92,11 +94,16 @@ class CLIParser:
     def main(cls: Type[CP], parser: ArgumentParser) -> Callable:
         def _main(args: ArgType = None) -> int:
             if args is None:
+                if len(sys.argv) == 2 and sys.argv[1] == "--version":
+                    print(f"intensity-normalization version {__version__}")
+                    return 0
                 args = parser.parse_args()
             elif isinstance(args, list):
                 args = parser.parse_args(args)
             else:
                 raise ValueError("args must be None or a list of strings to parse")
+            if args.version:
+                print(f"intensity-normalization version {__version__}")
             setup_log(args.verbosity)
             cls_instance = cls.from_argparse_args(args)
             cls_instance.call_from_argparse_args(args)
