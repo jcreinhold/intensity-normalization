@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-intensity-normalization.parse
+intensity-normalization.cli
 
 process command-line arguments for
 normalization or other utility scripts
@@ -11,14 +11,14 @@ Created on: Jun 06, 2021
 """
 
 __all__ = [
-    "CLIParser",
+    "CLI",
     "setup_log",
 ]
 
 import logging
+import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
-import sys
 from typing import Callable, Optional, Type, TypeVar
 
 import nibabel as nib
@@ -43,10 +43,10 @@ def setup_log(verbosity: int) -> None:
     logging.captureWarnings(True)
 
 
-CP = TypeVar("CP", bound="CLIParser")
+C = TypeVar("C", bound="CLI")
 
 
-class CLIParser:
+class CLI:
     def __call__(self, *args, **kwargs):  # type: ignore[no-untyped-def]
         raise NotImplementedError
 
@@ -85,13 +85,13 @@ class CLIParser:
         return parent_parser
 
     @classmethod
-    def parser(cls: Type[CP]) -> ArgumentParser:
+    def parser(cls: Type[C]) -> ArgumentParser:
         parser = cls.get_parent_parser(cls.description())
         parser = cls.add_method_specific_arguments(parser)
         return parser
 
     @classmethod
-    def main(cls: Type[CP], parser: ArgumentParser) -> Callable:
+    def main(cls: Type[C], parser: ArgumentParser) -> Callable:
         def _main(args: ArgType = None) -> int:
             if args is None:
                 if len(sys.argv) == 2 and sys.argv[1] == "--version":
@@ -112,7 +112,7 @@ class CLIParser:
         return _main
 
     @classmethod
-    def from_argparse_args(cls: Type[CP], args: Namespace) -> CP:
+    def from_argparse_args(cls: Type[C], args: Namespace) -> C:
         raise NotImplementedError
 
     def call_from_argparse_args(self, args: Namespace) -> None:
