@@ -53,8 +53,8 @@ class NyulNormalize(NormalizeFitBase):
         output_max_value: float = 100.0,
         min_percentile: float = 1.0,
         max_percentile: float = 99.0,
-        next_percentile_after_min: float = 10.0,
-        prev_percentile_before_max: float = 90.0,
+        percentile_after_min: float = 10.0,
+        percentile_before_max: float = 90.0,
         percentile_step: float = 10.0,
     ):
         super().__init__()
@@ -62,8 +62,8 @@ class NyulNormalize(NormalizeFitBase):
         self.output_max_value = output_max_value
         self.min_percentile = min_percentile
         self.max_percentile = max_percentile
-        self.next_percentile_after_min = next_percentile_after_min
-        self.prev_percentile_before_max = prev_percentile_before_max
+        self.percentile_after_min = percentile_after_min
+        self.percentile_before_max = percentile_before_max
         self.percentile_step = percentile_step
         self._percentiles = None
 
@@ -83,8 +83,8 @@ class NyulNormalize(NormalizeFitBase):
     def percentiles(self) -> Vector:
         if self._percentiles is None:
             percs = np.arange(
-                self.next_percentile_after_min,
-                self.prev_percentile_before_max + self.percentile_step,
+                self.percentile_after_min,
+                self.percentile_before_max + self.percentile_step,
                 self.percentile_step,
             )
             self._percentiles: Vector = np.concatenate(  # type: ignore[no-redef]
@@ -197,18 +197,20 @@ class NyulNormalize(NormalizeFitBase):
             help="max percentile to account for while finding standard histogram",
         )
         parser.add_argument(
-            "--next-percentile-after-min",
+            "--percentile-after-min",
             type=float,
             default=10.0,
-            help="next percentile after min for finding standard histogram "
-            "(percentile-step creates intermediate percentiles)",
+            help="percentile after min for finding standard histogram "
+            "(percentile-step creates intermediate percentiles between "
+            "this and percentile-before-max)",
         )
         parser.add_argument(
-            "--prev-percentile-before-max",
+            "--percentile-before-max",
             type=float,
             default=90.0,
-            help="previous percentile before max for finding standard histogram "
-            "(percentile-step creates intermediate percentiles)",
+            help="percentile before max for finding standard histogram "
+            "(percentile-step creates intermediate percentiles between "
+            "this and percentile-after-min)",
         )
         parser.add_argument(
             "--percentile-step",
@@ -232,8 +234,8 @@ class NyulNormalize(NormalizeFitBase):
             output_max_value=args.output_max_value,
             min_percentile=args.min_percentile,
             max_percentile=args.max_percentile,
-            next_percentile_after_min=args.next_percentile_after_min,
-            prev_percentile_before_max=args.prev_percentile_before_max,
+            percentile_after_min=args.percentile_after_min,
+            percentile_before_max=args.percentile_before_max,
             percentile_step=args.percentile_step,
         )
         return out
