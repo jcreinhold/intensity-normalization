@@ -2,7 +2,7 @@
 
 __author__ = """Jacob Reinhold"""
 __email__ = "jcreinhold@gmail.com"
-__version__ = "2.1.0"
+__version__ = "2.1.1"
 
 PEAK = {
     "last": ["t1", "other", "last"],
