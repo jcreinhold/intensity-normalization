@@ -2,6 +2,12 @@
 History
 =======
 
+2.1.1 (2021-10-20)
+------------------
+
+* Fix warning about negative values when not passing in a mask
+* Remove redundant word from Nyul normalize keyword arguments
+
 2.1.0 (2021-10-13)
 ------------------
 
