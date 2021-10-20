@@ -12,6 +12,7 @@ __all__ = [
 ]
 
 import logging
+import warnings
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from typing import List, Optional, Set, Tuple, Type, TypeVar
 
@@ -157,7 +158,9 @@ class NormalizeBase(CLI):
         return foreground
 
     @staticmethod
-    def skull_stripped_foreground(data: Array) -> Array:
+    def skull_stripped_foreground(
+        data: Array, *, background_threshold: float = 1e-6
+    ) -> Array:
         if data.min() < 0.0:
             msg = (
                 "Data contains negative values; "
@@ -165,8 +168,8 @@ class NormalizeBase(CLI):
                 "the foreground is all positive. "
                 "Provide the brain mask if otherwise."
             )
-            logger.warning(msg)
-        ss_foreground: Array = data > 0.0
+            warnings.warn(msg)
+        ss_foreground: Array = data > background_threshold
         return ss_foreground
 
     def _get_mask(
@@ -174,9 +177,13 @@ class NormalizeBase(CLI):
         data: Array,
         mask: Optional[Array] = None,
         modality: Optional[str] = None,
+        *,
+        background_threshold: float = 1e-6,
     ) -> Array:
         if mask is None:
-            mask = self.skull_stripped_foreground(data)
+            mask = self.skull_stripped_foreground(
+                data, background_threshold=background_threshold
+            )
         out: Array = mask > 0.0
         return out
 
