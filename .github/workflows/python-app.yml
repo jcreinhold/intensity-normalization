@@ -1,4 +1,4 @@
-name: Python Package
+name: Unit Tests
 
 on:
   - push
