@@ -17,7 +17,7 @@ __all__ = [
 ]
 
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import nibabel as nib
 
@@ -48,10 +48,7 @@ def gather_images_and_masks(
     mask_dir: Optional[PathLike] = None,
     ext: str = "nii*",
     return_data: bool = False,
-) -> Union[
-    Tuple[List[NiftiImage], List[Optional[NiftiImage]]],
-    Tuple[List[Array], List[Optional[Array]]],
-]:
+) -> Tuple[Union[List[Any], List[Array]], Union[List[Any], List[Any]],]:
     images = gather_images(image_dir, ext, return_data)
     if mask_dir is not None:
         masks = gather_images(mask_dir, ext, return_data)

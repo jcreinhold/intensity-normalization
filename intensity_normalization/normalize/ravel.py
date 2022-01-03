@@ -152,7 +152,7 @@ class RavelNormalize(NormalizeFitBase):
             unwanted_factors.T @ control_voxels.T,
         )
         fitted = (unwanted_factors @ beta).T
-        residuals = control_voxels - fitted
+        residuals: np.ndarray = control_voxels - fitted
         voxel_means = np.mean(control_voxels, axis=1, keepdims=True)
         normalized: Array = residuals + voxel_means
         return normalized

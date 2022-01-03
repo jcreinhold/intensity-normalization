@@ -65,7 +65,7 @@ class NyulNormalize(NormalizeFitBase):
         self.percentile_after_min = percentile_after_min
         self.percentile_before_max = percentile_before_max
         self.percentile_step = percentile_step
-        self._percentiles = None
+        self._percentiles: Optional[Vector] = None
 
     def normalize_array(
         self,
@@ -87,8 +87,8 @@ class NyulNormalize(NormalizeFitBase):
                 self.percentile_before_max + self.percentile_step,
                 self.percentile_step,
             )
-            self._percentiles: Vector = np.concatenate(  # type: ignore[no-redef]
-                ([self.min_percentile], percs, [self.max_percentile])
+            self._percentiles = np.concatenate(
+                ([self.min_percentile], percs, [self.max_percentile])  # type: ignore[arg-type]
             )
         return self._percentiles
 
