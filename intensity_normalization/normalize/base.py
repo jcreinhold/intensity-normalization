@@ -451,10 +451,10 @@ class NormalizeFitBase(NormalizeSampleBase):
         assert len(images) > 0
         logger.info("Loading data")
         if hasattr(images[0], "get_fdata"):
-            images = [img.get_fdata() for img in images]
+            images = [img.get_fdata() for img in images]  # type: ignore[union-attr]
         if masks is not None:
             if hasattr(masks[0], "get_fdata"):
-                masks = [msk.get_fdata() for msk in masks]
+                masks = [msk.get_fdata() for msk in masks]  # type: ignore[union-attr]
         logger.debug("Loaded data")
         return images, masks
 

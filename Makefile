@@ -88,10 +88,13 @@ install: clean ## install the package to the active Python's site-packages
 develop: clean ## symlink the package to the active Python's site-packages
 	python setup.py develop
 
-check:  ## run various code quality checks
+format:  ## run various code quality checks and formatters
 	black intensity_normalization
 	isort intensity_normalization
 	mypy intensity_normalization
+	bandit -r medio -c pyproject.toml
 	black tests
 	isort tests
 	mypy tests
+	bandit -r tests -c pyproject.toml
+	snyk test --file=requirements_dev.txt --package-manager=pip --fail-on=all

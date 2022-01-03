@@ -56,13 +56,18 @@ class LeastSquaresNormalize(NormalizeFitBase):
         mask: Optional[Array] = None,
         modality: Optional[str] = None,
     ) -> float:
+        tissue_membership: np.ndarray
         if modality is None:
             modality = "t1"
         if modality == "t1":
             tissue_membership = find_tissue_memberships(data, mask)
             self.tissue_memberships.append(tissue_membership)
-        else:
+        elif mask is not None:
             tissue_membership = mask
+        else:
+            msg = "If modality != t1, you must provide the "
+            msg += "tissue_membership in the mask argument."
+            raise ValueError(msg)
         tissue_means = self.tissue_means(data, tissue_membership)
         sf = self.scaling_factor(tissue_means)
         return sf
@@ -81,9 +86,13 @@ class LeastSquaresNormalize(NormalizeFitBase):
             modality = "t1"
         if modality.lower() == "t1":
             tissue_membership = find_tissue_memberships(image, mask)
-        else:
+        elif mask is not None:
             logger.debug("Assuming --mask-dir contains tissue memberships.")
             tissue_membership = mask
+        else:
+            msg = "If modality != t1, you must provide the "
+            msg += "tissue_membership in the mask argument."
+            raise ValueError(msg)
         csf_mean = np.average(image, weights=tissue_membership[..., 0])
         norm_image = (image / csf_mean) * self.norm_value
         self.standard_tissue_means = self.tissue_means(
