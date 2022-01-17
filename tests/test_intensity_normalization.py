@@ -21,20 +21,6 @@ from intensity_normalization.cli.tissue_membership import (
 from intensity_normalization.cli.whitestripe import whitestripe_main as ws_main
 from intensity_normalization.cli.zscore import zscore_main as zs_main
 
-try:
-    import ants
-
-    test_ants = True
-except (ImportError, ModuleNotFoundError):
-    test_ants = False
-else:
-    from intensity_normalization.cli.coregister import coregister_main
-    from intensity_normalization.cli.preprocess import preprocess_main
-    from intensity_normalization.cli.ravel import ravel_main
-
-ANTSPY_DIR = Path.home() / ".antspy"
-ANTSPY_DIR_EXISTS = ANTSPY_DIR.is_dir()
-
 
 @pytest.fixture
 def cwd() -> Path:
@@ -168,35 +154,6 @@ def test_nyul_normalization_save_load_cli(
     assert retval == 0
 
 
-@pytest.mark.skipif(not test_ants, reason="Requires ANTsPy")
-def test_ravel_normalization_cli(base_cli_dir_args: List[str]) -> None:
-    retval = ravel_main(base_cli_dir_args)
-    assert retval == 0
-
-
-@pytest.fixture
-def coregister_cli_args(image: Path) -> List[str]:
-    return f"{image}".split()
-
-
-@pytest.mark.skipif(not test_ants, reason="Requires ANTsPy")
-@pytest.mark.skipif(not ANTSPY_DIR_EXISTS, reason="ANTsPy directory wasn't found.")
-def test_coregister_mni_cli(coregister_cli_args: List[str]) -> None:
-    retval = coregister_main(coregister_cli_args)
-    assert retval == 0
-
-
-@pytest.fixture
-def coregister_template_cli_args(image: Path, mask: Path) -> List[str]:
-    return f"{image} -t {mask}".split()
-
-
-@pytest.mark.skip("Test images are problematic.")
-def test_coregister_template_cli(coregister_template_cli_args: List[str]) -> None:
-    retval = coregister_main(coregister_template_cli_args)
-    assert retval == 0
-
-
 @pytest.fixture
 def histogram_cli_args(base_cli_dir_args: List[str], temp_dir: Path) -> List[str]:
     return base_cli_dir_args + f"-o {temp_dir}/hist.png".split()
@@ -204,17 +161,6 @@ def histogram_cli_args(base_cli_dir_args: List[str], temp_dir: Path) -> List[str
 
 def test_histogram_cli(histogram_cli_args: List[str]) -> None:
     retval = hist_main(histogram_cli_args)
-    assert retval == 0
-
-
-@pytest.fixture
-def preprocess_cli_args(image: Path) -> List[str]:
-    return f"{image} -2n4".split()
-
-
-@pytest.mark.skip("Takes too long.")
-def test_preprocess_cli(preprocess_cli_args: List[str]) -> None:
-    retval = preprocess_main(preprocess_cli_args)
     assert retval == 0
 
 

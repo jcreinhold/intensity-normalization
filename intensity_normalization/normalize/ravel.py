@@ -25,7 +25,6 @@ from scipy.sparse.linalg import svds
 from intensity_normalization.normalize.base import NormalizeFitBase
 from intensity_normalization.normalize.whitestripe import WhiteStripeNormalize
 from intensity_normalization.type import Array, ArrayOrNifti, NiftiImage, PathLike
-from intensity_normalization.util.coregister import register, to_ants
 from intensity_normalization.util.io import gather_images_and_masks
 from intensity_normalization.util.tissue_membership import find_tissue_memberships
 
@@ -33,9 +32,11 @@ logger = logging.getLogger(__name__)
 
 try:
     import ants
-except (ModuleNotFoundError, ImportError):
-    logger.error("ANTsPy not installed. Install antspyx to use RAVEL.")
-    raise
+except ImportError as ants_imp_exn:
+    msg = "ANTsPy not installed. Install antspyx to use RAVEL."
+    raise RuntimeError(msg) from ants_imp_exn
+else:
+    from intensity_normalization.util.coregister import register, to_ants
 
 RN = TypeVar("RN", bound="RavelNormalize")
 
