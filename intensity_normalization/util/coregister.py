@@ -32,9 +32,9 @@ logger = logging.getLogger(__name__)
 
 try:
     import ants
-except (ModuleNotFoundError, ImportError):
-    logger.error("ANTsPy not installed. Install antspyx to use co-registration.")
-    raise
+except ImportError as ants_imp_exn:
+    msg = "ANTsPy not installed. Install antspyx to use co-registration."
+    raise RuntimeError(msg) from ants_imp_exn
 
 
 def to_ants(image: Union[ArrayOrNifti, ants.ANTsImage]) -> ants.ANTsImage:

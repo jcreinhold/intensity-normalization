@@ -37,9 +37,9 @@ logger = logging.getLogger(__name__)
 
 try:
     import ants
-except (ModuleNotFoundError, ImportError):
-    logger.error("ANTsPy not installed. Install antspyx to use preprocessor.")
-    raise
+except ImportError as ants_imp_exn:
+    msg = "ANTsPy not installed. Install antspyx to use preprocessor."
+    raise RuntimeError(msg) from ants_imp_exn
 
 
 def preprocess(
