@@ -23,8 +23,10 @@ from intensity_normalization.cli.zscore import zscore_main as zs_main
 
 try:
     import ants
+
+    test_ants = True
 except (ImportError, ModuleNotFoundError):
-    ants = None
+    test_ants = False
 else:
     from intensity_normalization.cli.coregister import coregister_main
     from intensity_normalization.cli.preprocess import preprocess_main
@@ -166,7 +168,7 @@ def test_nyul_normalization_save_load_cli(
     assert retval == 0
 
 
-@pytest.mark.skipif(ants is None, reason="Requires ANTsPy")
+@pytest.mark.skipif(not test_ants, reason="Requires ANTsPy")
 def test_ravel_normalization_cli(base_cli_dir_args: List[str]) -> None:
     retval = ravel_main(base_cli_dir_args)
     assert retval == 0
@@ -177,7 +179,7 @@ def coregister_cli_args(image: Path) -> List[str]:
     return f"{image}".split()
 
 
-@pytest.mark.skipif(ants is None, reason="Requires ANTsPy")
+@pytest.mark.skipif(not test_ants, reason="Requires ANTsPy")
 @pytest.mark.skipif(not ANTSPY_DIR_EXISTS, reason="ANTsPy directory wasn't found.")
 def test_coregister_mni_cli(coregister_cli_args: List[str]) -> None:
     retval = coregister_main(coregister_cli_args)

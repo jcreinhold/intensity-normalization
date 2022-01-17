@@ -1,4 +1,26 @@
-.PHONY: clean clean-test clean-pyc clean-build docs help
+.PHONY: \
+	black \
+	clean \
+	clean-build \
+	clean-pyc \
+	clean-test \
+	clean-test-all \
+	coverage \
+	develop \
+	dist \
+	docs \
+	format \
+	help \
+	install \
+	isort \
+	lint \
+	mypy \
+	release \
+	security \
+	servedocs \
+	test \
+	test-all
+
 .DEFAULT_GOAL := help
 
 define BROWSER_PYSCRIPT
@@ -23,47 +45,49 @@ export PRINT_HELP_PYSCRIPT
 
 BROWSER := python -c "$$BROWSER_PYSCRIPT"
 
-help:
-	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
+black:  ## run black on python code
+	black intensity_normalization
+	black tests
 
-clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
+clean: clean-build clean-pyc clean-test  ## remove all build, test, coverage and Python artifacts
 
-clean-build: ## remove build artifacts
+clean-build:  ## remove build artifacts
 	rm -fr build/
 	rm -fr dist/
 	rm -fr .eggs/
 	find . -name '*.egg-info' -exec rm -fr {} +
 	find . -name '*.egg' -exec rm -f {} +
 
-clean-pyc: ## remove Python file artifacts
+clean-pyc:  ## remove Python file artifacts
 	find . -name '*.pyc' -exec rm -f {} +
 	find . -name '*.pyo' -exec rm -f {} +
 	find . -name '*~' -exec rm -f {} +
 	find . -name '__pycache__' -exec rm -fr {} +
 
-clean-test: ## remove test and coverage artifacts
-	rm -fr .tox/
+clean-test:  ## remove test and coverage artifacts
 	rm -f .coverage
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
+
+clean-test-all: clean-test  ## remove all test artifacts
+	rm -fr .tox/
 	rm -fr .mypy_cache
 
-lint: ## check style with flake8
-	flake8 intensity_normalization tests
-
-test: ## run tests quickly with the default Python
-	pytest
-
-test-all: ## run tests on every Python version with tox
-	tox
-
-coverage: ## check code coverage quickly with the default Python
+coverage:  ## check code coverage quickly with the default Python
 	coverage run --source intensity_normalization -m pytest
 	coverage report -m
 	coverage html
 	$(BROWSER) htmlcov/index.html
 
-docs: ## generate Sphinx HTML documentation, including API docs
+develop: clean  ## symlink the package to the active Python's site-packages
+	python setup.py develop
+
+dist: clean  ## builds source and wheel package
+	python setup.py sdist
+	python setup.py bdist_wheel
+	ls -l dist
+
+docs:  ## generate Sphinx HTML documentation, including API docs
 	rm -f docs/intensity_normalization.rst
 	rm -f docs/intensity_normalization.*.rst
 	sphinx-apidoc -o docs/ intensity_normalization
@@ -71,30 +95,38 @@ docs: ## generate Sphinx HTML documentation, including API docs
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
 
-servedocs: docs ## compile the docs watching for changes
-	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
+format: black isort mypy security  ## format and run various checks on the code
 
-release: dist ## package and upload a release
-	twine upload dist/*
+help:
+	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
-dist: clean ## builds source and wheel package
-	python setup.py sdist
-	python setup.py bdist_wheel
-	ls -l dist
-
-install: clean ## install the package to the active Python's site-packages
+install: clean  ## install the package to the active Python's site-packages
 	python setup.py install
 
-develop: clean ## symlink the package to the active Python's site-packages
-	python setup.py develop
-
-format:  ## run various code quality checks and formatters
-	black intensity_normalization
+isort:  ## run isort on python code
 	isort intensity_normalization
-	mypy intensity_normalization
-	bandit -r medio -c pyproject.toml
-	black tests
 	isort tests
+
+lint:  ## check style with flake8
+	flake8 intensity_normalization tests
+
+mypy:  ## typecheck code with mypy
+	mypy intensity_normalization
 	mypy tests
+
+release: dist  ## package and upload a release
+	twine upload dist/*
+
+security:  ## run various code quality checks and formatters
+	bandit -r medio -c pyproject.toml
 	bandit -r tests -c pyproject.toml
 	snyk test --file=requirements_dev.txt --package-manager=pip --fail-on=all
+
+servedocs: docs  ## compile the docs watching for changes
+	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
+
+test:  ## run tests quickly with the default Python
+	pytest
+
+test-all:  ## run tests on every Python version with tox
+	tox
