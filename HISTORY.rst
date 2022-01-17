@@ -2,6 +2,12 @@
 History
 =======
 
+2.1.3 (2022-01-17)
+------------------
+
+* Cleanup Makefile and dependencies
+* Add py.typed file
+
 2.1.2 (2022-01-03)
 ------------------
 
