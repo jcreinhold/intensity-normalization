@@ -48,7 +48,7 @@ def gather_images_and_masks(
     mask_dir: Optional[PathLike] = None,
     ext: str = "nii*",
     return_data: bool = False,
-) -> Tuple[Union[List[Any], List[Array]], Union[List[Any], List[Any]],]:
+) -> Tuple[Union[List[Any], List[Array]], Union[List[Any], List[Any]]]:
     images = gather_images(image_dir, ext, return_data)
     if mask_dir is not None:
         masks = gather_images(mask_dir, ext, return_data)

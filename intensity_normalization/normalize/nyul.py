@@ -87,9 +87,8 @@ class NyulNormalize(NormalizeFitBase):
                 self.percentile_before_max + self.percentile_step,
                 self.percentile_step,
             )
-            self._percentiles = np.concatenate(
-                ([self.min_percentile], percs, [self.max_percentile])  # type: ignore[arg-type]
-            )
+            _percs = ([self.min_percentile], percs, [self.max_percentile])
+            self._percentiles = np.concatenate(_percs)  # type: ignore[arg-type]
         return self._percentiles
 
     def get_landmarks(self, image: Array) -> Vector:

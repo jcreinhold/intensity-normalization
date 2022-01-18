@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """Tests for ants-required `intensity_normalization` package."""
 
-import os
 from pathlib import Path
 from typing import List
 
@@ -11,13 +10,11 @@ import numpy as np
 import pytest
 
 try:
-    import ants
-except ImportError:
-    pytest.skip("ANTsPy required for these tests. Skipping.", allow_module_level=True)
-else:
     from intensity_normalization.cli.coregister import coregister_main
     from intensity_normalization.cli.preprocess import preprocess_main
     from intensity_normalization.cli.ravel import ravel_main
+except RuntimeError:
+    pytest.skip("ANTsPy required for these tests. Skipping.", allow_module_level=True)
 
 ANTSPY_DIR = Path.home() / ".antspy"
 ANTSPY_DIR_EXISTS = ANTSPY_DIR.is_dir()
