@@ -2,6 +2,11 @@
 History
 =======
 
+2.1.4 (2022-01-17)
+------------------
+
+* Fix testing bugs in 2.1.3 and cleanup some interfaces
+
 2.1.3 (2022-01-17)
 ------------------
 
