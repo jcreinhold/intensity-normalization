@@ -1,11 +1,6 @@
-# -*- coding: utf-8 -*-
-"""
-intensity_normalization.util.histogram_tools
-
-Process the histograms of MR (brain) images
-
-Author: Jacob Reinhold (jcreinhold@gmail.com)
-Created on: Jun 01, 2021
+"""Process the histograms of MR (brain) images
+Author: Jacob Reinhold <jcreinhold@gmail.com>
+Created on: 01 Jun 2021
 """
 
 __all__ = [
@@ -24,7 +19,7 @@ from scipy.signal import argrelmax
 
 from intensity_normalization import PEAK, VALID_PEAKS
 from intensity_normalization.errors import NormalizationError
-from intensity_normalization.type import Array
+from intensity_normalization.typing import Array
 
 
 def smooth_histogram(data: Array) -> Tuple[Array, Array]:

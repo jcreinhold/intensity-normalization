@@ -1,13 +1,9 @@
-# -*- coding: utf-8 -*-
+"""Input/output utilities for the project
+Author: Jacob Reinhold <jcreinhold@gmail.com>
+Created on: 01 Jun 2021
 """
-intensity_normalization.util.io
 
-assortment of input/output utilities for the project
-
-Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
-
-Created on: Jun 1, 2021
-"""
+from __future__ import annotations
 
 __all__ = [
     "gather_images",
@@ -16,12 +12,12 @@ __all__ = [
     "split_filename",
 ]
 
-from pathlib import Path
-from typing import Any, List, Optional, Tuple, Union
+import pathlib
+import typing
 
 import nibabel as nib
 
-from intensity_normalization.type import Array, NiftiImage, PathLike
+from intensity_normalization.typing import Array, NiftiImage, PathLike
 
 
 def gather_images(

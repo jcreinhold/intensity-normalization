@@ -1,22 +1,24 @@
-# -*- coding: utf-8 -*-
-"""
-intensity_normalization.plot.histogram
-
-Author: Jacob Reinhold (jcreinhold@gmail.com)
-Created on: Jun 02, 2021
+"""Plot histogram of the intensities of a set of images
+Author: Jacob Reinhold <jcreinhold@gmail.com>
+Created on: 02 Jun 2021
 """
 
+from __future__ import annotations
+
+__all__ = ["HistogramPlotter", "plot_histogram"]
+
+import argparse
+import builtins
 import logging
+import pathlib
+import typing
 import warnings
-from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
-from pathlib import Path
-from typing import List, Optional, Tuple, Type, TypeVar
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 from intensity_normalization.base_cli import CLI
-from intensity_normalization.type import (
+from intensity_normalization.typing import (
     Array,
     ArrayOrNifti,
     PathLike,
@@ -34,8 +36,6 @@ try:
     sns.set(style="whitegrid", font_scale=2, rc={"grid.color": ".9"})
 except ImportError:
     logger.debug("Seaborn not installed. Plots won't look as pretty.")
-
-HP = TypeVar("HP", bound="HistogramPlotter")
 
 
 class HistogramPlotter(CLI):

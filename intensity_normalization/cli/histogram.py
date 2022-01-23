@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-intensity_normalization.cli.histogram
-
-Author: Jacob Reinhold (jcreinhold@gmail.com)
+"""CLI for plotting histograms of a set of images
+Author: Jacob Reinhold <jcreinhold@gmail.com>
 Created on: 13 Oct 2021
 """
 

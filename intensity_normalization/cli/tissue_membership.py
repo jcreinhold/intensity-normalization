@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-intensity_normalization.cli.tissue_membership
-
-Author: Jacob Reinhold (jcreinhold@gmail.com)
+"""CLI for calculating tissue membership image
+Author: Jacob Reinhold <jcreinhold@gmail.com>
 Created on: 13 Oct 2021
 """
 

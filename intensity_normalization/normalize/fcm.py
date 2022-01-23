@@ -1,14 +1,11 @@
-# -*- coding: utf-8 -*-
-"""
-intensity_normalization.normalize.fcm
-
-Author: Jacob Reinhold (jcreinhold@gmail.com)
-Created on: Jun 01, 2021
+"""Fuzzy C-Means-based tissue mean normalization
+Author: Jacob Reinhold <jcreinhold@gmail.com>
+Created on: 01 Jun 2021
 """
 
-__all__ = [
-    "FCMNormalize",
-]
+from __future__ import annotations
+
+__all__ = ["FCMNormalize"]
 
 import logging
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
@@ -20,7 +17,7 @@ import numpy as np
 
 from intensity_normalization import VALID_MODALITIES
 from intensity_normalization.normalize.base import NormalizeBase
-from intensity_normalization.type import (
+from intensity_normalization.typing import (
     Array,
     file_path,
     positive_float,
@@ -28,8 +25,6 @@ from intensity_normalization.type import (
 )
 from intensity_normalization.util.io import split_filename
 from intensity_normalization.util.tissue_membership import find_tissue_memberships
-
-FCM = TypeVar("FCM", bound="FCMNormalize")
 
 logger = logging.getLogger(__name__)
 

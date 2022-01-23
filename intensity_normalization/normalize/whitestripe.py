@@ -1,27 +1,22 @@
-# -*- coding: utf-8 -*-
-"""
-intensity_normalization.normalize.whitestripe
-
-Author: Jacob Reinhold (jcreinhold@gmail.com)
-Created on: Jun 01, 2021
+"""WhiteStripe (normal-appearing white matter mean/std) normalization
+Author: Jacob Reinhold <jcreinhold@gmail.com>
+Created on: 01 Jun 2021
 """
 
-__all__ = [
-    "WhiteStripeNormalize",
-]
+from __future__ import annotations
 
-from argparse import ArgumentParser, Namespace
-from typing import Optional, Set, Type, TypeVar
+__all__ = ["WhiteStripeNormalize"]
+
+import argparse
+import typing
 
 import nibabel as nib
 import numpy as np
 
 from intensity_normalization import VALID_PEAKS
 from intensity_normalization.normalize.base import NormalizeBase
-from intensity_normalization.type import Array, NiftiImage
+from intensity_normalization.typing import Array, NiftiImage
 from intensity_normalization.util.histogram_tools import get_tissue_mode
-
-WS = TypeVar("WS", bound="WhiteStripeNormalize")
 
 
 class WhiteStripeNormalize(NormalizeBase):

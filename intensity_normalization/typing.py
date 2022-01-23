@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
+"""Project-specific types
+Author: Jacob Reinhold <jcreinhold@gmail.com>
+Created on: 01 Jun 2021
 """
-intensity_normalization.type
 
-Author: Jacob Reinhold (jcreinhold@gmail.com)
-Created on: Jun 01, 2021
-"""
+from __future__ import annotations
 
 __all__ = [
     "allowed_interpolators",
@@ -12,13 +11,14 @@ __all__ = [
     "allowed_orientations",
     "allowed_transforms",
     "ArgType",
-    "Array",
-    "ArrayOrNifti",
     "dir_path",
     "file_path",
+    "Image",
+    "interp_type_dict",
     "new_parse_type",
     "nonnegative_float",
     "nonnegative_int",
+    "PathLike",
     "positive_float",
     "positive_int",
     "positive_int_or_none",
@@ -27,25 +27,22 @@ __all__ = [
     "probability_float_or_none",
     "save_file_path",
     "save_nifti_path",
-    "interp_type_dict",
-    "NiftiImage",
-    "PathLike",
     "Vector",
 ]
 
-from argparse import ArgumentTypeError, Namespace
-from pathlib import Path
-from typing import Any, Callable, List, Optional, Union
+import argparse
+import builtins
+import os
+import pathlib
+import typing
 
 import nibabel as nib
 import numpy as np
+import numpy.typing as npt
 
-ArgType = Optional[Union[Namespace, List[str]]]
-Array = np.ndarray
-NiftiImage = nib.Nifti1Image
-ArrayOrNifti = Union[np.ndarray, nib.Nifti1Image]
-PathLike = Union[str, Path]
-Vector = np.ndarray
+ArgType = typing.Optional[typing.Union[argparse.Namespace, typing.List[builtins.str]]]
+PathLike = typing.Union[builtins.str, os.PathLike]
+Vector = npt.NDArray
 
 interp_type_dict = dict(
     linear=0,
@@ -213,8 +210,10 @@ allowed_metrics = frozenset(
 )
 
 
-def return_none(func: Callable) -> Callable:
-    def new_func(self, string: Any) -> Any:  # type: ignore[no-untyped-def]
+def return_none(
+    func: typing.Callable[[builtins.object, typing.Any], typing.Any]
+) -> typing.Callable[[builtins.object, typing.Any], typing.Any]:
+    def new_func(self: builtins.object, string: typing.Any) -> typing.Any:
         if string is None:
             return None
         elif isinstance(string, str):
@@ -227,26 +226,26 @@ def return_none(func: Callable) -> Callable:
 
 class _ParseType:
     @property
-    def __name__(self) -> str:
+    def __name__(self) -> builtins.str:
         name = self.__class__.__name__
         assert isinstance(name, str)
         return name
 
-    def __str__(self) -> str:
+    def __str__(self) -> builtins.str:
         return self.__name__
 
 
 class save_file_path(_ParseType):
-    def __call__(self, string: str) -> Path:
+    def __call__(self, string: builtins.str) -> pathlib.Path:
         if not string.isprintable():
             msg = "String must only contain printable characters."
-            raise ArgumentTypeError(msg)
-        path = Path(string)
+            raise argparse.ArgumentTypeError(msg)
+        path = pathlib.Path(string)
         return path
 
 
 class save_nifti_path(_ParseType):
-    def __call__(self, string: str) -> Path:
+    def __call__(self, string: builtins.str) -> pathlib.Path:
         not_nifti = not string.endswith(".nii.gz") and not string.endswith(".nii")
         if not_nifti or not string.isprintable():
             msg = (
@@ -254,107 +253,152 @@ class save_nifti_path(_ParseType):
                 "Needs to end with .nii or .nii.gz and can "
                 "only contain printable characters."
             )
-            raise ArgumentTypeError(msg)
-        path = Path(string)
+            raise argparse.ArgumentTypeError(msg)
+        path = pathlib.Path(string)
         return path
 
 
 class dir_path(_ParseType):
-    def __call__(self, string: str) -> str:
-        path = Path(string)
+    def __call__(self, string: builtins.str) -> builtins.str:
+        path = pathlib.Path(string)
         if not path.is_dir():
             msg = f"{string} is not a valid directory path."
-            raise ArgumentTypeError(msg)
+            raise argparse.ArgumentTypeError(msg)
         return str(path.resolve())
 
 
 class file_path(_ParseType):
-    def __call__(self, string: str) -> str:
-        path = Path(string)
+    def __call__(self, string: builtins.str) -> builtins.str:
+        path = pathlib.Path(string)
         if not path.is_file():
             msg = f"{string} is not a valid file path."
-            raise ArgumentTypeError(msg)
+            raise argparse.ArgumentTypeError(msg)
         return str(path)
 
 
 class positive_float(_ParseType):
-    def __call__(self, string: str) -> float:
+    def __call__(self, string: builtins.str) -> builtins.float:
         num = float(string)
         if num <= 0.0:
             msg = f"{string} needs to be a positive float."
-            raise ArgumentTypeError(msg)
+            raise argparse.ArgumentTypeError(msg)
         return num
 
 
 class positive_int(_ParseType):
-    def __call__(self, string: str) -> int:
+    def __call__(self, string: builtins.str) -> builtins.int:
         num = int(string)
         if num <= 0:
             msg = f"{string} needs to be a positive integer."
-            raise ArgumentTypeError(msg)
+            raise argparse.ArgumentTypeError(msg)
         return num
 
 
 class positive_odd_int_or_none(_ParseType):
     @return_none
-    def __call__(self, string: str) -> Union[int, None]:
+    def __call__(self, string: builtins.str) -> builtins.int | None:
         num = int(string)
         if num <= 0 or not (num % 2):
             msg = f"{string} needs to be a positive odd integer."
-            raise ArgumentTypeError(msg)
+            raise argparse.ArgumentTypeError(msg)
         return num
 
 
 class positive_int_or_none(_ParseType):
     @return_none
-    def __call__(self, string: str) -> Union[int, None]:
+    def __call__(self, string: builtins.str) -> builtins.int | None:
         return positive_int()(string)
 
 
 class nonnegative_int(_ParseType):
-    def __call__(self, string: str) -> int:
+    def __call__(self, string: builtins.str) -> builtins.int:
         num = int(string)
         if num < 0:
             msg = f"{string} needs to be a nonnegative integer."
-            raise ArgumentTypeError(msg)
+            raise argparse.ArgumentTypeError(msg)
         return num
 
 
 class nonnegative_float(_ParseType):
-    def __call__(self, string: str) -> float:
+    def __call__(self, string: builtins.str) -> builtins.float:
         num = float(string)
         if num < 0.0:
             msg = f"{string} needs to be a nonnegative float."
-            raise ArgumentTypeError(msg)
+            raise argparse.ArgumentTypeError(msg)
         return num
 
 
 class probability_float(_ParseType):
-    def __call__(self, string: str) -> float:
+    def __call__(self, string: builtins.str) -> builtins.float:
         num = float(string)
         if num < 0.0 or num > 1.0:
             msg = f"{string} needs to be between 0 and 1."
-            raise ArgumentTypeError(msg)
+            raise argparse.ArgumentTypeError(msg)
         return num
 
 
 class probability_float_or_none(_ParseType):
     @return_none
-    def __call__(self, string: str) -> Union[float, None]:
+    def __call__(self, string: builtins.str) -> builtins.float | None:
         return probability_float()(string)
 
 
 class NewParseType:
-    def __init__(self, func: Callable, name: str):
+    def __init__(
+        self, func: typing.Callable[[typing.Any], typing.Any], name: builtins.str
+    ):
         self.name = name
         self.func = func
 
     def __str__(self) -> str:
         return self.name
 
-    def __call__(self, val: Any) -> Any:
+    def __call__(self, val: typing.Any) -> typing.Any:
         return self.func(val)
 
 
-def new_parse_type(func: Callable, name: str) -> NewParseType:
+def new_parse_type(
+    func: typing.Callable[[typing.Any], typing.Any], name: builtins.str
+) -> NewParseType:
     return NewParseType(func, name)
+
+
+class Image(typing.Protocol, npt.NDArray):
+    """support anything that implements the methods here"""
+
+    def __gt__(self, other: typing.Any) -> typing.Any:
+        ...
+
+    def __and__(self, other: Image) -> Image:
+        ...
+
+    def __or__(self, other: Image) -> Image:
+        ...
+
+    def __getitem__(
+        self, item: typing.Tuple[builtins.slice, ...] | builtins.int
+    ) -> typing.Any:
+        ...
+
+    def sum(self) -> builtins.float:
+        ...
+
+    @property
+    def ndim(self) -> builtins.int:
+        ...
+
+    def any(
+        self,
+        axis: builtins.int | typing.Tuple[builtins.int, ...] | None = None,
+    ) -> typing.Any:
+        ...
+
+    def nonzero(self) -> typing.Any:
+        ...
+
+    def squeeze(self) -> typing.Any:
+        ...
+
+    @property
+    def shape(self) -> typing.Tuple[builtins.int, ...]:
+        ...

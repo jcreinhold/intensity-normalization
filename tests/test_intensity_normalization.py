@@ -1,10 +1,9 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """Tests for `intensity_normalization` package."""
 
+import builtins
 import os
-from pathlib import Path
-from typing import List
+import pathlib
+import typing
 
 import nibabel as nib
 import numpy as np
@@ -21,95 +20,40 @@ from intensity_normalization.cli.tissue_membership import (
 from intensity_normalization.cli.whitestripe import whitestripe_main as ws_main
 from intensity_normalization.cli.zscore import zscore_main as zs_main
 
-
-@pytest.fixture
-def cwd() -> Path:
-    return Path.cwd().resolve()
+from common import base_cli_dir_args, base_cli_image_args, image, mask  # isort: skip
 
 
-@pytest.fixture
-def temp_dir(tmpdir_factory) -> Path:  # type: ignore[no-untyped-def]
-    return Path(tmpdir_factory.mktemp("out"))
-
-
-@pytest.fixture
-def image_dir(temp_dir: Path) -> Path:
-    image_dir = temp_dir / "image"
-    image_dir.mkdir()
-    return image_dir
-
-
-@pytest.fixture()
-def image(image_dir: Path) -> Path:
-    image_data = np.random.randn(5, 5, 5)
-    image_path = image_dir / "test_image.nii"
-    image = nib.Nifti1Image(image_data, np.eye(4))
-    image.to_filename(image_path)
-    return image_path
-
-
-@pytest.fixture
-def mask_dir(temp_dir: Path) -> Path:
-    mask_dir = temp_dir / "mask"
-    mask_dir.mkdir()
-    return mask_dir
-
-
-@pytest.fixture
-def out_dir(temp_dir: Path) -> Path:
-    mask_dir = temp_dir / "normalized"
-    mask_dir.mkdir()
-    return mask_dir
-
-
-@pytest.fixture()
-def mask(mask_dir: Path) -> Path:
-    mask_data = np.random.randint(0, 2, (5, 5, 5)).astype(float)
-    mask_path = mask_dir / "test_mask.nii"
-    mask = nib.Nifti1Image(mask_data, np.eye(4))
-    mask.to_filename(mask_path)
-    return mask_path
-
-
-@pytest.fixture
-def base_cli_image_args(image: Path, mask: Path) -> List[str]:
-    return f"{image} -m {mask}".split()
-
-
-@pytest.fixture
-def base_cli_dir_args(image: Path, mask: Path) -> List[str]:
-    # use image, mask instead of image_dir, mask_dir so they are created
-    return f"{image.parent} -m {mask.parent}".split()
-
-
-def test_fcm_normalization_cli(base_cli_image_args: List[str]) -> None:
-    args = base_cli_image_args
-    retval = fcm_main(args)
+def test_fcm_normalization_cli(base_cli_image_args: typing.List[builtins.str]) -> None:
+    retval = fcm_main(base_cli_image_args)
     assert retval == 0
 
 
-def test_fcm_normalization_nont1w_cli(image: Path, mask: Path) -> None:
+def test_fcm_normalization_nont1w_cli(image: pathlib.Path, mask: pathlib.Path) -> None:
     args = f"{image} -tm {mask} -mo t2".split()
     retval = fcm_main(args)
     assert retval == 0
 
 
-def test_kde_normalization_cli(base_cli_image_args: List[str]) -> None:
+def test_kde_normalization_cli(base_cli_image_args: typing.List[builtins.str]) -> None:
     retval = kde_main(base_cli_image_args)
     assert retval == 0
 
 
-def test_ws_normalization_cli(base_cli_image_args: List[str]) -> None:
+def test_ws_normalization_cli(base_cli_image_args: typing.List[builtins.str]) -> None:
     retval = ws_main(base_cli_image_args)
     assert retval == 0
 
 
-def test_zscore_normalization_cli(base_cli_image_args: List[str]) -> None:
+def test_zscore_normalization_cli(
+    base_cli_image_args: typing.List[builtins.str],
+) -> None:
     retval = zs_main(base_cli_image_args)
     assert retval == 0
 
 
-def test_lsq_normalization_cli(image: Path, mask: Path, out_dir: Path) -> None:
+def test_lsq_normalization_cli(
+    image: pathlib.Path, mask: pathlib.Path, out_dir: pathlib.Path
+) -> None:
     args = f"{image.parent} -m {mask.parent} -o {out_dir}".split()
     retval = lsq_main(args)
     assert retval == 0
@@ -120,10 +64,10 @@ def test_lsq_normalization_cli(image: Path, mask: Path, out_dir: Path) -> None:
 
 
 def test_lsq_normalization_save_load_cli(
-    image: Path,
-    mask: Path,
-    out_dir: Path,
-    temp_dir: Path,
+    image: pathlib.Path,
+    mask: pathlib.Path,
+    out_dir: pathlib.Path,
+    temp_dir: pathlib.Path,
 ) -> None:
     base_args = f"{image.parent} -m {mask.parent} -o {out_dir}".split()
     args = base_args + ["-sstm", f"{temp_dir}/test.npy"]
@@ -134,16 +78,16 @@ def test_lsq_normalization_save_load_cli(
     assert retval == 0
 
 
-def test_nyul_normalization_cli(base_cli_dir_args: List[str]) -> None:
+def test_nyul_normalization_cli(base_cli_dir_args: typing.List[builtins.str]) -> None:
     retval = nyul_main(base_cli_dir_args)
     assert retval == 0
 
 
 def test_nyul_normalization_save_load_cli(
-    image: Path,
-    mask: Path,
-    out_dir: Path,
-    temp_dir: Path,
+    image: pathlib.Path,
+    mask: pathlib.Path,
+    out_dir: pathlib.Path,
+    temp_dir: pathlib.Path,
 ) -> None:
     base_args = f"{image.parent} -m {mask.parent} -o {out_dir}".split()
     args = base_args + ["-ssh", f"{temp_dir}/test.npy"]
@@ -155,26 +99,32 @@ def test_nyul_normalization_save_load_cli(
 
 
 @pytest.fixture
-def histogram_cli_args(base_cli_dir_args: List[str], temp_dir: Path) -> List[str]:
+def histogram_cli_args(
+    base_cli_dir_args: typing.List[builtins.str], temp_dir: pathlib.Path
+) -> typing.List[builtins.str]:
     return base_cli_dir_args + f"-o {temp_dir}/hist.png".split()
 
 
-def test_histogram_cli(histogram_cli_args: List[str]) -> None:
+def test_histogram_cli(histogram_cli_args: typing.List[builtins.str]) -> None:
     retval = hist_main(histogram_cli_args)
     assert retval == 0
 
 
 @pytest.fixture
-def tissue_membership_cli_args(image: Path) -> List[str]:
+def tissue_membership_cli_args(image: pathlib.Path) -> typing.List[builtins.str]:
     return f"{image}".split()
 
 
-def test_tissue_membership_cli(tissue_membership_cli_args: List[str]) -> None:
+def test_tissue_membership_cli(
+    tissue_membership_cli_args: typing.List[builtins.str],
+) -> None:
     retval = tm_main(tissue_membership_cli_args)
     assert retval == 0
 
 
-def test_tissue_membership_hard_seg_cli(tissue_membership_cli_args: List[str]) -> None:
+def test_tissue_membership_hard_seg_cli(
+    tissue_membership_cli_args: typing.List[builtins.str],
+) -> None:
     tissue_membership_cli_args.append("-hs")
     retval = tm_main(tissue_membership_cli_args)
     assert retval == 0

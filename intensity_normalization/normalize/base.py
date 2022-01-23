@@ -1,104 +1,87 @@
-# -*- coding: utf-8 -*-
-"""
-intensity_normalization.normalize.base
-
-Author: Jacob Reinhold (jcreinhold@gmail.com)
+"""Base class for normalization methods
+Author: Jacob Reinhold <jcreinhold@gmail.com>
 Created on: Jun 01, 2021
 """
+
+from __future__ import annotations
 
 __all__ = [
     "NormalizeBase",
     "NormalizeFitBase",
 ]
 
+import argparse
+import builtins
 import logging
+import pathlib
+import typing
 import warnings
-from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
-from typing import List, Optional, Set, Tuple, Type, TypeVar
 
 import nibabel as nib
 
-from intensity_normalization import VALID_MODALITIES
-from intensity_normalization.base_cli import CLI
-from intensity_normalization.plot.histogram import HistogramPlotter, plot_histogram
-from intensity_normalization.type import (
-    Array,
-    ArrayOrNifti,
-    NiftiImage,
-    PathLike,
-    dir_path,
-    file_path,
-    positive_float,
-    save_nifti_path,
-)
-from intensity_normalization.util.io import gather_images_and_masks, glob_ext
-
-NB = TypeVar("NB", bound="NormalizeBase")
+import intensity_normalization as intnorm
+import intensity_normalization.base_cli as intnormcli
+import intensity_normalization.plot.histogram as intnormhist
+import intensity_normalization.typing as intnormt
+import intensity_normalization.util.io as intnormio
 
 logger = logging.getLogger(__name__)
 
 
-class NormalizeBase(CLI):
-    def __init__(self, norm_value: float = 1.0):
+class NormalizeBase(intnormcli.CLI):
+    def __init__(self, norm_value: builtins.float = 1.0):
         self.norm_value = norm_value
 
-    def __call__(  # type: ignore[override]
+    def __call__(
         self,
-        data: ArrayOrNifti,
-        mask: Optional[ArrayOrNifti] = None,
-        modality: Optional[str] = None,
-    ) -> ArrayOrNifti:
-        if isinstance(data, NiftiImage):
-            return self.normalize_nifti(data, mask, modality)
-        else:
-            return self.normalize_array(data, mask, modality)
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnorm.Modalities = intnorm.Modalities.T1,
+    ) -> intnormt.Image:
+        return self.normalize_image(image, mask, modality=modality)
 
-    def normalize_array(
+    def normalize_image(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
-    ) -> Array:
-        self.setup(data, mask, modality)
-        loc = self.calculate_location(data, mask, modality)
-        scale = self.calculate_scale(data, mask, modality)
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnorm.Modalities = intnorm.Modalities.T1,
+    ) -> intnormt.Image:
+        self.setup(image, mask, modality=modality)
+        loc = self.calculate_location(image, mask, modality=modality)
+        scale = self.calculate_scale(image, mask, modality=modality)
         self.teardown()
-        normalized: Array = ((data - loc) / scale) * self.norm_value
+        normalized: intnormt.Image = ((image - loc) / scale) * self.norm_value
         return normalized
 
-    def normalize_nifti(
+    def normalize_from_filename(
         self,
-        image: NiftiImage,
-        mask_image: Optional[NiftiImage] = None,
-        modality: Optional[str] = None,
-    ) -> NiftiImage:
-        data = image.get_fdata()
-        mask = mask_image and mask_image.get_fdata()
-        normalized = self.normalize_array(data, mask, modality)
-        return nib.Nifti1Image(normalized, image.affine, image.header)
-
-    def normalize_from_filenames(
-        self,
-        image_path: PathLike,
-        mask_path: Optional[PathLike] = None,
-        out_path: Optional[PathLike] = None,
-        modality: Optional[str] = None,
-    ) -> NiftiImage:
+        image_path: intnormt.PathLike,
+        /,
+        mask_path: intnormt.PathLike | None = None,
+        out_path: intnormt.PathLike | None = None,
+        *,
+        modality: intnorm.Modalities = intnorm.Modalities.T1,
+    ) -> intnormt.Image:
         image = nib.load(image_path)
         mask = nib.load(mask_path) if mask_path is not None else None
         if out_path is None:
             out_path = self.append_name_to_file(image_path)
         logger.info(f"Normalizing image: {image_path}")
-        normalized = self.normalize_nifti(image, mask, modality)
+        normalized = self.normalize_image(image, mask, modality=modality)
         logger.info(f"Saving normalized image: {out_path}")
         normalized.to_filename(out_path)
         return normalized, mask
 
-    def plot_histogram(
+    def plot_histogram_from_args(
         self,
-        args: Namespace,
-        normalized: NiftiImage,
-        mask: Optional[NiftiImage] = None,
+        args: argparse.Namespace,
+        /,
+        normalized: intnormt.Image,
+        mask: intnormt.Image | None = None,
     ) -> None:
         from pathlib import Path
 
@@ -110,42 +93,48 @@ class NormalizeBase(CLI):
             output = Path(args.output).parent / "hist.pdf"
         normalized_data = normalized.get_fdata()
         mask_data = mask and mask.get_fdata()
-        ax = plot_histogram(normalized_data, mask_data)
+        ax = intnormhist.plot_histogram(normalized_data, mask_data)
         ax.set_title(self.fullname())
         plt.savefig(output)
 
-    def call_from_argparse_args(self, args: Namespace) -> None:
-        normalized, mask = self.normalize_from_filenames(
+    def call_from_argparse_args(self, args: argparse.Namespace) -> None:
+        normalized, mask = self.normalize_from_filename(
             args.image,
             args.mask,
             args.output,
-            args.modality,
+            modality=args.modality,
         )
         if args.plot_histogram:
-            self.plot_histogram(args, normalized, mask)
+            self.plot_histogram_from_args(args, normalized, mask)
         self.save_additional_info(args, normalized=normalized, mask=mask)
 
     def calculate_location(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnorm.Modalities = intnorm.Modalities.T1,
     ) -> float:
         raise NotImplementedError
 
     def calculate_scale(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnorm.Modalities = intnorm.Modalities.T1,
     ) -> float:
         raise NotImplementedError
 
     def setup(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnorm.Modalities = intnorm.Modalities.T1,
     ) -> None:
         return
 
@@ -153,14 +142,14 @@ class NormalizeBase(CLI):
         return
 
     @staticmethod
-    def estimate_foreground(data: Array) -> Array:
-        foreground: Array = data > data.mean()
+    def estimate_foreground(image: intnormt.Image, /) -> intnormt.Image:
+        foreground: intnormt.Image = image > image.mean()
         return foreground
 
     @staticmethod
     def skull_stripped_foreground(
-        data: Array, *, background_threshold: float = 1e-6
-    ) -> Array:
+        data: intnormt.Image, /, *, background_threshold: builtins.float = 1e-6
+    ) -> intnormt.Image:
         if data.min() < 0.0:
             msg = (
                 "Data contains negative values; "
@@ -169,62 +158,61 @@ class NormalizeBase(CLI):
                 "Provide the brain mask if otherwise."
             )
             warnings.warn(msg)
-        ss_foreground: Array = data > background_threshold
+        ss_foreground: intnormt.Image = data > background_threshold
         return ss_foreground
 
     def _get_mask(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
         *,
-        background_threshold: float = 1e-6,
-    ) -> Array:
+        modality: intnorm.Modalities = intnorm.Modalities.T1,
+        background_threshold: builtins.float = 1e-6,
+    ) -> intnormt.Image:
         if mask is None:
             mask = self.skull_stripped_foreground(
-                data, background_threshold=background_threshold
+                image, background_threshold=background_threshold
             )
-        out: Array = mask > 0.0
+        out: intnormt.Image = mask > 0.0
         return out
 
     def _get_voi(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
-    ) -> Array:
-        voi: Array = data[self._get_mask(data, mask, modality)]
+        data: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnorm.Modalities = intnorm.Modalities.T1,
+    ) -> intnormt.Image:
+        voi: intnormt.Image = data[self._get_mask(data, mask, modality=modality)]
         return voi
 
     @staticmethod
-    def _get_modality(modality: Optional[str]) -> str:
-        return "t1" if modality is None else modality.lower()
-
-    @staticmethod
     def get_parent_parser(
-        desc: str,
-        valid_modalities: Set[str] = VALID_MODALITIES,
-    ) -> ArgumentParser:
-        parser = ArgumentParser(
+        desc: builtins.str,
+        valid_modalities: typing.Set[builtins.str] = intnorm.VALID_MODALITIES,
+    ) -> argparse.ArgumentParser:
+        parser = argparse.ArgumentParser(
             description=desc,
-            formatter_class=ArgumentDefaultsHelpFormatter,
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
             "image",
-            type=file_path(),
+            type=intnormt.file_path(),
             help="Path of image to normalize.",
         )
         parser.add_argument(
             "-m",
             "--mask",
-            type=file_path(),
+            type=intnormt.file_path(),
             default=None,
             help="Path of foreground mask for image.",
         )
         parser.add_argument(
             "-o",
             "--output",
-            type=save_nifti_path(),
+            type=intnormt.save_nifti_path(),
             default=None,
             help="Path to save normalized image.",
         )
@@ -239,7 +227,7 @@ class NormalizeBase(CLI):
         parser.add_argument(
             "-n",
             "--norm-value",
-            type=positive_float(),
+            type=intnormt.positive_float(),
             default=1.0,
             help="Reference value for normalization.",
         )
@@ -264,81 +252,78 @@ class NormalizeBase(CLI):
         return parser
 
     @classmethod
-    def from_argparse_args(cls: Type[NB], args: Namespace) -> NB:
+    def from_argparse_args(cls, args: argparse.Namespace) -> NormalizeBase:
         return cls(args.norm_value)
 
-    def save_additional_info(  # type: ignore[no-untyped-def]
+    def save_additional_info(
         self,
-        args: Namespace,
+        args: argparse.Namespace,
         **kwargs,
     ) -> None:
         return
 
 
-NSB = TypeVar("NSB", bound="NormalizeSampleBase")
-
-
 class NormalizeSampleBase(NormalizeBase):
-    def fit(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+    def fit(self, *args, **kwargs) -> None:
         return None
 
-    def process_directories(  # type: ignore[no-untyped-def]
+    def process_directories(
         self,
-        image_dir: PathLike,
-        mask_dir: Optional[PathLike] = None,
-        modality: Optional[str] = None,
-        ext: str = "nii*",
-        return_normalized_and_masks: bool = False,
+        image_dir: intnormt.PathLike,
+        /,
+        mask_dir: intnormt.PathLike | None = None,
+        *,
+        modality: intnorm.Modalities = intnorm.Modalities.T1,
+        ext: builtins.str = "nii*",
+        return_normalized_and_masks: builtins.bool = False,
         **kwargs,
-    ) -> Optional[Tuple[List[ArrayOrNifti], List[Optional[ArrayOrNifti]]]]:
+    ):
         logger.debug("Grabbing images")
-        images, masks = gather_images_and_masks(image_dir, mask_dir, ext)
+        images, masks = intnormio.gather_images_and_masks(image_dir, mask_dir, ext)
         self.fit(images, masks, modality, **kwargs)
         if return_normalized_and_masks:
-            normalized: List[ArrayOrNifti] = []
+            normalized: typing.List[intnormt.Image] = []
             n_images = len(images)
             assert n_images == len(masks)
             for i, (image, mask) in enumerate(zip(images, masks), 1):
                 logger.info(f"Normalizing image {i}/{n_images}")
-                normalized.append(self(image, mask, modality))
+                normalized.append(self(image, mask, modality=modality))
             return normalized, masks
         return None
 
-    def plot_histograms(
+    def plot_histogram_from_args(
         self,
-        args: Namespace,
-        normalized: List[NiftiImage],
-        masks: List[Optional[NiftiImage]],
+        args: argparse.Namespace,
+        /,
+        normalized: intnormt.Image,
+        masks: intnormt.Image | None = None,
     ) -> None:
-        from pathlib import Path
-
         import matplotlib.pyplot as plt
 
         if args.output_dir is None:
-            output = Path(args.image_dir) / "hist.pdf"
+            output = pathlib.Path(args.image_dir) / "hist.pdf"
         else:
-            output = Path(args.output_dir) / "hist.pdf"
-        hp = HistogramPlotter(title=self.fullname())
+            output = pathlib.Path(args.output_dir) / "hist.pdf"
+        hp = intnormhist.HistogramPlotter(title=self.fullname())
         _ = hp(normalized, masks)
         plt.savefig(output)
 
-    def call_from_argparse_args(self, args: Namespace) -> None:
-        normalized, masks = self.process_directories(  # type: ignore[misc]
-            image_dir=args.image_dir,
-            mask_dir=args.mask_dir,
+    def call_from_argparse_args(self, args: argparse.Namespace) -> None:
+        normalized, masks = self.process_directories(
+            args.image_dir,
+            args.mask_dir,
             modality=args.modality,
             ext=args.extension,
             return_normalized_and_masks=True,
         )
         assert isinstance(normalized, list)
-        image_filenames = glob_ext(args.image_dir)
+        image_filenames = intnormio.glob_ext(args.image_dir)
         output_filenames = [
             self.append_name_to_file(fn, args.output_dir) for fn in image_filenames
         ]
         n_images = len(normalized)
         assert n_images == len(output_filenames)
         for i, (norm_image, fn) in enumerate(zip(normalized, output_filenames), 1):
-            assert isinstance(norm_image, NiftiImage)
             logger.info(f"Saving normalized image: {fn} ({i}/{n_images})")
             norm_image.to_filename(fn)
         self.save_additional_info(
@@ -348,33 +333,33 @@ class NormalizeSampleBase(NormalizeBase):
             image_filenames=image_filenames,
         )
         if args.plot_histogram:
-            self.plot_histograms(args, normalized, masks)
+            self.plot_histogram_from_args(args, normalized, masks)
 
     @staticmethod
     def get_parent_parser(
-        desc: str,
-        valid_modalities: Set[str] = VALID_MODALITIES,
-    ) -> ArgumentParser:
-        parser = ArgumentParser(
+        desc: builtins.str,
+        valid_modalities: typing.Set[builtins.str] = intnorm.VALID_MODALITIES,
+    ) -> argparse.ArgumentParser:
+        parser = argparse.ArgumentParser(
             description=desc,
-            formatter_class=ArgumentDefaultsHelpFormatter,
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
             "image_dir",
-            type=dir_path(),
+            type=intnormt.dir_path(),
             help="Path of directory of images to normalize.",
         )
         parser.add_argument(
             "-m",
             "--mask-dir",
-            type=dir_path(),
+            type=intnormt.dir_path(),
             default=None,
             help="Path of directory of foreground masks corresponding to images.",
         )
         parser.add_argument(
             "-o",
             "--output-dir",
-            type=dir_path(),
+            type=intnormt.dir_path(),
             default=None,
             help="Path of directory in which to save normalized images.",
         )
@@ -383,7 +368,7 @@ class NormalizeSampleBase(NormalizeBase):
             "--modality",
             type=str,
             default=None,
-            choices=VALID_MODALITIES,
+            choices=intnorm.VALID_MODALITIES,
             help="Modality of the images.",
         )
         parser.add_argument(
@@ -414,59 +399,71 @@ class NormalizeSampleBase(NormalizeBase):
         return parser
 
     @classmethod
-    def from_argparse_args(cls: Type[NSB], args: Namespace) -> NSB:
-        out: NSB = cls()
+    def from_argparse_args(cls, args: argparse.Namespace) -> NormalizeSampleBase:
+        out = cls()
         return out
 
 
 class NormalizeFitBase(NormalizeSampleBase):
-    def fit(  # type: ignore[no-untyped-def,override]
+    def fit(
         self,
-        images: List[ArrayOrNifti],
-        masks: Optional[List[ArrayOrNifti]] = None,
-        modality: Optional[str] = None,
+        images: typing.Sequence[intnormt.Image],
+        /,
+        masks: typing.Sequence[intnormt.Image] | None = None,
+        *,
+        modality: intnorm.Modalities = intnorm.Modalities.T1,
         **kwargs,
     ) -> None:
-        images, masks = self.before_fit(images, masks, modality, **kwargs)
+        images, masks = self.before_fit(images, masks, modality=modality, **kwargs)
         logger.info("Fitting")
-        self._fit(images, masks, modality, **kwargs)
+        self._fit(images, masks, modality=modality, **kwargs)
         logger.debug("Done fitting")
 
     def _fit(  # type: ignore[no-untyped-def]
         self,
-        images: List[ArrayOrNifti],
-        masks: Optional[List[ArrayOrNifti]] = None,
-        modality: Optional[str] = None,
+        images: typing.Sequence[intnormt.Image],
+        /,
+        masks: typing.Sequence[intnormt.Image] | None = None,
+        *,
+        modality: intnorm.Modalities = intnorm.Modalities.T1,
         **kwargs,
     ) -> None:
         raise NotImplementedError
 
-    def before_fit(  # type: ignore[no-untyped-def]
+    def before_fit(
         self,
-        images: List[ArrayOrNifti],
-        masks: Optional[List[ArrayOrNifti]] = None,
-        modality: Optional[str] = None,
+        images: typing.Sequence[intnormt.Image],
+        /,
+        masks: typing.Sequence[intnormt.Image] | None = None,
+        *,
+        modality: intnorm.Modalities = intnorm.Modalities.T1,
         **kwargs,
-    ) -> Tuple[List[Array], Optional[List[Array]]]:
+    ) -> typing.Tuple[
+        typing.Sequence[intnormt.Image], typing.Sequence[intnormt.Image | None]
+    ]:
         assert len(images) > 0
         logger.info("Loading data")
         if hasattr(images[0], "get_fdata"):
-            images = [img.get_fdata() for img in images]  # type: ignore[union-attr]
+            images = [img.get_fdata() for img in images]
         if masks is not None:
             if hasattr(masks[0], "get_fdata"):
-                masks = [msk.get_fdata() for msk in masks]  # type: ignore[union-attr]
+                masks = [msk.get_fdata() for msk in masks]
         logger.debug("Loaded data")
         return images, masks
 
-    def fit_from_directories(  # type: ignore[no-untyped-def]
+    def fit_from_directories(
         self,
-        image_dir: PathLike,
-        mask_dir: Optional[PathLike] = None,
-        modality: Optional[str] = None,
-        ext: str = "nii*",
-        return_normalized_and_masks: bool = False,
+        image_dir: intnormt.PathLike,
+        /,
+        mask_dir: intnormt.PathLike | None = None,
+        *,
+        modality: intnorm.Modalities = intnorm.Modalities.T1,
+        ext: builtins.str = "nii*",
+        return_normalized_and_masks: builtins.bool = False,
         **kwargs,
-    ) -> Optional[Tuple[List[ArrayOrNifti], List[Optional[ArrayOrNifti]]]]:
+    ) -> typing.Tuple[
+        typing.Sequence[intnormt.Image], typing.Sequence[intnormt.Image | None]
+    ] | None:
         return self.process_directories(
             image_dir=image_dir,
             mask_dir=mask_dir,

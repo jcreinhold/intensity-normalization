@@ -6,15 +6,16 @@ Author: Jacob Reinhold (jcreinhold@gmail.com)
 Created on: Jun 02, 2021
 """
 
-__all__ = [
-    "RavelNormalize",
-]
+from __future__ import annotations
 
+__all__ = ["RavelNormalize"]
+
+import argparse
+import builtins
+import functools
 import logging
-from argparse import ArgumentParser, Namespace
-from functools import reduce
-from operator import add
-from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
+import operator
+import typing
 
 import nibabel
 import numpy as np
@@ -24,7 +25,7 @@ from scipy.sparse.linalg import svds
 
 from intensity_normalization.normalize.base import NormalizeFitBase
 from intensity_normalization.normalize.whitestripe import WhiteStripeNormalize
-from intensity_normalization.type import Array, ArrayOrNifti, NiftiImage, PathLike
+from intensity_normalization.typing import Array, ArrayOrNifti, NiftiImage, PathLike
 from intensity_normalization.util.io import gather_images_and_masks
 from intensity_normalization.util.tissue_membership import find_tissue_memberships
 
@@ -37,8 +38,6 @@ except ImportError as ants_imp_exn:
     raise RuntimeError(msg) from ants_imp_exn
 else:
     from intensity_normalization.util.coregister import register, to_ants
-
-RN = TypeVar("RN", bound="RavelNormalize")
 
 
 class RavelNormalize(NormalizeFitBase):
