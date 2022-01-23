@@ -1,22 +1,20 @@
-# -*- coding: utf-8 -*-
-"""
-intensity_normalization.normalize.zscore
-
-Author: Jacob Reinhold (jcreinhold@gmail.com)
-Created on: Jun 01, 2021
+"""Z-score normalize image (voxel-wise subtract mean, divide std)
+Author: Jacob Reinhold <jcreinhold@gmail.com>
+Created on: 01 Jun 2021
 """
 
-__all__ = [
-    "ZScoreNormalize",
-]
+from __future__ import annotations
 
-from argparse import Namespace
-from typing import Optional
+__all__ = ["ZScoreNormalize"]
+
+import argparse
+import builtins
+import typing
 
 import nibabel as nib
 
 from intensity_normalization.normalize.base import NormalizeBase
-from intensity_normalization.type import Array, NiftiImage
+from intensity_normalization.typing import Array, NiftiImage
 
 
 class ZScoreNormalize(NormalizeBase):

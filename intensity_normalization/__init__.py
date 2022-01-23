@@ -1,5 +1,6 @@
 """Top-level package for intensity-normalization."""
 
+import enum
 import logging
 
 __title__ = "intensity-normalization"
@@ -18,5 +19,8 @@ PEAK = {
 }
 VALID_PEAKS = {m for modalities in PEAK.values() for m in modalities}
 VALID_MODALITIES = VALID_PEAKS - {"last", "largest", "first"}
+Modalities = enum.Enum(
+    "Modalities", [vm.upper() for vm in sorted(VALID_MODALITIES)], module=__name__
+)
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())

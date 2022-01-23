@@ -1,23 +1,21 @@
-# -*- coding: utf-8 -*-
-"""
-intensity_normalization.normalize.nyul
-
-Author: Jacob Reinhold (jcreinhold@gmail.com)
-Created on: Jun 02, 2021
+"""Nyul & Udupa piecewise linear histogram matching normalization
+Author: Jacob Reinhold <jcreinhold@gmail.com>
+Created on: 02 Jun 2021
 """
 
-__all__ = [
-    "NyulNormalize",
-]
+from __future__ import annotations
 
-from argparse import ArgumentParser, Namespace
-from typing import List, Optional, Type, TypeVar
+__all__ = ["NyulNormalize"]
+
+import argparse
+import builtins
+import typing
 
 import numpy as np
 from scipy.interpolate import interp1d
 
 from intensity_normalization.normalize.base import NormalizeFitBase
-from intensity_normalization.type import (
+from intensity_normalization.typing import (
     Array,
     ArrayOrNifti,
     PathLike,
@@ -25,8 +23,6 @@ from intensity_normalization.type import (
     file_path,
     save_file_path,
 )
-
-NN = TypeVar("NN", bound="NyulNormalize")
 
 
 class NyulNormalize(NormalizeFitBase):
@@ -227,8 +223,8 @@ class NyulNormalize(NormalizeFitBase):
         super().call_from_argparse_args(args)
 
     @classmethod
-    def from_argparse_args(cls: Type[NN], args: Namespace) -> NN:
-        out: NN = cls(
+    def from_argparse_args(cls, args: argparse.Namespace) -> NyulNormalize:
+        out = cls(
             output_min_value=args.output_min_value,
             output_max_value=args.output_max_value,
             min_percentile=args.min_percentile,

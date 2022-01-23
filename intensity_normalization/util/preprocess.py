@@ -1,29 +1,27 @@
-# -*- coding: utf-8 -*-
-"""
-intensity_normalization.util.preprocess
+"""Preprocess MR images for image processing
 
 Preprocess MR images according to a simple scheme:
 1) N4 bias field correction
 2) resample to X mm x Y mm x Z mm
 3) reorient images to specification
 
-Author: Jacob Reinhold (jcreinhold@gmail.com)
-Created on: May 21, 2018
+Author: Jacob Reinhold <jcreinhold@gmail.com>
+Created on: 21 May 2018
 """
 
-__all__ = [
-    "preprocess",
-    "Preprocessor",
-]
+from __future__ import annotations
 
+__all__ = ["preprocess", "Preprocessor"]
+
+import argparse
+import builtins
 import logging
-from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
-from typing import Optional, Tuple, Type, TypeVar
+import typing
 
 import nibabel as nib
 
 from intensity_normalization.base_cli import CLI
-from intensity_normalization.type import (
+from intensity_normalization.typing import (
     NiftiImage,
     PathLike,
     allowed_orientations,
@@ -118,9 +116,6 @@ def preprocess(
     return image, mask
 
 
-PP = TypeVar("PP", bound="Preprocessor")
-
-
 class Preprocessor(CLI):
     def __init__(
         self,
@@ -164,10 +159,10 @@ class Preprocessor(CLI):
         )
 
     @staticmethod
-    def get_parent_parser(desc: str) -> ArgumentParser:
-        parser = ArgumentParser(
+    def get_parent_parser(desc: str) -> argparse.ArgumentParser:
+        parser = argparse.ArgumentParser(
             description=desc,
-            formatter_class=ArgumentDefaultsHelpFormatter,
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
             "image",
@@ -235,7 +230,7 @@ class Preprocessor(CLI):
         return parser
 
     @classmethod
-    def from_argparse_args(cls: Type[PP], args: Namespace) -> PP:
+    def from_argparse_args(cls, args: argparse.Namespace) -> Preprocessor:
         return cls(
             args.resolution,
             args.orientation,

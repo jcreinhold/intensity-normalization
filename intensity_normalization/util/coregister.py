@@ -1,22 +1,18 @@
-# -*- coding: utf-8 -*-
-"""
-intensity-normalization.util.coregister
-
-Author: Jacob Reinhold (jcreinhold@gmail.com)
-Created on: Jun 03, 2021
+"""Co-register images with ANTsPy
+Author: Jacob Reinhold <jcreinhold@gmail.com>
+Created on: 03 Jun 2021
 """
 
-__all__ = [
-    "register",
-    "Registrator",
-]
+from __future__ import annotations
+
+__all__ = ["register", "Registrator"]
 
 import logging
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from typing import List, Optional, Type, TypeVar, Union
 
 from intensity_normalization.base_cli import CLI
-from intensity_normalization.type import (
+from intensity_normalization.typing import (
     Array,
     ArrayOrNifti,
     NiftiImage,

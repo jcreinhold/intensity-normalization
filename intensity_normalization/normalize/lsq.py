@@ -1,26 +1,24 @@
-# -*- coding: utf-8 -*-
-"""
-intensity_normalization.normalize.lsq
-
+"""Least-squares fit tissue modes of a set of images
 Author: Jacob Reinhold (jcreinhold@gmail.com)
-Created on: Jun 01, 2021
+Created on: 01 Jun 2021
 """
 
-__all__ = [
-    "LeastSquaresNormalize",
-]
+from __future__ import annotations
 
+__all__ = ["LeastSquaresNormalize"]
+
+import argparse
+import builtins
 import logging
-from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
-from pathlib import Path
-from typing import List, Optional, Set, Type, TypeVar
+import pathlib
+import typing
 
 import nibabel as nib
 import numpy as np
 
 from intensity_normalization import VALID_MODALITIES
 from intensity_normalization.normalize.base import NormalizeFitBase
-from intensity_normalization.type import (
+from intensity_normalization.typing import (
     Array,
     PathLike,
     Vector,
@@ -31,8 +29,6 @@ from intensity_normalization.type import (
 )
 from intensity_normalization.util.io import split_filename
 from intensity_normalization.util.tissue_membership import find_tissue_memberships
-
-LSQN = TypeVar("LSQN", bound="LeastSquaresNormalize")
 
 logger = logging.getLogger(__name__)
 
@@ -159,8 +155,8 @@ class LeastSquaresNormalize(NormalizeFitBase):
         self.standard_tissue_means = data
 
     @classmethod
-    def from_argparse_args(cls: Type[LSQN], args: Namespace) -> LSQN:
-        out: LSQN = cls(args.norm_value)
+    def from_argparse_args(cls, args: argparse.Namespace) -> LeastSquaresNormalize:
+        out = cls(args.norm_value)
         return out
 
     def call_from_argparse_args(self, args: Namespace) -> None:

@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-intensity_normalization.cli.lsq
-
-Author: Jacob Reinhold (jcreinhold@gmail.com)
+"""Least-squares fit tissue mean normalization
+Author: Jacob Reinhold <jcreinhold@gmail.com>
 Created on: 13 Oct 2021
 """
 

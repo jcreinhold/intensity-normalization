@@ -1,32 +1,30 @@
-# -*- coding: utf-8 -*-
-"""
-intensity_normalization.util.tissue_membership
-
-Author: Jacob Reinhold (jcreinhold@gmail.com)
-Created on: Jun 01, 2021
+"""Find the tissue-membership of a T1-w brain image
+Author: Jacob Reinhold <jcreinhold@gmail.com>
+Created on: 01 Jun 2021
 """
 
-__all__ = [
-    "find_tissue_memberships",
-    "TissueMembershipFinder",
-]
+from __future__ import annotations
 
-from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
-from typing import Optional, Tuple, Type, TypeVar
+__all__ = ["find_tissue_memberships", "TissueMembershipFinder"]
+
+import argparse
+import builtins
+import operator
 
 import nibabel as nib
 import numpy as np
 from skfuzzy import cmeans
 
-from intensity_normalization.base_cli import CLI
-from intensity_normalization.type import Array, NiftiImage, file_path, save_nifti_path
+import intensity_normalization.base_cli as intnormcli
+import intensity_normalization.typing as intnormt
 
 
 def find_tissue_memberships(
-    image: Array,
-    mask: Array = None,
-    hard_segmentation: bool = False,
-) -> Array:
+    image: intnormt.Image,
+    mask: intnormt.Image | None = None,
+    hard_segmentation: builtins.bool = False,
+    n_classes: builtins.int = 3,
+) -> intnormt.Image:
     """Tissue memberships for a T1-w brain image with fuzzy c-means
 
     Args:
@@ -38,24 +36,19 @@ def find_tissue_memberships(
         tissue_mask: membership values for each of three classes in the image
             (or class determinations w/ hard_seg)
     """
+    assert n_classes > 0
     if mask is None:
         mask = image > 0.0
     else:
         mask = mask > 0.0
-    assert isinstance(mask, Array)
     foreground_size = mask.sum()
     foreground = image[mask].reshape(-1, foreground_size)
-    centers, memberships_, *_ = cmeans(foreground, 3, 2, 0.005, 50)
-
-    def get_center(element: Tuple[float, Array]) -> float:
-        center: float = element[0]
-        return center
-
+    centers, memberships_, *_ = cmeans(foreground, n_classes, 2, 0.005, 50)
     # sort the tissue memberships to CSF/GM/WM (assuming T1-w image)
-    sorted_memberships = sorted(zip(centers, memberships_), key=get_center)
+    sorted_memberships = sorted(zip(centers, memberships_), key=operator.itemgetter(0))
     memberships = [m for _, m in sorted_memberships]
-    tissue_mask = np.zeros(image.shape + (3,))
-    for i in range(3):
+    tissue_mask = np.zeros(image.shape + (n_classes,))
+    for i in range(n_classes):
         tissue_mask[..., i][mask] = memberships[i]
     if hard_segmentation:
         tmp_mask = np.zeros(image.shape)
@@ -65,22 +58,17 @@ def find_tissue_memberships(
     return tissue_mask
 
 
-TMF = TypeVar("TMF", bound="TissueMembershipFinder")
-
-
-class TissueMembershipFinder(CLI):
-    def __init__(self, hard_segmentation: bool = False):
+class TissueMembershipFinder(intnormcli.CLI):
+    def __init__(self, hard_segmentation: builtins.bool = False):
         self.hard_segmentation = hard_segmentation
 
-    def __call__(  # type: ignore[override]
+    def __call__(
         self,
-        image: NiftiImage,
-        mask: Optional[NiftiImage] = None,
-    ) -> NiftiImage:
-        data = image.get_fdata()
-        mask = mask and mask.get_fdata()
+        image: intnormt.Image,
+        mask: intnormt.Image | None = None,
+    ) -> intnormt.Image:
         tissue_memberships = find_tissue_memberships(
-            data,
+            image,
             mask,
             self.hard_segmentation,
         )
@@ -97,27 +85,27 @@ class TissueMembershipFinder(CLI):
         return "Find tissue memberships of an MR image."
 
     @staticmethod
-    def get_parent_parser(desc: str) -> ArgumentParser:
-        parser = ArgumentParser(
+    def get_parent_parser(desc: str) -> argparse.ArgumentParser:
+        parser = argparse.ArgumentParser(
             description=desc,
-            formatter_class=ArgumentDefaultsHelpFormatter,
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
             "image",
-            type=file_path(),
+            type=intnormt.file_path(),
             help="Path of image to normalize.",
         )
         parser.add_argument(
             "-m",
             "--mask",
-            type=file_path(),
+            type=intnormt.file_path(),
             default=None,
             help="Path of foreground mask for image.",
         )
         parser.add_argument(
             "-o",
             "--output",
-            type=save_nifti_path(),
+            type=intnormt.save_nifti_path(),
             default=None,
             help="Path to save registered image.",
         )
@@ -142,5 +130,5 @@ class TissueMembershipFinder(CLI):
         return parser
 
     @classmethod
-    def from_argparse_args(cls: Type[TMF], args: Namespace) -> TMF:
+    def from_argparse_args(cls, args: argparse.Namespace) -> TissueMembershipFinder:
         return cls(args.hard_segmentation)

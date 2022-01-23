@@ -1,21 +1,18 @@
-# -*- coding: utf-8 -*-
-"""
-intensity_normalization.normalize.kde
-
-Author: Jacob Reinhold (jcreinhold@gmail.com)
-Created on: Jun 01, 2021
+"""Kernel density estimation-based tissue mode normalization
+Author: Jacob Reinhold <jcreinhold@gmail.com>
+Created on: 01 Jun 2021
 """
 
-__all__ = [
-    "KDENormalize",
-]
+from __future__ import annotations
+
+__all__ = ["KDENormalize"]
 
 from argparse import ArgumentParser
 from typing import Optional, Set
 
 from intensity_normalization import VALID_PEAKS
 from intensity_normalization.normalize.base import NormalizeBase
-from intensity_normalization.type import Array
+from intensity_normalization.typing import Array
 from intensity_normalization.util.histogram_tools import get_tissue_mode
 
 
