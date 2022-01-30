@@ -1,13 +1,16 @@
 """Base class for normalization methods
 Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: Jun 01, 2021
+Created on: 01 Jun 2021
 """
+# For MRO information use help(...) on a class and refer to the following
+# https://rhettinger.wordpress.com/2011/05/26/super-considered-super/
 
 from __future__ import annotations
 
 __all__ = [
-    "NormalizeBase",
-    "NormalizeFitBase",
+    "SingleImageNormalizeCLI",
+    "DirectoryNormalizeCLI",
+    "LocationScaleCLIMixin",
 ]
 
 import abc
@@ -20,7 +23,6 @@ import warnings
 
 import pymedio.image as mioi
 
-import intensity_normalization as intnorm
 import intensity_normalization.base_cli as intnormcli
 import intensity_normalization.plot.histogram as intnormhist
 import intensity_normalization.typing as intnormt
@@ -28,11 +30,10 @@ import intensity_normalization.util.io as intnormio
 
 logger = logging.getLogger(__name__)
 
+T = typing.TypeVar("T")
 
-class NormalizeBase(intnormcli.CLI, metaclass=abc.ABCMeta):
-    def __init__(self, *, norm_value: builtins.float = 1.0, **kwargs: typing.Any):
-        self.norm_value = norm_value
 
+class NormalizeMixin(metaclass=abc.ABCMeta):
     def __call__(
         self,
         image: intnormt.Image,
@@ -44,6 +45,7 @@ class NormalizeBase(intnormcli.CLI, metaclass=abc.ABCMeta):
     ) -> intnormt.Image:
         return self.normalize_image(image, mask, modality=modality)
 
+    @abc.abstractmethod
     def normalize_image(
         self,
         image: intnormt.Image,
@@ -52,69 +54,6 @@ class NormalizeBase(intnormcli.CLI, metaclass=abc.ABCMeta):
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
     ) -> intnormt.Image:
-        self.setup(image, mask, modality=modality)
-        loc = self.calculate_location(image, mask, modality=modality)
-        scale = self.calculate_scale(image, mask, modality=modality)
-        self.teardown()
-        normalized: intnormt.Image = ((image - loc) / scale) * self.norm_value
-        return normalized
-
-    def normalize_from_filename(
-        self,
-        image_path: intnormt.PathLike,
-        /,
-        mask_path: intnormt.PathLike | None = None,
-        *,
-        out_path: intnormt.PathLike | None = None,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
-    ) -> intnormt.Image:
-        image = mioi.Image.from_path(image_path)
-        mask = mioi.Image.from_path(mask_path) if mask_path is not None else None
-        if out_path is None:
-            out_path = self.append_name_to_file(image_path)
-        logger.info(f"Normalizing image: {image_path}")
-        normalized: mioi.Image = self.normalize_image(image, mask, modality=modality)
-        logger.info(f"Saving normalized image: {out_path}")
-        normalized.save(out_path, squeeze=False)
-        return normalized, mask
-
-    def plot_histogram_from_args(
-        self,
-        args: argparse.Namespace,
-        /,
-        normalized: intnormt.Image,
-        mask: intnormt.Image | None = None,
-    ) -> None:
-        import matplotlib.pyplot as plt
-
-        if args.output is None:
-            output = pathlib.Path(args.image).parent / "hist.pdf"
-        else:
-            output = pathlib.Path(args.output).parent / "hist.pdf"
-        ax = intnormhist.plot_histogram(normalized, mask)
-        ax.set_title(self.fullname())
-        plt.savefig(output)
-
-    @abc.abstractmethod
-    def calculate_location(
-        self,
-        image: intnormt.Image,
-        /,
-        mask: intnormt.Image | None = None,
-        *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
-    ) -> builtins.float:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def calculate_scale(
-        self,
-        image: intnormt.Image,
-        /,
-        mask: intnormt.Image | None = None,
-        *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
-    ) -> builtins.float:
         raise NotImplementedError
 
     def setup(
@@ -175,42 +114,120 @@ class NormalizeBase(intnormcli.CLI, metaclass=abc.ABCMeta):
         voi: intnormt.Image = image[self._get_mask(image, mask, modality=modality)]
         return voi
 
-    @staticmethod
+
+class LocationScaleMixin(NormalizeMixin, metaclass=abc.ABCMeta):
+    def __init__(self, *, norm_value: builtins.float = 1.0, **kwargs: typing.Any):
+        super().__init__(**kwargs)
+        self.norm_value = norm_value
+
+    @abc.abstractmethod
+    def calculate_location(
+        self,
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+    ) -> builtins.float:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def calculate_scale(
+        self,
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+    ) -> builtins.float:
+        raise NotImplementedError
+
+    def normalize_image(
+        self,
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+    ) -> intnormt.Image:
+        self.setup(image, mask, modality=modality)
+        loc = self.calculate_location(image, mask, modality=modality)
+        scale = self.calculate_scale(image, mask, modality=modality)
+        self.teardown()
+        normalized: intnormt.Image = ((image - loc) / scale) * self.norm_value
+        return normalized
+
+
+class NormalizeCLIMixin(NormalizeMixin, intnormcli.CLIMixin, metaclass=abc.ABCMeta):
+    def normalize_from_filename(
+        self,
+        image_path: intnormt.PathLike,
+        /,
+        mask_path: intnormt.PathLike | None = None,
+        *,
+        out_path: intnormt.PathLike | None = None,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+    ) -> intnormt.Image:
+        image = mioi.Image.from_path(image_path)
+        mask = mioi.Image.from_path(mask_path) if mask_path is not None else None
+        if out_path is None:
+            out_path = self.append_name_to_file(image_path)
+        logger.info(f"Normalizing image: {image_path}")
+        normalized: mioi.Image = self.normalize_image(image, mask, modality=modality)
+        logger.info(f"Saving normalized image: {out_path}")
+        normalized.save(out_path, squeeze=False)
+        return normalized, mask
+
+    @abc.abstractmethod
+    def plot_histogram_from_args(
+        self,
+        args: argparse.Namespace,
+        /,
+        normalized: intnormt.Image,
+        mask: intnormt.Image | None = None,
+    ) -> None:
+        raise NotImplementedError
+
+    @classmethod
     def get_parent_parser(
+        cls,
         desc: builtins.str,
-        valid_modalities: typing.Set[builtins.str] = intnorm.VALID_MODALITIES,
+        **kwargs,
     ) -> argparse.ArgumentParser:
-        parser = argparse.ArgumentParser(
-            description=desc,
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        )
+        parser = super().get_parent_parser(desc, **kwargs)
         parser.add_argument(
-            "image",
-            type=intnormt.file_path(),
-            help="Path of image to normalize.",
+            "-p",
+            "--plot-histogram",
+            action="store_true",
+            help="Plot the histogram of the normalized image.",
         )
-        parser.add_argument(
-            "-m",
-            "--mask",
-            type=intnormt.file_path(),
-            default=None,
-            help="Path of foreground mask for image.",
-        )
-        parser.add_argument(
-            "-o",
-            "--output",
-            type=intnormt.save_nifti_path(),
-            default=None,
-            help="Path to save normalized image.",
-        )
-        parser.add_argument(
-            "-mo",
-            "--modality",
-            type=str,
-            default="t1",
-            choices=valid_modalities,
-            help="Modality of the image.",
-        )
+        return parser
+
+    @abc.abstractmethod
+    def call_from_argparse_args(self, args: argparse.Namespace, /) -> None:
+        raise NotImplementedError
+
+    @classmethod
+    @abc.abstractmethod
+    def from_argparse_args(cls: typing.Type[T], args: argparse.Namespace, /) -> T:
+        raise NotImplementedError
+
+    def save_additional_info(
+        self,
+        args: argparse.Namespace,
+        **kwargs: typing.Any,
+    ) -> None:
+        return
+
+
+class LocationScaleCLIMixin(LocationScaleMixin, NormalizeCLIMixin):
+    @classmethod
+    def get_parent_parser(
+        cls,
+        desc: builtins.str,
+        **kwargs,
+    ) -> argparse.ArgumentParser:
+        parser = super().get_parent_parser(desc, **kwargs)
         parser.add_argument(
             "-n",
             "--norm-value",
@@ -218,29 +235,30 @@ class NormalizeBase(intnormcli.CLI, metaclass=abc.ABCMeta):
             default=1.0,
             help="Reference value for normalization.",
         )
-        parser.add_argument(
-            "-p",
-            "--plot-histogram",
-            action="store_true",
-            help="Plot the histogram of the normalized image.",
-        )
-        parser.add_argument(
-            "-v",
-            "--verbosity",
-            action="count",
-            default=0,
-            help="Increase output verbosity (e.g., -vv is more than -v).",
-        )
-        parser.add_argument(
-            "--version",
-            action="store_true",
-            help="print the version of intensity-normalization",
-        )
         return parser
 
     @classmethod
-    def from_argparse_args(cls, args: argparse.Namespace, /) -> NormalizeBase:
+    def from_argparse_args(cls: typing.Type[T], args: argparse.Namespace, /) -> T:
         return cls(norm_value=args.norm_value)
+
+
+class SingleImageNormalizeCLI(NormalizeCLIMixin, intnormcli.SingleImageCLI):
+    def plot_histogram_from_args(
+        self,
+        args: argparse.Namespace,
+        /,
+        normalized: intnormt.Image,
+        mask: intnormt.Image | None = None,
+    ) -> None:
+        import matplotlib.pyplot as plt
+
+        if args.output is None:
+            output = pathlib.Path(args.image).parent / "hist.pdf"
+        else:
+            output = pathlib.Path(args.output).parent / "hist.pdf"
+        ax = intnormhist.plot_histogram(normalized, mask)
+        ax.set_title(self.fullname())
+        plt.savefig(output)
 
     def call_from_argparse_args(self, args: argparse.Namespace, /) -> None:
         normalized, mask = self.normalize_from_filename(
@@ -253,15 +271,8 @@ class NormalizeBase(intnormcli.CLI, metaclass=abc.ABCMeta):
             self.plot_histogram_from_args(args, normalized, mask)
         self.save_additional_info(args, normalized=normalized, mask=mask)
 
-    def save_additional_info(
-        self,
-        args: argparse.Namespace,
-        **kwargs: typing.Any,
-    ) -> None:
-        return
 
-
-class NormalizeSampleBase(NormalizeBase, metaclass=abc.ABCMeta):
+class SampleNormalizeCLIMixin(NormalizeCLIMixin, intnormcli.CLIMixin):
     def fit(
         self,
         images: typing.Sequence[intnormt.Image],
@@ -327,7 +338,7 @@ class NormalizeSampleBase(NormalizeBase, metaclass=abc.ABCMeta):
         assert out is not None
         normalized, masks = out
         assert isinstance(normalized, list)
-        image_filenames = intnormio.glob_ext(args.image_dir)
+        image_filenames = intnormio.glob_ext(args.image_dir, ext=args.extension)
         output_filenames = [
             self.append_name_to_file(fn, args.output_dir) for fn in image_filenames
         ]
@@ -345,77 +356,14 @@ class NormalizeSampleBase(NormalizeBase, metaclass=abc.ABCMeta):
         if args.plot_histogram:
             self.plot_histogram_from_args(args, normalized, masks)
 
-    @staticmethod
-    def get_parent_parser(
-        desc: builtins.str,
-        valid_modalities: typing.Set[builtins.str] = intnorm.VALID_MODALITIES,
-        **kwargs: typing.Any,
-    ) -> argparse.ArgumentParser:
-        parser = argparse.ArgumentParser(
-            description=desc,
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        )
-        parser.add_argument(
-            "image_dir",
-            type=intnormt.dir_path(),
-            help="Path of directory of images to normalize.",
-        )
-        parser.add_argument(
-            "-m",
-            "--mask-dir",
-            type=intnormt.dir_path(),
-            default=None,
-            help="Path of directory of foreground masks corresponding to images.",
-        )
-        parser.add_argument(
-            "-o",
-            "--output-dir",
-            type=intnormt.dir_path(),
-            default=None,
-            help="Path of directory in which to save normalized images.",
-        )
-        parser.add_argument(
-            "-mo",
-            "--modality",
-            type=str,
-            default="t1",
-            choices=intnorm.VALID_MODALITIES,
-            help="Modality of the images.",
-        )
-        parser.add_argument(
-            "-e",
-            "--extension",
-            type=str,
-            default="nii*",
-            help="Extension of images (must be nibabel readable).",
-        )
-        parser.add_argument(
-            "-p",
-            "--plot-histogram",
-            action="store_true",
-            help="Plot the histogram of the normalized image.",
-        )
-        parser.add_argument(
-            "-v",
-            "--verbosity",
-            action="count",
-            default=0,
-            help="Increase output verbosity (e.g., -vv is more than -v).",
-        )
-        parser.add_argument(
-            "--version",
-            action="store_true",
-            help="print the version of intensity-normalization",
-        )
-        return parser
-
     @classmethod
-    def from_argparse_args(cls, args: argparse.Namespace, /) -> NormalizeSampleBase:
-        out = cls()
-        return out
+    def from_argparse_args(cls: typing.Type[T], args: argparse.Namespace, /) -> T:
+        return cls()  # TODO: why is this empty?
 
 
-class NormalizeFitBase(NormalizeSampleBase, metaclass=abc.ABCMeta):
+class DirectoryNormalizeCLI(
+    SampleNormalizeCLIMixin, intnormcli.DirectoryCLI, metaclass=abc.ABCMeta
+):
     def fit(
         self,
         images: typing.Sequence[intnormt.Image],
@@ -430,7 +378,6 @@ class NormalizeFitBase(NormalizeSampleBase, metaclass=abc.ABCMeta):
         self._fit(images, masks, modality=modality, **kwargs)
         logger.debug("Done fitting")
 
-    @abc.abstractmethod
     def _fit(
         self,
         images: typing.Sequence[intnormt.Image],

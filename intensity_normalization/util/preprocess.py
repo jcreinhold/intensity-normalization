@@ -116,7 +116,7 @@ def preprocess(
     return typing.cast(intnormt.Image, pp_image), typing.cast(intnormt.Image, pp_mask)
 
 
-class Preprocessor(intnormcli.CLI):
+class Preprocessor(intnormcli.SingleImageCLI):
     def __init__(
         self,
         *,
@@ -164,9 +164,9 @@ class Preprocessor(intnormcli.CLI):
         desc += "bias field-correction, resampling, and reorientation."
         return desc
 
-    @staticmethod
+    @classmethod
     def get_parent_parser(
-        desc: builtins.str, **kwargs: typing.Any
+        cls, desc: builtins.str, **kwargs: typing.Any
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description=desc,

@@ -19,7 +19,7 @@ import intensity_normalization.normalize.base as intnormb
 import intensity_normalization.typing as intnormt
 
 
-class NyulNormalize(intnormb.NormalizeFitBase):
+class NyulNormalize(intnormb.DirectoryNormalizeCLI):
     """
     Args:
         output_min_value: where min-percentile mapped for output normalized image
@@ -57,26 +57,6 @@ class NyulNormalize(intnormb.NormalizeFitBase):
         self.percentile_step = percentile_step
         self._percentiles: npt.ArrayLike | None = None
         self.standard_scale: npt.ArrayLike | None = None
-
-    def calculate_location(
-        self,
-        image: intnormt.Image,
-        /,
-        mask: intnormt.Image | None = None,
-        *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
-    ) -> builtins.float:
-        return 0.0
-
-    def calculate_scale(
-        self,
-        image: intnormt.Image,
-        /,
-        mask: intnormt.Image | None = None,
-        *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
-    ) -> builtins.float:
-        return 1.0
 
     def normalize_image(
         self,

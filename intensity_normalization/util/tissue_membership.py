@@ -64,7 +64,7 @@ def find_tissue_memberships(
     return typing.cast(intnormt.Image, tissue_mask.view(mioi.Image))
 
 
-class TissueMembershipFinder(intnormcli.CLI):
+class TissueMembershipFinder(intnormcli.SingleImageCLI):
     def __init__(self, hard_segmentation: builtins.bool = False):
         self.hard_segmentation = hard_segmentation
 
@@ -94,9 +94,9 @@ class TissueMembershipFinder(intnormcli.CLI):
     def description() -> builtins.str:
         return "Find tissue memberships of an MR image."
 
-    @staticmethod
+    @classmethod
     def get_parent_parser(
-        desc: builtins.str, **kwargs: typing.Any
+        cls, desc: builtins.str, **kwargs: typing.Any
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description=desc,

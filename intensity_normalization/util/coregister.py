@@ -91,7 +91,7 @@ def register(
     return registered.to_nibabel() if is_nibabel else registered
 
 
-class Registrator(intnormcli.CLI):
+class Registrator(intnormcli.SingleImageCLI):
     def __init__(
         self,
         template: nib.Nifti1Image | ants.ANTsImage = None,
@@ -162,9 +162,9 @@ class Registrator(intnormcli.CLI):
     def description() -> builtins.str:
         return "Co-register an image to MNI or another image."
 
-    @staticmethod
+    @classmethod
     def get_parent_parser(
-        desc: builtins.str, **kwargs: typing.Any
+        cls, desc: builtins.str, **kwargs: typing.Any
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description=desc,

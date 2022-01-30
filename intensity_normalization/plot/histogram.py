@@ -109,9 +109,12 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
     def description() -> builtins.str:
         return "Plot the histogram of an image."
 
-    @staticmethod
+    @classmethod
     def get_parent_parser(
-        desc: builtins.str, **kwargs: typing.Any
+        cls,
+        desc: builtins.str,
+        valid_modalities: typing.Set[builtins.str] = None,
+        **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description=desc,

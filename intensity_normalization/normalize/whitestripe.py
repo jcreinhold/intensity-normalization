@@ -21,7 +21,9 @@ import intensity_normalization.typing as intnormt
 import intensity_normalization.util.histogram_tools as intnormhisttool
 
 
-class WhiteStripeNormalize(intnormb.NormalizeBase):
+class WhiteStripeNormalize(
+    intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalizeCLI
+):
     """
     find the normal appearing white matter of the input MR image and
     use those values to standardize the data (i.e., subtract the mean of
@@ -115,13 +117,15 @@ class WhiteStripeNormalize(intnormb.NormalizeBase):
         )
         return parent_parser
 
-    @staticmethod
+    @classmethod
     def get_parent_parser(
+        cls,
         desc: builtins.str,
         valid_modalities: typing.Set[builtins.str] = intnorm.VALID_PEAKS,
+        **kwargs,
     ) -> argparse.ArgumentParser:
-        return super(WhiteStripeNormalize, WhiteStripeNormalize).get_parent_parser(
-            desc, valid_modalities
+        return super().get_parent_parser(
+            desc, valid_modalities=valid_modalities, **kwargs
         )
 
     @classmethod
