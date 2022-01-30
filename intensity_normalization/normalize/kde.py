@@ -7,16 +7,17 @@ from __future__ import annotations
 
 __all__ = ["KDENormalize"]
 
-from argparse import ArgumentParser
-from typing import Optional, Set
+import argparse
+import builtins
+import typing
 
-from intensity_normalization import VALID_PEAKS
-from intensity_normalization.normalize.base import NormalizeBase
-from intensity_normalization.typing import Array
-from intensity_normalization.util.histogram_tools import get_tissue_mode
+import intensity_normalization as intnorm
+import intensity_normalization.normalize.base as intnormb
+import intensity_normalization.typing as intnormt
+import intensity_normalization.util.histogram_tools as intnormhisttool
 
 
-class KDENormalize(NormalizeBase):
+class KDENormalize(intnormb.NormalizeBase):
     """
     use kernel density estimation to find the peak of the white
     matter in the histogram of a (skull-stripped) brain MR image.
@@ -25,21 +26,24 @@ class KDENormalize(NormalizeBase):
 
     def calculate_location(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> float:
         return 0.0
 
     def calculate_scale(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> float:
-        modality = self._get_modality(modality)
-        voi = self._get_voi(data, mask, modality)
-        tissue_mode = get_tissue_mode(voi, modality)
+        voi = self._get_voi(image, mask, modality=modality)
+        tissue_mode = intnormhisttool.get_tissue_mode(voi, modality=modality)
         return tissue_mode
 
     @staticmethod
@@ -52,16 +56,15 @@ class KDENormalize(NormalizeBase):
 
     @staticmethod
     def description() -> str:
-        return (
-            "Use kernel density estimation to find the WM mode from "
-            "a smoothed histogram and normalize an NIfTI MR image."
-        )
+        desc = "Use kernel density estimation to find the WM mode from "
+        desc += "a smoothed histogram and normalize an NIfTI MR image."
+        return desc
 
     @staticmethod
     def get_parent_parser(
-        desc: str,
-        valid_modalities: Set[str] = VALID_PEAKS,
-    ) -> ArgumentParser:
+        desc: builtins.str,
+        valid_modalities: typing.Set[builtins.str] = intnorm.VALID_PEAKS,
+    ) -> argparse.ArgumentParser:
         return super(KDENormalize, KDENormalize).get_parent_parser(
             desc, valid_modalities
         )

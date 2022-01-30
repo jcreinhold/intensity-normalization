@@ -126,7 +126,7 @@ servedocs: docs  ## compile the docs watching for changes
 	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
 test:  ## run tests quickly with the default Python
-	pytest
+	pytest --cov=intensity_normalization --disable-pytest-warnings
 
 test-all:  ## run tests on every Python version with tox
 	tox

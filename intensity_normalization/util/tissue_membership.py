@@ -21,7 +21,9 @@ import intensity_normalization.typing as intnormt
 
 def find_tissue_memberships(
     image: intnormt.Image,
+    /,
     mask: intnormt.Image | None = None,
+    *,
     hard_segmentation: builtins.bool = False,
     n_classes: builtins.int = 3,
 ) -> intnormt.Image:
@@ -31,12 +33,14 @@ def find_tissue_memberships(
         image: image to find tissue masks for (must be T1-w)
         mask: mask covering the brain of image (none if already skull-stripped)
         hard_segmentation: pick the maximum membership as the true class in output
+        n_classes: number of classes (usually three for CSF, GM, WM)
 
     Returns:
         tissue_mask: membership values for each of three classes in the image
             (or class determinations w/ hard_seg)
     """
-    assert n_classes > 0
+    if n_classes <= 0:
+        raise ValueError(f"n_classes must be positive. Got {n_classes}")
     if mask is None:
         mask = image > 0.0
     else:
@@ -63,29 +67,30 @@ class TissueMembershipFinder(intnormcli.CLI):
         self.hard_segmentation = hard_segmentation
 
     def __call__(
-        self,
-        image: intnormt.Image,
-        mask: intnormt.Image | None = None,
+        self, image: intnormt.Image, /, mask: intnormt.Image | None = None, **kwargs
     ) -> intnormt.Image:
         tissue_memberships = find_tissue_memberships(
             image,
             mask,
-            self.hard_segmentation,
+            hard_segmentation=self.hard_segmentation,
         )
         out = nib.Nifti1Image(tissue_memberships, image.affine)
         return out
 
-    def name(self) -> str:  # type: ignore[override]
-        base = "tissue_"
-        suffix = "mask" if self.hard_segmentation else "membership"
-        return base + suffix
+    @staticmethod
+    def name() -> builtins.str:
+        return "tm"
 
     @staticmethod
-    def description() -> str:
+    def fullname() -> builtins.str:
+        return "tissue_membership"
+
+    @staticmethod
+    def description() -> builtins.str:
         return "Find tissue memberships of an MR image."
 
     @staticmethod
-    def get_parent_parser(desc: str) -> argparse.ArgumentParser:
+    def get_parent_parser(desc: builtins.str, **kwargs) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description=desc,
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,

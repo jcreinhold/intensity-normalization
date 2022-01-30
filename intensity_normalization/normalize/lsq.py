@@ -13,91 +13,101 @@ import logging
 import pathlib
 import typing
 
-import nibabel as nib
 import numpy as np
+import numpy.typing as npt
+import pymedio.image as mioi
 
-from intensity_normalization import VALID_MODALITIES
-from intensity_normalization.normalize.base import NormalizeFitBase
-from intensity_normalization.typing import (
-    Array,
-    PathLike,
-    Vector,
-    dir_path,
-    file_path,
-    positive_float,
-    save_file_path,
-)
-from intensity_normalization.util.io import split_filename
-from intensity_normalization.util.tissue_membership import find_tissue_memberships
+import intensity_normalization as intnorm
+import intensity_normalization.normalize.base as intnormb
+import intensity_normalization.typing as intnormt
+import intensity_normalization.util.io as intnormio
+import intensity_normalization.util.tissue_membership as intnormtm
 
 logger = logging.getLogger(__name__)
 
 
-class LeastSquaresNormalize(NormalizeFitBase):
-    def __init__(self, norm_value: float = 1.0):
-        super().__init__(norm_value)
-        self.tissue_memberships: List[Array] = []
+class LeastSquaresNormalize(intnormb.NormalizeFitBase):
+    def __init__(self, *, norm_value: float = 1.0, **kwargs):
+        super().__init__(norm_value=norm_value)
+        self.tissue_memberships: typing.List[intnormt.Image] = []
+        self.standard_tissue_means: npt.NDArray | None = None
 
     def calculate_location(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> float:
         return 0.0
 
     def calculate_scale(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> float:
         tissue_membership: np.ndarray
-        if modality is None:
-            modality = "t1"
-        if modality == "t1":
-            tissue_membership = find_tissue_memberships(data, mask)
+        if modality == intnormt.Modalities.T1:
+            tissue_membership = intnormtm.find_tissue_memberships(image, mask)
             self.tissue_memberships.append(tissue_membership)
         elif mask is not None:
-            tissue_membership = mask
+            tissue_membership = self._fix_tissue_membership(image, mask)
         else:
             msg = "If modality != t1, you must provide the "
             msg += "tissue_membership in the mask argument."
             raise ValueError(msg)
-        tissue_means = self.tissue_means(data, tissue_membership)
+        tissue_means = self.tissue_means(image, tissue_membership)
         sf = self.scaling_factor(tissue_means)
         return sf
 
-    def _fit(  # type: ignore[no-untyped-def]
+    def _fit(
         self,
-        images: List[Array],
-        masks: Optional[List[Array]] = None,
-        modality: Optional[str] = None,
+        images: typing.Sequence[intnormt.Image],
+        /,
+        masks: typing.Sequence[intnormt.Image] | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs,
     ) -> None:
         image = images[0]  # only need one image to fit this method
-        mask = masks and masks[0]
-        assert isinstance(mask, Array) or mask is None
-        if modality is None:
-            modality = "t1"
-        if modality.lower() == "t1":
-            tissue_membership = find_tissue_memberships(image, mask)
+        mask = masks[0] if masks is not None else None
+        if not isinstance(mask, np.ndarray) and mask is not None:
+            raise ValueError("mask must be either none or subclass of ndarray")
+        if modality == intnormt.Modalities.T1:
+            tissue_membership = intnormtm.find_tissue_memberships(image, mask)
         elif mask is not None:
             logger.debug("Assuming --mask-dir contains tissue memberships.")
-            tissue_membership = mask
+            tissue_membership = self._fix_tissue_membership(image, mask)
         else:
             msg = "If modality != t1, you must provide the "
             msg += "tissue_membership in the mask argument."
             raise ValueError(msg)
         csf_mean = np.average(image, weights=tissue_membership[..., 0])
-        norm_image = (image / csf_mean) * self.norm_value
+        norm_image: intnormt.Image = (image / csf_mean) * self.norm_value
         self.standard_tissue_means = self.tissue_means(
             norm_image,
             tissue_membership,
         )
 
+    def _fix_tissue_membership(
+        self, image: intnormt.Image, tissue_membership: intnormt.Image
+    ) -> intnormt.Image:
+        if tissue_membership.shape[: image.ndim] != image.shape:
+            # try to swap last axes b/c sitk, if still doesn't match then fail
+            tissue_membership = np.swapaxes(tissue_membership, -2, -1)
+        if tissue_membership.shape[: image.ndim] != image.shape:
+            msg = "If masks provided, need to have same spatial shape as image"
+            raise RuntimeError(msg)
+        return tissue_membership
+
     @staticmethod
-    def tissue_means(image: Array, tissue_membership: Array) -> Vector:
+    def tissue_means(
+        image: intnormt.Image, /, tissue_membership: intnormt.Image
+    ) -> npt.NDArray:
         n_tissues = tissue_membership.shape[-1]
         weighted_avgs = [
             np.average(image, weights=tissue_membership[..., i])
@@ -105,95 +115,88 @@ class LeastSquaresNormalize(NormalizeFitBase):
         ]
         return np.asarray([weighted_avgs]).T
 
-    def scaling_factor(self, tissue_means: Vector) -> float:
+    def scaling_factor(self, tissue_means: npt.NDArray) -> builtins.float:
         numerator = tissue_means.T @ tissue_means
         denominator = tissue_means.T @ self.standard_tissue_means
-        sf: float = (numerator / denominator).item()
+        sf: builtins.float = (numerator / denominator).item()
         return sf
 
     @staticmethod
-    def name() -> str:
+    def name() -> builtins.str:
         return "lsq"
 
     @staticmethod
-    def fullname() -> str:
+    def fullname() -> builtins.str:
         return "Least Squares"
 
     @staticmethod
     def description() -> str:
-        return (
-            "Minimize distance between tissue means (CSF/GM/WM) in a "
-            "least squares-sense within a set of NIfTI MR images."
-        )
+        desc = "Minimize distance between tissue means (CSF/GM/WM) in a "
+        desc += "least squares-sense within a set of NIfTI MR images."
+        return desc
 
-    def save_additional_info(  # type: ignore[no-untyped-def]
+    def save_additional_info(
         self,
-        args: Namespace,
+        args: argparse.Namespace,
         **kwargs,
     ) -> None:
         for memberships, fn in zip(self.tissue_memberships, kwargs["image_filenames"]):
-            tissue_memberships = nib.Nifti1Image(
-                memberships,
-                None,
-            )
-            base, name, ext = split_filename(fn)
+            tissue_memberships = mioi.Image(memberships)
+            base, name, ext = intnormio.split_filename(fn)
             new_name = name + "_tissue_memberships" + ext
             if args.output_dir is None:
                 output = base / new_name
             else:
-                output = Path(args.output_dir) / new_name
-            tissue_memberships.to_filename(output)
+                output = pathlib.Path(args.output_dir) / new_name
+            tissue_memberships.save(output, squeeze=False)
         del self.tissue_memberships
         if args.save_standard_tissue_means is not None:
             self.save_standard_tissue_means(args.save_standard_tissue_means)
 
-    def save_standard_tissue_means(self, filename: PathLike) -> None:
+    def save_standard_tissue_means(self, filename: intnormt.PathLike, /) -> None:
         np.save(filename, self.standard_tissue_means)
 
-    def load_standard_tissue_means(self, filename: PathLike) -> None:
+    def load_standard_tissue_means(self, filename: intnormt.PathLike, /) -> None:
         data = np.load(filename)
         self.standard_tissue_means = data
 
     @classmethod
-    def from_argparse_args(cls, args: argparse.Namespace) -> LeastSquaresNormalize:
-        out = cls(args.norm_value)
+    def from_argparse_args(cls, args: argparse.Namespace, /) -> LeastSquaresNormalize:
+        out = cls(norm_value=args.norm_value)
         return out
 
-    def call_from_argparse_args(self, args: Namespace) -> None:
+    def call_from_argparse_args(self, args: argparse.Namespace, /) -> None:
         if args.load_standard_tissue_means is not None:
             self.load_standard_tissue_means(args.load_standard_tissue_means)
             self.fit = lambda *args, **kwargs: None  # type: ignore[assignment]
 
+        args.modality = intnormt.Modalities.from_string(args.modality)
         if args.mask_dir is not None:
-            if args.modality is not None:
-                if args.modality.lower() != "t1":
-                    msg = (
-                        "If brain masks provided, modality must be `t1`. "
-                        f"Got {args.modality}."
-                    )
-                    raise ValueError(msg)
+            if args.modality != intnormt.Modalities.T1:
+                msg = f"If brain masks provided, modality must be `t1`. Got {args.modality}."  # noqa: E501
+                raise ValueError(msg)
         elif args.tissue_membership_dir is not None:
             args.mask_dir = args.tissue_membership_dir
         super().call_from_argparse_args(args)
 
     @staticmethod
     def get_parent_parser(
-        desc: str,
-        valid_modalities: Set[str] = VALID_MODALITIES,
-    ) -> ArgumentParser:
-        parser = ArgumentParser(
+        desc: builtins.str,
+        valid_modalities: typing.Set[builtins.str] = intnorm.VALID_MODALITIES,
+    ) -> argparse.ArgumentParser:
+        parser = argparse.ArgumentParser(
             description=desc,
-            formatter_class=ArgumentDefaultsHelpFormatter,
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
             "image_dir",
-            type=dir_path(),
+            type=intnormt.dir_path(),
             help="Path of directory of images to normalize.",
         )
         parser.add_argument(
             "-o",
             "--output-dir",
-            type=dir_path(),
+            type=intnormt.dir_path(),
             default=None,
             help="Path of directory in which to save normalized images.",
         )
@@ -201,14 +204,14 @@ class LeastSquaresNormalize(NormalizeFitBase):
             "-mo",
             "--modality",
             type=str,
-            default=None,
-            choices=VALID_MODALITIES,
+            default="t1",
+            choices=intnorm.VALID_MODALITIES,
             help="Modality of the images.",
         )
         parser.add_argument(
             "-n",
             "--norm-value",
-            type=positive_float(),
+            type=intnormt.positive_float(),
             default=1.0,
             help="Reference value for normalization.",
         )
@@ -240,20 +243,22 @@ class LeastSquaresNormalize(NormalizeFitBase):
         return parser
 
     @staticmethod
-    def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
+    def add_method_specific_arguments(
+        parent_parser: argparse.ArgumentParser,
+    ) -> argparse.ArgumentParser:
         parser = parent_parser.add_argument_group("method-specific arguments")
         parser.add_argument(
             "-sstm",
             "--save-standard-tissue-means",
             default=None,
-            type=save_file_path(),
+            type=intnormt.save_file_path(),
             help="save the standard tissue means fit by the method",
         )
         parser.add_argument(
             "-lstm",
             "--load-standard-tissue-means",
             default=None,
-            type=file_path(),
+            type=intnormt.file_path(),
             help="load a standard tissue means previously fit by the method",
         )
         exclusive = parent_parser.add_argument_group(
@@ -263,7 +268,7 @@ class LeastSquaresNormalize(NormalizeFitBase):
         group.add_argument(
             "-m",
             "--mask-dir",
-            type=dir_path(),
+            type=intnormt.dir_path(),
             default=None,
             help="Path to a foreground mask for the image. "
             "Provide this if not providing a tissue mask "
@@ -272,7 +277,7 @@ class LeastSquaresNormalize(NormalizeFitBase):
         group.add_argument(
             "-tm",
             "--tissue-membership-dir",
-            type=dir_path(),
+            type=intnormt.dir_path(),
             help="Path to a mask of a tissue memberships. "
             "Provide this if not providing the foreground mask.",
         )

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 __all__ = ["CLI", "setup_log"]
 
+import abc
 import argparse
 import builtins
 import logging
@@ -18,7 +19,7 @@ import pathlib
 import sys
 import typing
 
-import nibabel as nib
+import pymedio.image as mioi
 
 import intensity_normalization.typing as intnormt
 import intensity_normalization.util.io as intnormio
@@ -40,22 +41,34 @@ def setup_log(verbosity: builtins.int) -> None:
     logging.captureWarnings(True)
 
 
-class CLI:
-    def __call__(self, *args, **kwargs):
+class CLI(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def __call__(
+        self,
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        **kwargs,
+    ):
         raise NotImplementedError
 
     def __str__(self) -> builtins.str:
         return self.__class__.__name__
 
     @staticmethod
+    @abc.abstractmethod
     def description() -> builtins.str:
         raise NotImplementedError
 
     @staticmethod
+    @abc.abstractmethod
     def name() -> builtins.str:
         raise NotImplementedError
 
     @staticmethod
+    @abc.abstractmethod
     def fullname() -> builtins.str:
         raise NotImplementedError
 
@@ -71,7 +84,8 @@ class CLI:
         return path / (base + f"_{self.name()}" + ext)
 
     @staticmethod
-    def get_parent_parser(desc: builtins.str) -> argparse.ArgumentParser:
+    @abc.abstractmethod
+    def get_parent_parser(desc: builtins.str, **kwargs) -> argparse.ArgumentParser:
         raise NotImplementedError
 
     @staticmethod
@@ -110,6 +124,7 @@ class CLI:
         return _main
 
     @classmethod
+    @abc.abstractmethod
     def from_argparse_args(cls, args: argparse.Namespace) -> CLI:
         raise NotImplementedError
 
@@ -126,5 +141,5 @@ class CLI:
         out.to_filename(args.output)
 
     @staticmethod
-    def load_image(image_path: intnormt.PathLike) -> intnormt.Image:
-        return nib.load(image_path)
+    def load_image(image_path: intnormt.PathLike) -> mioi.Image:
+        return mioi.Image.from_path(image_path)

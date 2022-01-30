@@ -5,8 +5,6 @@ import os
 import pathlib
 import typing
 
-import nibabel as nib
-import numpy as np
 import pytest
 
 from intensity_normalization.cli.fcm import fcm_main
@@ -19,8 +17,6 @@ from intensity_normalization.cli.tissue_membership import (
 )
 from intensity_normalization.cli.whitestripe import whitestripe_main as ws_main
 from intensity_normalization.cli.zscore import zscore_main as zs_main
-
-from common import base_cli_dir_args, base_cli_image_args, image, mask  # isort: skip
 
 
 def test_fcm_normalization_cli(base_cli_image_args: typing.List[builtins.str]) -> None:
