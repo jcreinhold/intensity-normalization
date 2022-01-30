@@ -9,7 +9,7 @@ Created on: 06 Jun 2021
 
 from __future__ import annotations
 
-__all__ = ["CLI", "DirectoryCLI", "setup_log"]
+__all__ = ["CLIMixin", "DirectoryCLI", "setup_log", "SingleImageCLI"]
 
 import abc
 import argparse
@@ -21,6 +21,7 @@ import typing
 
 import pymedio.image as mioi
 
+import intensity_normalization as intnorm
 import intensity_normalization.typing as intnormt
 import intensity_normalization.util.io as intnormio
 from intensity_normalization import __version__ as int_norm_version
@@ -41,19 +42,7 @@ def setup_log(verbosity: builtins.int) -> None:
     logging.captureWarnings(True)
 
 
-class CLI(metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def __call__(
-        self,
-        image: intnormt.Image,
-        /,
-        mask: intnormt.Image | None,
-        *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
-        **kwargs: typing.Any,
-    ) -> typing.Any:
-        raise NotImplementedError
-
+class CLIMixin(metaclass=abc.ABCMeta):
     def __str__(self) -> builtins.str:
         return self.__class__.__name__
 
@@ -84,10 +73,10 @@ class CLI(metaclass=abc.ABCMeta):
         new_path: pathlib.Path = path / (base + f"_{self.name()}" + ext)
         return new_path
 
-    @staticmethod
+    @classmethod
     @abc.abstractmethod
     def get_parent_parser(
-        desc: builtins.str, **kwargs: typing.Any
+        cls, desc: builtins.str, **kwargs: typing.Any
     ) -> argparse.ArgumentParser:
         raise NotImplementedError
 
@@ -128,8 +117,78 @@ class CLI(metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def from_argparse_args(cls, args: argparse.Namespace) -> CLI:
+    def from_argparse_args(cls, args: argparse.Namespace) -> SingleImageCLI:
         raise NotImplementedError
+
+    @staticmethod
+    def load_image(image_path: intnormt.PathLike) -> intnormt.Image:
+        return typing.cast(intnormt.Image, mioi.Image.from_path(image_path))
+
+
+class SingleImageCLI(CLIMixin, metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def __call__(
+        self,
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        **kwargs: typing.Any,
+    ) -> typing.Any:
+        raise NotImplementedError
+
+    @classmethod
+    def get_parent_parser(
+        cls,
+        desc: builtins.str,
+        valid_modalities: typing.Set[builtins.str] = intnorm.VALID_MODALITIES,
+        **kwargs: typing.Any,
+    ) -> argparse.ArgumentParser:
+        parser = argparse.ArgumentParser(
+            description=desc,
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
+        parser.add_argument(
+            "image",
+            type=intnormt.file_path(),
+            help="Path of image to process.",
+        )
+        parser.add_argument(
+            "-m",
+            "--mask",
+            type=intnormt.file_path(),
+            default=None,
+            help="Path of foreground mask for image.",
+        )
+        parser.add_argument(
+            "-o",
+            "--output",
+            type=intnormt.save_nifti_path(),
+            default=None,
+            help="Path to save the processed image.",
+        )
+        parser.add_argument(
+            "-mo",
+            "--modality",
+            type=str,
+            default="t1",
+            choices=valid_modalities,
+            help="Modality of the image.",
+        )
+        parser.add_argument(
+            "-v",
+            "--verbosity",
+            action="count",
+            default=0,
+            help="Increase output verbosity (e.g., -vv is more than -v).",
+        )
+        parser.add_argument(
+            "--version",
+            action="store_true",
+            help="print the version of intensity-normalization",
+        )
+        return parser
 
     def call_from_argparse_args(self, args: argparse.Namespace) -> None:
         image = self.load_image(args.image)
@@ -141,16 +200,17 @@ class CLI(metaclass=abc.ABCMeta):
         if args.output is None:
             args.output = self.append_name_to_file(args.image)
         logger.debug(f"Saving output: {args.output}")
-        out.save(args.output)
+        if hasattr(out, "save"):
+            out.save(args.output)
+        elif hasattr(out, "to_filename"):
+            out.to_filename(args.output)
+        else:
+            raise ValueError("Unexpected image type")
 
-    @staticmethod
-    def load_image(image_path: intnormt.PathLike) -> intnormt.Image:
-        return typing.cast(intnormt.Image, mioi.Image.from_path(image_path))
 
-
-class DirectoryCLI(CLI, metaclass=abc.ABCMeta):
+class DirectoryCLI(CLIMixin, metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def __call__(  # type: ignore[override]
+    def __call__(
         self,
         images: typing.Sequence[intnormt.Image],
         /,
@@ -161,8 +221,67 @@ class DirectoryCLI(CLI, metaclass=abc.ABCMeta):
     ) -> typing.Any:
         raise NotImplementedError
 
+    @classmethod
+    def get_parent_parser(
+        cls,
+        desc: builtins.str,
+        valid_modalities: typing.Set[builtins.str] = intnorm.VALID_MODALITIES,
+        **kwargs: typing.Any,
+    ) -> argparse.ArgumentParser:
+        parser = argparse.ArgumentParser(
+            description=desc,
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
+        parser.add_argument(
+            "image_dir",
+            type=intnormt.dir_path(),
+            help="Path of directory of images to normalize.",
+        )
+        parser.add_argument(
+            "-m",
+            "--mask-dir",
+            type=intnormt.dir_path(),
+            default=None,
+            help="Path of directory of foreground masks corresponding to images.",
+        )
+        parser.add_argument(
+            "-o",
+            "--output-dir",
+            type=intnormt.dir_path(),
+            default=None,
+            help="Path of directory in which to save normalized images.",
+        )
+        parser.add_argument(
+            "-mo",
+            "--modality",
+            type=str,
+            default="t1",
+            choices=intnorm.VALID_MODALITIES,
+            help="Modality of the images.",
+        )
+        parser.add_argument(
+            "-e",
+            "--extension",
+            type=str,
+            default="nii*",
+            help="Extension of images (must be nibabel readable).",
+        )
+        parser.add_argument(
+            "-v",
+            "--verbosity",
+            action="count",
+            default=0,
+            help="Increase output verbosity (e.g., -vv is more than -v).",
+        )
+        parser.add_argument(
+            "--version",
+            action="store_true",
+            help="print the version of intensity-normalization",
+        )
+        return parser
+
     def call_from_argparse_args(self, args: argparse.Namespace) -> None:
-        # TODO: fix this to use directory arguments
+        # TODO: fix for directory
         image = self.load_image(args.image)
         if hasattr(args, "mask"):
             mask = args.mask and self.load_image(args.mask)
@@ -172,4 +291,9 @@ class DirectoryCLI(CLI, metaclass=abc.ABCMeta):
         if args.output is None:
             args.output = self.append_name_to_file(args.image)
         logger.debug(f"Saving output: {args.output}")
-        out.save(args.output)
+        if hasattr(out, "save"):
+            out.save(args.output)
+        elif hasattr(out, "to_filename"):
+            out.to_filename(args.output)
+        else:
+            raise ValueError("Unexpected image type")

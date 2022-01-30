@@ -14,7 +14,7 @@ import intensity_normalization.normalize.base as intnormb
 import intensity_normalization.typing as intnormt
 
 
-class ZScoreNormalize(intnormb.NormalizeBase):
+class ZScoreNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalizeCLI):
     def __init__(self, *, norm_value: builtins.float = 1.0, **kwargs):
         super().__init__(norm_value=norm_value)
         self.voi: intnormt.Image | None = None

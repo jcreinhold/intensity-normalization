@@ -7,17 +7,12 @@ from __future__ import annotations
 
 __all__ = ["KDENormalize"]
 
-import argparse
-import builtins
-import typing
-
-import intensity_normalization as intnorm
 import intensity_normalization.normalize.base as intnormb
 import intensity_normalization.typing as intnormt
 import intensity_normalization.util.histogram_tools as intnormhisttool
 
 
-class KDENormalize(intnormb.NormalizeBase):
+class KDENormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalizeCLI):
     """
     use kernel density estimation to find the peak of the white
     matter in the histogram of a (skull-stripped) brain MR image.
@@ -59,12 +54,3 @@ class KDENormalize(intnormb.NormalizeBase):
         desc = "Use kernel density estimation to find the WM mode from "
         desc += "a smoothed histogram and normalize an NIfTI MR image."
         return desc
-
-    @staticmethod
-    def get_parent_parser(
-        desc: builtins.str,
-        valid_modalities: typing.Set[builtins.str] = intnorm.VALID_PEAKS,
-    ) -> argparse.ArgumentParser:
-        return super(KDENormalize, KDENormalize).get_parent_parser(
-            desc, valid_modalities
-        )

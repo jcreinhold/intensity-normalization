@@ -101,6 +101,9 @@ ENV/
 # mypy
 .mypy_cache/
 
+# pyre
+.pyre/
+
 # IDE settings
 .vscode/
 .idea

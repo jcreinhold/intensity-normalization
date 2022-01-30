@@ -26,7 +26,9 @@ import intensity_normalization.util.tissue_membership as intnormtm
 logger = logging.getLogger(__name__)
 
 
-class LeastSquaresNormalize(intnormb.NormalizeFitBase):
+class LeastSquaresNormalize(
+    intnormb.LocationScaleCLIMixin, intnormb.DirectoryNormalizeCLI
+):
     def __init__(self, *, norm_value: float = 1.0, **kwargs):
         super().__init__(norm_value=norm_value)
         self.tissue_memberships: typing.List[intnormt.Image] = []
@@ -179,10 +181,12 @@ class LeastSquaresNormalize(intnormb.NormalizeFitBase):
             args.mask_dir = args.tissue_membership_dir
         super().call_from_argparse_args(args)
 
-    @staticmethod
+    @classmethod
     def get_parent_parser(
+        cls,
         desc: builtins.str,
         valid_modalities: typing.Set[builtins.str] = intnorm.VALID_MODALITIES,
+        **kwargs,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description=desc,

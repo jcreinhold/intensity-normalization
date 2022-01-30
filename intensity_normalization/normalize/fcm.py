@@ -25,7 +25,7 @@ import intensity_normalization.util.tissue_membership as intnormtm
 logger = logging.getLogger(__name__)
 
 
-class FCMNormalize(intnormb.NormalizeBase):
+class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalizeCLI):
     """
     use fuzzy c-means-generated tissue membership (found on a T1-w
     image) to normalize the tissue to norm_value (default = 1.)
@@ -38,7 +38,7 @@ class FCMNormalize(intnormb.NormalizeBase):
         tissue_type: intnormt.TissueTypes = intnormt.TissueTypes.WM,
         **kwargs,
     ):
-        super().__init__(norm_value=norm_value)
+        super().__init__(norm_value=norm_value, **kwargs)
         self.tissue_membership = None
         self.tissue_type = tissue_type
 
@@ -97,8 +97,9 @@ class FCMNormalize(intnormb.NormalizeBase):
         desc += "Use the specified tissue's mean to normalize a NIfTI MRI."
         return desc
 
-    @staticmethod
+    @classmethod
     def get_parent_parser(
+        cls,
         desc: builtins.str,
         valid_modalities: typing.Set[builtins.str] = intnorm.VALID_MODALITIES,
         **kwargs,

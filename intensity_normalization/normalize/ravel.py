@@ -16,7 +16,6 @@ import functools
 import logging
 import operator
 import typing
-import warnings
 
 import numpy as np
 import numpy.typing as npt
@@ -41,11 +40,10 @@ else:
     from intensity_normalization.util.coregister import register, to_ants
 
 
-class RavelNormalize(intnormb.NormalizeFitBase):
+class RavelNormalize(intnormb.DirectoryNormalizeCLI):
     def __init__(
         self,
         *,
-        norm_value: builtins.float = 1.0,
         membership_threshold: builtins.float = 0.99,
         register: builtins.bool = True,
         num_unwanted_factors: builtins.int = 1,
@@ -54,9 +52,7 @@ class RavelNormalize(intnormb.NormalizeFitBase):
         quantile_to_label_csf: builtins.float = 1.0,
         masks_are_csf: builtins.bool = False,
     ):
-        super().__init__(norm_value=norm_value)
-        if norm_value != 1.0:
-            warnings.warn("norm_value not used in RavelNormalize")
+        super().__init__()
         self.membership_threshold = membership_threshold
         self.register = register
         self.num_unwanted_factors = num_unwanted_factors
@@ -71,25 +67,15 @@ class RavelNormalize(intnormb.NormalizeFitBase):
         self._template_mask = None
         self._normalized = None
 
-    def calculate_location(
+    def normalize_image(
         self,
         image: intnormt.Image,
         /,
         mask: intnormt.Image | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
-    ) -> builtins.float:
-        return 0.0
-
-    def calculate_scale(
-        self,
-        image: intnormt.Image,
-        /,
-        mask: intnormt.Image | None = None,
-        *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
-    ) -> builtins.float:
-        return 1.0
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+    ) -> intnormt.Image:
+        return NotImplemented
 
     def teardown(self) -> None:
         del self._normalized
@@ -215,7 +201,7 @@ class RavelNormalize(intnormb.NormalizeFitBase):
         assert n_images == len(masks)
 
         for i, (image, mask) in enumerate(zip(images, masks), 1):
-            image_ws = whitestripe_norm(image)
+            image_ws = whitestripe_norm(image, mask)
             image_matrix[:, i - 1] = image_ws.flatten()
             logger.info(f"Processing image {i}/{n_images}")
             if i == 1 and self.template is None:
@@ -233,7 +219,7 @@ class RavelNormalize(intnormb.NormalizeFitBase):
                     logger.debug("Deformably co-registering image to template")
                     image = to_ants(image)
                     image = self._register(image)
-                    image_ws = whitestripe_norm(image)
+                    image_ws = whitestripe_norm(image, mask)
                     registered_images.append(image_ws)
                 logger.debug("Finding CSF mask")
                 csf_mask = self._find_csf_mask(image, mask, modality=modality)
@@ -317,16 +303,10 @@ class RavelNormalize(intnormb.NormalizeFitBase):
         self.fit(images, masks, modality=modality, **kwargs)
         assert self._normalized is not None
         if return_normalized_and_masks:
-            normalized_list: typing.List[intnormt.Image] = []
+            norm_lst: typing.List[intnormt.Image] = []
             for normed, image in zip(self._normalized, images):
-                shape = image.shape
-                normalized_list.append(
-                    mioi.Image(
-                        normed.reshape(shape),
-                        image.affine,
-                    )
-                )
-            return normalized_list, _masks
+                norm_lst.append(mioi.Image(normed.reshape(image.shape), image.affine))
+            return norm_lst, _masks
         return None
 
     @staticmethod
