@@ -20,8 +20,7 @@ pytest-cov>=3.0.0
 antspyx~=0.3.1
 matplotlib~=3.5.1
 nibabel~=3.2.1
-numpy~=1.21.5; python_version == "3.7"
-numpy~=1.22.0; python_version >= "3.8"
+numpy~=1.22.0
 pillow>=9.0.0
 pydicom~=2.2.2
 pymedio>=0.2.0

@@ -117,8 +117,8 @@ class Registrator(intnormcli.CLI):
         self,
         image: nib.Nifti1Image | ants.ANTsImage,
         /,
-        *args,
-        **kwargs,
+        *args: typing.Any,
+        **kwargs: typing.Any,
     ) -> nib.Nifti1Image | ants.ANTsImage:
         return register(
             image,
@@ -163,7 +163,9 @@ class Registrator(intnormcli.CLI):
         return "Co-register an image to MNI or another image."
 
     @staticmethod
-    def get_parent_parser(desc: builtins.str, **kwargs) -> argparse.ArgumentParser:
+    def get_parent_parser(
+        desc: builtins.str, **kwargs: typing.Any
+    ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description=desc,
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,

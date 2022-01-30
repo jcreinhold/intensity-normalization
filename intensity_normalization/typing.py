@@ -438,33 +438,37 @@ def new_parse_type(
 class Image(typing.Protocol):
     """support anything that implements the methods here"""
 
-    def __gt__(self, other: typing.Any) -> typing.Any:
+    def __gt__(self, other: typing.Any) -> Image:
         ...
 
-    def __ge__(self, other: typing.Any) -> typing.Any:
+    def __ge__(self, other: typing.Any) -> Image:
         ...
 
-    def __lt__(self, other: typing.Any) -> typing.Any:
+    def __lt__(self, other: typing.Any) -> Image:
         ...
 
-    def __le__(self, other: typing.Any) -> typing.Any:
+    def __le__(self, other: typing.Any) -> Image:
         ...
 
-    def __and__(self, other: Image) -> Image:
+    def __and__(self, other: typing.Any) -> Image:
         ...
 
-    def __or__(self, other: Image) -> Image:
+    def __or__(self, other: typing.Any) -> Image:
         ...
 
-    def __mul__(self, other: Image) -> Image:
+    def __add__(self, other: typing.Any) -> Image:
         ...
 
-    def __truediv__(self, other: Image) -> Image:
+    def __sub__(self, other: typing.Any) -> Image:
         ...
 
-    def __getitem__(
-        self, item: typing.Tuple[builtins.slice, ...] | builtins.int | Image
-    ) -> typing.Any:
+    def __mul__(self, other: typing.Any) -> Image:
+        ...
+
+    def __truediv__(self, other: typing.Any) -> Image:
+        ...
+
+    def __getitem__(self, item: typing.Any) -> typing.Any:
         ...
 
     def sum(self) -> builtins.float:
@@ -506,5 +510,5 @@ class Image(typing.Protocol):
     def affine(self) -> npt.NDArray:
         ...
 
-    def reshape(self, shape: typing.Tuple[builtins.int, ...]) -> Image:
+    def reshape(self, shape: typing.Sequence[builtins.int]) -> Image:
         ...

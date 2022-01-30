@@ -107,7 +107,7 @@ class NyulNormalize(intnormb.NormalizeFitBase):
         return self._percentiles
 
     def get_landmarks(self, image: intnormt.Image, /) -> npt.NDArray:
-        landmarks: npt.NDArray = np.percentile(image, self.percentiles)
+        landmarks: npt.NDArray = np.percentile(image, self.percentiles)  # type: ignore[call-overload]
         return landmarks
 
     def _fit(
@@ -135,8 +135,8 @@ class NyulNormalize(intnormb.NormalizeFitBase):
         for i, (image, mask) in enumerate(zip(images, _masks)):
             voi = self._get_voi(image, mask, modality=modality)
             landmarks = self.get_landmarks(voi)
-            min_p = np.percentile(voi, self.min_percentile)
-            max_p = np.percentile(voi, self.max_percentile)
+            min_p = np.percentile(voi, self.min_percentile)  # type: ignore[call-overload]
+            max_p = np.percentile(voi, self.max_percentile)  # type: ignore[call-overload]
             f = interp1d([min_p, max_p], [self.output_min_value, self.output_max_value])
             landmarks = np.array(f(landmarks))
             standard_scale += landmarks
@@ -145,7 +145,7 @@ class NyulNormalize(intnormb.NormalizeFitBase):
     def save_additional_info(
         self,
         args: argparse.Namespace,
-        **kwargs,
+        **kwargs: typing.Any,
     ) -> None:
         if args.save_standard_histogram is not None:
             self.save_standard_histogram(args.save_standard_histogram)

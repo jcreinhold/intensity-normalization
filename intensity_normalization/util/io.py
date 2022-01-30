@@ -25,16 +25,16 @@ def gather_images(
     dirpath: intnormt.PathLike,
     *,
     ext: builtins.str = "nii*",
-) -> typing.List[mioi.Image]:
+) -> typing.List[intnormt.Image]:
     """return all images of extension `ext` from a directory"""
     if not isinstance(dirpath, pathlib.Path):
         dirpath = pathlib.Path(dirpath)
     if not dirpath.is_dir():
         raise ValueError("dirpath must be a valid directory.")
     image_filenames = glob_ext(dirpath, ext=ext)
-    images: typing.List[mioi.Image] = []
+    images: typing.List[intnormt.Image] = []
     for fn in image_filenames:
-        image = mioi.Image.from_path(fn)
+        image = typing.cast(intnormt.Image, mioi.Image.from_path(fn))
         images.append(image)
     return images
 
@@ -44,8 +44,11 @@ def gather_images_and_masks(
     mask_dir: intnormt.PathLike | None = None,
     *,
     ext: builtins.str = "nii*",
-) -> typing.Tuple[typing.List[intnormt.Image], typing.Sequence[intnormt.Image | None]]:
+) -> typing.Tuple[
+    typing.List[intnormt.Image], typing.List[intnormt.Image] | typing.List[None]
+]:
     images = gather_images(image_dir, ext=ext)
+    masks: typing.List[intnormt.Image] | typing.List[None]
     if mask_dir is not None:
         masks = gather_images(mask_dir, ext=ext)
     else:
