@@ -8,18 +8,20 @@ from __future__ import annotations
 __all__ = ["WhiteStripeNormalize"]
 
 import argparse
+import builtins
 import typing
+import warnings
 
-import nibabel as nib
 import numpy as np
+import numpy.typing as npt
 
-from intensity_normalization import VALID_PEAKS
-from intensity_normalization.normalize.base import NormalizeBase
-from intensity_normalization.typing import Array, NiftiImage
-from intensity_normalization.util.histogram_tools import get_tissue_mode
+import intensity_normalization as intnorm
+import intensity_normalization.normalize.base as intnormb
+import intensity_normalization.typing as intnormt
+import intensity_normalization.util.histogram_tools as intnormhisttool
 
 
-class WhiteStripeNormalize(NormalizeBase):
+class WhiteStripeNormalize(intnormb.NormalizeBase):
     """
     find the normal appearing white matter of the input MR image and
     use those values to standardize the data (i.e., subtract the mean of
@@ -28,47 +30,60 @@ class WhiteStripeNormalize(NormalizeBase):
 
     def __init__(
         self,
-        width: float = 0.05,
-        width_l: Optional[float] = None,
-        width_u: Optional[float] = None,
+        *,
+        norm_value: builtins.float = 1.0,
+        width: builtins.float = 0.05,
+        width_l: builtins.float | None = None,
+        width_u: builtins.float | None = None,
     ):
-        super().__init__()
+        super().__init__(norm_value=norm_value)
+        if norm_value != 1.0:
+            warnings.warn("norm_value not used in RavelNormalize")
         self.width_l = width_l or width
         self.width_u = width_u or width
+        self.whitestripe: npt.NDArray | None = None
 
     def calculate_location(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
-    ) -> float:
-        loc: float = data[self.whitestripe].mean()
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
+    ) -> builtins.float:
+        loc: builtins.float = image[self.whitestripe].mean()
         return loc
 
     def calculate_scale(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
-    ) -> float:
-        scale: float = data[self.whitestripe].std()
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
+    ) -> builtins.float:
+        scale: builtins.float = image[self.whitestripe].std()
         return scale
 
     def setup(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> None:
         if modality is None:
             modality = "t1"
-        mask = self._get_mask(data, mask, modality)
-        masked = data * mask
-        voi = data[mask]
-        wm_mode = get_tissue_mode(voi, modality)
-        wm_mode_quantile: float = np.mean(voi < wm_mode).item()
+        mask = self._get_mask(image, mask, modality=modality)
+        masked = image * mask
+        voi = image[mask]
+        wm_mode = intnormhisttool.get_tissue_mode(voi, modality=modality)
+        wm_mode_quantile: builtins.float = np.mean(voi < wm_mode).item()
         lower_bound = max(wm_mode_quantile - self.width_l, 0.0)
         upper_bound = min(wm_mode_quantile + self.width_u, 1.0)
+        ws_l: builtins.float
+        ws_u: builtins.float
         ws_l, ws_u = np.quantile(voi, (lower_bound, upper_bound))
         self.whitestripe = (masked > ws_l) & (masked < ws_u)
 
@@ -76,19 +91,21 @@ class WhiteStripeNormalize(NormalizeBase):
         del self.whitestripe
 
     @staticmethod
-    def name() -> str:
+    def name() -> builtins.str:
         return "ws"
 
     @staticmethod
-    def fullname() -> str:
+    def fullname() -> builtins.str:
         return "WhiteStripe"
 
     @staticmethod
-    def description() -> str:
+    def description() -> builtins.str:
         return "Standardize the normal appearing WM of a NIfTI MR image."
 
     @staticmethod
-    def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
+    def add_method_specific_arguments(
+        parent_parser: argparse.ArgumentParser,
+    ) -> argparse.ArgumentParser:
         parser = parent_parser.add_argument_group("method-specific arguments")
         parser.add_argument(
             "--width",
@@ -100,24 +117,24 @@ class WhiteStripeNormalize(NormalizeBase):
 
     @staticmethod
     def get_parent_parser(
-        desc: str,
-        valid_modalities: Set[str] = VALID_PEAKS,
-    ) -> ArgumentParser:
+        desc: builtins.str,
+        valid_modalities: typing.Set[builtins.str] = intnorm.VALID_PEAKS,
+    ) -> argparse.ArgumentParser:
         return super(WhiteStripeNormalize, WhiteStripeNormalize).get_parent_parser(
             desc, valid_modalities
         )
 
     @classmethod
-    def from_argparse_args(cls: Type[WS], args: Namespace) -> WS:
-        return cls(args.width)
+    def from_argparse_args(cls, args: argparse.Namespace, /) -> WhiteStripeNormalize:
+        return cls(width=args.width)
 
-    def plot_histogram(
+    def plot_histogram_from_args(
         self,
-        args: Namespace,
-        normalized: NiftiImage,
-        mask: Optional[NiftiImage] = None,
+        args: argparse.Namespace,
+        /,
+        normalized: intnormt.Image,
+        mask: intnormt.Image | None = None,
     ) -> None:
         if mask is None:
-            mask_data = self.estimate_foreground(normalized.get_fdata())
-            mask = nib.Nifti1Image(mask_data, normalized.affine, normalized.header)
-        super().plot_histogram(args, normalized, mask)
+            mask = self.estimate_foreground(normalized)
+        super().plot_histogram_from_args(args, normalized, mask)

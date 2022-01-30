@@ -15,6 +15,7 @@ __all__ = [
     "file_path",
     "Image",
     "interp_type_dict",
+    "Modalities",
     "new_parse_type",
     "nonnegative_float",
     "nonnegative_int",
@@ -27,22 +28,93 @@ __all__ = [
     "probability_float_or_none",
     "save_file_path",
     "save_nifti_path",
-    "Vector",
+    "SplitFilename",
+    "TissueTypes",
 ]
 
 import argparse
 import builtins
+import dataclasses
+import enum
 import os
 import pathlib
 import typing
 
-import nibabel as nib
-import numpy as np
 import numpy.typing as npt
+
+import intensity_normalization as intnorm
 
 ArgType = typing.Optional[typing.Union[argparse.Namespace, typing.List[builtins.str]]]
 PathLike = typing.Union[builtins.str, os.PathLike]
-Vector = npt.NDArray
+
+_MODALITIES = [(vm.upper(), vm) for vm in sorted(intnorm.VALID_MODALITIES)]
+
+Modalities = enum.Enum("Modalities", _MODALITIES, module=__name__)  # type: ignore[misc]
+
+
+def _modality_from_string(
+    cls: typing.Type, string: builtins.str | Modalities
+) -> Modalities:
+    if isinstance(string, cls):
+        modality: Modalities = string
+        return modality
+    for name, value in _MODALITIES:
+        if string == value:
+            modality = getattr(cls, name)
+            return modality
+    msg = f"string must be one of {intnorm.VALID_MODALITIES}. Got {string}"
+    raise ValueError(msg)
+
+
+Modalities.from_string = classmethod(_modality_from_string)  # type: ignore[attr-defined]
+
+
+class TissueTypes(enum.Enum):
+    CSF: builtins.str = "csf"
+    GM: builtins.str = "gm"
+    WM: builtins.str = "wm"
+
+    @classmethod
+    def from_string(cls, string: builtins.str) -> TissueTypes:
+        if string.lower() == "csf":
+            return TissueTypes.CSF
+        elif string.lower() == "gm":
+            return TissueTypes.GM
+        elif string.lower() == "wm":
+            return TissueTypes.WM
+        else:
+            raise ValueError(f"string must be 'csf', 'gm', or 'wm'. Got {string}")
+
+    def to_int(self) -> builtins.int:
+        if self == TissueTypes.CSF:
+            return 0
+        elif self == TissueTypes.GM:
+            return 1
+        elif self == TissueTypes.WM:
+            return 2
+        else:
+            raise ValueError("Unexpected enum.")
+
+    def to_fullname(self) -> builtins.str:
+        if self == TissueTypes.CSF:
+            return "Cerebrospinal fluid"
+        elif self == TissueTypes.GM:
+            return "Grey matter"
+        elif self == TissueTypes.WM:
+            return "White matter"
+        else:
+            raise ValueError("Unexpected enum.")
+
+
+@dataclasses.dataclass(frozen=True)
+class SplitFilename:
+    path: pathlib.Path
+    base: builtins.str
+    ext: builtins.str
+
+    def __iter__(self) -> typing.Iterator[typing.Any]:
+        return iter(dataclasses.astuple(self))
+
 
 interp_type_dict = dict(
     linear=0,
@@ -211,8 +283,8 @@ allowed_metrics = frozenset(
 
 
 def return_none(
-    func: typing.Callable[[builtins.object, typing.Any], typing.Any]
-) -> typing.Callable[[builtins.object, typing.Any], typing.Any]:
+    func: typing.Callable[[typing.Any, typing.Any], typing.Any]
+) -> typing.Callable[[typing.Any, typing.Any], typing.Any]:
     def new_func(self: builtins.object, string: typing.Any) -> typing.Any:
         if string is None:
             return None
@@ -363,10 +435,19 @@ def new_parse_type(
     return NewParseType(func, name)
 
 
-class Image(typing.Protocol, npt.NDArray):
+class Image(typing.Protocol):
     """support anything that implements the methods here"""
 
     def __gt__(self, other: typing.Any) -> typing.Any:
+        ...
+
+    def __ge__(self, other: typing.Any) -> typing.Any:
+        ...
+
+    def __lt__(self, other: typing.Any) -> typing.Any:
+        ...
+
+    def __le__(self, other: typing.Any) -> typing.Any:
         ...
 
     def __and__(self, other: Image) -> Image:
@@ -375,8 +456,14 @@ class Image(typing.Protocol, npt.NDArray):
     def __or__(self, other: Image) -> Image:
         ...
 
+    def __mul__(self, other: Image) -> Image:
+        ...
+
+    def __truediv__(self, other: Image) -> Image:
+        ...
+
     def __getitem__(
-        self, item: typing.Tuple[builtins.slice, ...] | builtins.int
+        self, item: typing.Tuple[builtins.slice, ...] | builtins.int | Image
     ) -> typing.Any:
         ...
 
@@ -401,4 +488,23 @@ class Image(typing.Protocol, npt.NDArray):
 
     @property
     def shape(self) -> typing.Tuple[builtins.int, ...]:
+        ...
+
+    def mean(self) -> builtins.float:
+        ...
+
+    def std(self) -> builtins.float:
+        ...
+
+    def min(self) -> builtins.float:
+        ...
+
+    def flatten(self) -> Image:
+        ...
+
+    @property
+    def affine(self) -> npt.NDArray:
+        ...
+
+    def reshape(self, shape: typing.Tuple[builtins.int, ...]) -> Image:
         ...

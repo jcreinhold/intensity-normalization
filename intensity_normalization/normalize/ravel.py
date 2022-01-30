@@ -16,18 +16,19 @@ import functools
 import logging
 import operator
 import typing
+import warnings
 
-import nibabel
 import numpy as np
-from numpy.linalg import solve
-from scipy.sparse import bsr_matrix
-from scipy.sparse.linalg import svds
+import numpy.typing as npt
+import pymedio.image as mioi
+import scipy.sparse
+import scipy.sparse.linalg
 
-from intensity_normalization.normalize.base import NormalizeFitBase
-from intensity_normalization.normalize.whitestripe import WhiteStripeNormalize
-from intensity_normalization.typing import Array, ArrayOrNifti, NiftiImage, PathLike
-from intensity_normalization.util.io import gather_images_and_masks
-from intensity_normalization.util.tissue_membership import find_tissue_memberships
+import intensity_normalization.normalize.base as intnormb
+import intensity_normalization.normalize.whitestripe as intnormws
+import intensity_normalization.typing as intnormt
+import intensity_normalization.util.io as intnormio
+import intensity_normalization.util.tissue_membership as intnormtm
 
 logger = logging.getLogger(__name__)
 
@@ -40,67 +41,77 @@ else:
     from intensity_normalization.util.coregister import register, to_ants
 
 
-class RavelNormalize(NormalizeFitBase):
+class RavelNormalize(intnormb.NormalizeFitBase):
     def __init__(
         self,
-        membership_threshold: float = 0.99,
-        register: bool = True,
-        num_unwanted_factors: int = 1,
-        sparse_svd: bool = False,
-        whitestripe_kwargs: Optional[Dict[str, Any]] = None,
-        proportion_of_intersection_to_label_csf: float = 1.0,
-        masks_are_csf: bool = False,
+        *,
+        norm_value: builtins.float = 1.0,
+        membership_threshold: builtins.float = 0.99,
+        register: builtins.bool = True,
+        num_unwanted_factors: builtins.int = 1,
+        sparse_svd: builtins.bool = False,
+        whitestripe_kwargs: typing.Dict[builtins.str, typing.Any] | None = None,
+        quantile_to_label_csf: builtins.float = 1.0,
+        masks_are_csf: builtins.bool = False,
     ):
-        super().__init__()
+        super().__init__(norm_value=norm_value)
+        if norm_value != 1.0:
+            warnings.warn("norm_value not used in RavelNormalize")
         self.membership_threshold = membership_threshold
         self.register = register
         self.num_unwanted_factors = num_unwanted_factors
         self.sparse_svd = sparse_svd
         self.whitestripe_kwargs = whitestripe_kwargs or dict()
-        self.proportion_of_intersection_to_label_csf = (
-            proportion_of_intersection_to_label_csf
-        )
+        self.quantile_to_label_csf = quantile_to_label_csf
         self.masks_are_csf = masks_are_csf
         if register and masks_are_csf:
-            raise ValueError(
-                "If masks_are_csf, then images are assumed to be co-registered."
-            )
+            msg = "If masks_are_csf, then images are assumed to be co-registered."
+            raise ValueError(msg)
         self._template = None
         self._template_mask = None
+        self._normalized = None
 
     def calculate_location(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
-    ) -> float:
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
+    ) -> builtins.float:
         return 0.0
 
     def calculate_scale(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
-    ) -> float:
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
+    ) -> builtins.float:
         return 1.0
 
+    def teardown(self) -> None:
+        del self._normalized
+        self._normalized = None
+
     @property
-    def template(self) -> Optional[ants.ANTsImage]:
+    def template(self) -> ants.ANTsImage | None:
         return self._template
 
     @property
-    def template_mask(self) -> Optional[ants.ANTsImage]:
+    def template_mask(self) -> ants.ANTsImage | None:
         return self._template_mask
 
     def set_template(
         self,
-        template: Union[ArrayOrNifti, ants.ANTsImage],
+        template: intnormt.Image | ants.ANTsImage,
     ) -> None:
         self._template = to_ants(template)
 
     def set_template_mask(
         self,
-        template_mask: Optional[Union[ArrayOrNifti, ants.ANTsImage]],
+        template_mask: intnormt.Image | ants.ANTsImage | None,
     ) -> None:
         if template_mask is None:
             self._template_mask = None
@@ -115,24 +126,28 @@ class RavelNormalize(NormalizeFitBase):
 
     def _find_csf_mask(
         self,
-        image: Array,
-        mask: Optional[Array],
-        modality: Optional[str] = None,
-    ) -> Array:
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
+    ) -> intnormt.Image:
         if self.masks_are_csf:
-            assert mask is not None
+            if mask is None:
+                raise ValueError("mask must be defined if masks are CSF masks.")
             return mask
-        elif self._get_modality(modality) != "t1":
-            raise NotImplementedError(
-                "Non-T1-w RAVEL normalization w/o CSF masks not supported."
-            )
-        tissue_membership = find_tissue_memberships(image, mask)
-        csf_mask: Array = tissue_membership[..., 0] > self.membership_threshold
+        elif modality != intnormt.Modalities.T1:
+            msg = "Non-T1-w RAVEL normalization w/o CSF masks not supported."
+            raise NotImplementedError(msg)
+        tissue_membership = intnormtm.find_tissue_memberships(image, mask)
+        csf_mask: npt.NDArray = tissue_membership[..., 0] > self.membership_threshold
         csf_mask = csf_mask.astype(np.uint8)  # convert to integer for intersection
         return csf_mask
 
     @staticmethod
-    def _ravel_correction(control_voxels: Array, unwanted_factors: Array) -> Array:
+    def _ravel_correction(
+        control_voxels: npt.NDArray, unwanted_factors: npt.NDArray
+    ) -> npt.NDArray:
         """Correct control voxels by removing trend from unwanted factors
 
         Args:
@@ -147,33 +162,35 @@ class RavelNormalize(NormalizeFitBase):
         logger.debug("Performing RAVEL correction")
         logger.debug(f"Unwanted factors shape: {unwanted_factors.shape}")
         logger.debug(f"Control voxels shape: {control_voxels.shape}")
-        beta = solve(
+        beta = np.linalg.solve(
             unwanted_factors.T @ unwanted_factors,
             unwanted_factors.T @ control_voxels.T,
         )
         fitted = (unwanted_factors @ beta).T
         residuals: np.ndarray = control_voxels - fitted
         voxel_means = np.mean(control_voxels, axis=1, keepdims=True)
-        normalized: Array = residuals + voxel_means
+        normalized: npt.NDArray = residuals + voxel_means
         return normalized
 
-    def _register(self, image: ants.ANTsImage) -> Array:
+    def _register(self, image: ants.ANTsImage) -> npt.NDArray:
         registered = register(
-            image=image,
+            image,
             template=self.template,
             type_of_transform="SyN",
             interpolator="linear",
             template_mask=self.template_mask,
         )
-        out: Array = registered.numpy()
+        out: npt.NDArray = registered.numpy()
         return out
 
     def create_image_matrix_and_control_voxels(
         self,
-        images: List[Array],
-        masks: Optional[List[Optional[Array]]] = None,
-        modality: Optional[str] = None,
-    ) -> Tuple[Array, Array]:
+        images: typing.Sequence[intnormt.Image],
+        /,
+        masks: typing.Sequence[intnormt.Image | None] | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
+    ) -> typing.Tuple[npt.NDArray, npt.NDArray]:
         """creates an matrix of images; rows correspond to voxels, columns are images
 
         Args:
@@ -191,7 +208,7 @@ class RavelNormalize(NormalizeFitBase):
         image_size = int(np.prod(image_shape))
         assert all([shape == image_shape for shape in image_shapes])
         image_matrix = np.zeros((image_size, n_images))
-        whitestripe_norm = WhiteStripeNormalize(**self.whitestripe_kwargs)
+        whitestripe_norm = intnormws.WhiteStripeNormalize(**self.whitestripe_kwargs)
         control_masks = []
         registered_images = []
         masks = ([None] * n_images) if masks is None else masks
@@ -207,7 +224,7 @@ class RavelNormalize(NormalizeFitBase):
                 self.set_template_mask(mask)
                 logger.debug("Finding CSF mask")
                 # csf found on original b/c assume foreground positive
-                csf_mask = self._find_csf_mask(image, mask, modality)
+                csf_mask = self._find_csf_mask(image, mask, modality=modality)
                 control_masks.append(csf_mask)
                 if self.register:
                     registered_images.append(image_ws)
@@ -219,14 +236,12 @@ class RavelNormalize(NormalizeFitBase):
                     image_ws = whitestripe_norm(image)
                     registered_images.append(image_ws)
                 logger.debug("Finding CSF mask")
-                csf_mask = self._find_csf_mask(image, mask, modality)
+                csf_mask = self._find_csf_mask(image, mask, modality=modality)
                 control_masks.append(csf_mask)
 
-        control_mask_sum = reduce(add, control_masks)
-        threshold = np.floor(
-            len(control_masks) * self.proportion_of_intersection_to_label_csf
-        )
-        intersection = control_mask_sum >= threshold
+        control_mask_sum = functools.reduce(operator.add, control_masks)
+        threshold = np.floor(len(control_masks) * self.quantile_to_label_csf)
+        intersection: intnormt.Image = control_mask_sum >= threshold
         num_control_voxels = int(intersection.sum())
         if num_control_voxels == 0:
             raise RuntimeError(
@@ -249,75 +264,69 @@ class RavelNormalize(NormalizeFitBase):
 
         return image_matrix, control_voxels
 
-    def estimate_unwanted_factors(self, control_voxels: Array) -> Array:
+    def estimate_unwanted_factors(self, control_voxels: npt.NDArray) -> npt.NDArray:
         logger.debug("Estimating unwanted factors")
         _, _, all_unwanted_factors = (
             np.linalg.svd(control_voxels, full_matrices=False)
             if not self.sparse_svd
-            else svds(
-                bsr_matrix(control_voxels),
+            else scipy.sparse.linalg.svds(
+                scipy.sparse.bsr_matrix(control_voxels),
                 k=self.num_unwanted_factors,
                 return_singular_vectors="vh",
             )
         )
-        unwanted_factors: Array = all_unwanted_factors.T[
+        unwanted_factors: npt.NDArray = all_unwanted_factors.T[
             :, 0 : self.num_unwanted_factors
         ]
         return unwanted_factors
 
-    def fit(  # type: ignore[no-untyped-def,override]
+    def _fit(
         self,
-        images: List[ArrayOrNifti],
-        masks: Optional[List[ArrayOrNifti]] = None,
-        modality: Optional[str] = None,
+        images: typing.Sequence[intnormt.Image],
+        /,
+        masks: typing.Sequence[intnormt.Image] | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs,
-    ) -> Array:
-        images, masks = self.before_fit(images, masks, modality, **kwargs)
-        logger.info("Fitting")
-        normalized = self._fit(images, masks, modality, **kwargs)
-        logger.debug("Done fitting")
-        return normalized
-
-    def _fit(  # type: ignore[no-untyped-def,override]
-        self,
-        images: List[ArrayOrNifti],
-        masks: Optional[List[ArrayOrNifti]] = None,
-        modality: Optional[str] = None,
-        **kwargs,
-    ) -> Array:
+    ) -> None:
         image_matrix, control_voxels = self.create_image_matrix_and_control_voxels(
             images,
             masks,
-            modality,
+            modality=modality,
         )
         unwanted_factors = self.estimate_unwanted_factors(control_voxels)
         normalized = self._ravel_correction(image_matrix, unwanted_factors)
-        return normalized.T  # transpose so images on 0th axis
+        self._normalized = normalized.T  # transpose so images on 0th axis
 
-    def process_directories(  # type: ignore[no-untyped-def]
+    def process_directories(
         self,
-        image_dir: PathLike,
-        mask_dir: Optional[PathLike] = None,
-        modality: Optional[str] = None,
-        ext: str = "nii*",
-        return_normalized_and_masks: bool = False,
+        image_dir: intnormt.PathLike,
+        /,
+        mask_dir: intnormt.PathLike | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        ext: builtins.str = "nii*",
+        return_normalized_and_masks: builtins.bool = False,
         **kwargs,
-    ) -> Optional[Tuple[List[ArrayOrNifti], List[Optional[ArrayOrNifti]]]]:
+    ) -> typing.Tuple[
+        typing.Sequence[intnormt.Image], typing.Sequence[intnormt.Image | None]
+    ] | None:
         logger.debug("Grabbing images")
-        images, masks = gather_images_and_masks(image_dir, mask_dir, ext)
-        normalized = self.fit(images, masks, modality, **kwargs)
+        images, _masks = intnormio.gather_images_and_masks(image_dir, mask_dir, ext=ext)
+        masks = None if _masks[0] is None else _masks
+        self.fit(images, masks, modality=modality, **kwargs)
+        assert self._normalized is not None
         if return_normalized_and_masks:
-            normalized_list: List[NiftiImage] = []
-            for normed, image in zip(normalized, images):
-                shape = image.get_fdata().shape
+            normalized_list: typing.List[intnormt.Image] = []
+            for normed, image in zip(self._normalized, images):
+                shape = image.shape
                 normalized_list.append(
-                    nibabel.Nifti1Image(
+                    mioi.Image(
                         normed.reshape(shape),
                         image.affine,
-                        image.header,
                     )
                 )
-            return normalized_list, masks
+            return normalized_list, _masks
         return None
 
     @staticmethod
@@ -330,13 +339,14 @@ class RavelNormalize(NormalizeFitBase):
 
     @staticmethod
     def description() -> str:
-        return (
-            "Perform WhiteStripe and then correct for technical "
-            "variation with RAVEL on a set of NIfTI MR images."
-        )
+        desc = "Perform WhiteStripe and then correct for technical "
+        desc += "variation with RAVEL on a set of NIfTI MR images."
+        return desc
 
     @staticmethod
-    def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
+    def add_method_specific_arguments(
+        parent_parser: argparse.ArgumentParser,
+    ) -> argparse.ArgumentParser:
         parser = parent_parser.add_argument_group("method-specific arguments")
         parser.add_argument(
             "-b",
@@ -373,7 +383,7 @@ class RavelNormalize(NormalizeFitBase):
             "assumes images are deformably co-registered",
         )
         parser.add_argument(
-            "--prop-intersection-csf",
+            "--quantile-to-label-csf",
             default=1.0,
             help="control how intersection calculated "
             "(1.0 means normal intersection, 0.5 means only "
@@ -382,12 +392,12 @@ class RavelNormalize(NormalizeFitBase):
         return parent_parser
 
     @classmethod
-    def from_argparse_args(cls: Type[RN], args: Namespace) -> RN:
+    def from_argparse_args(cls, args: argparse.Namespace, /) -> RavelNormalize:
         return cls(
             membership_threshold=args.membership_threshold,
             register=args.register,
             num_unwanted_factors=args.num_unwanted_factors,
             sparse_svd=args.sparse_svd,
-            proportion_of_intersection_to_label_csf=args.prop_intersection_csf,
+            quantile_to_label_csf=args.quantile_to_label_csf,
             masks_are_csf=args.masks_are_csf,
         )

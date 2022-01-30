@@ -9,43 +9,55 @@ __all__ = ["ZScoreNormalize"]
 
 import argparse
 import builtins
-import typing
 
-import nibabel as nib
-
-from intensity_normalization.normalize.base import NormalizeBase
-from intensity_normalization.typing import Array, NiftiImage
+import intensity_normalization.normalize.base as intnormb
+import intensity_normalization.typing as intnormt
 
 
-class ZScoreNormalize(NormalizeBase):
+class ZScoreNormalize(intnormb.NormalizeBase):
+    def __init__(self, *, norm_value: builtins.float = 1.0, **kwargs):
+        super().__init__(norm_value=norm_value)
+        self.voi: intnormt.Image | None = None
+
     def calculate_location(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
-    ) -> float:
-        loc: float = self.voi.mean().item()
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
+    ) -> builtins.float:
+        if self.voi is None:
+            raise RuntimeError("voi needs to be set")
+        loc: builtins.float = float(self.voi.mean())
         return loc
 
     def calculate_scale(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
-    ) -> float:
-        scale: float = self.voi.std().item()
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
+    ) -> builtins.float:
+        if self.voi is None:
+            raise RuntimeError("voi needs to be set")
+        scale: builtins.float = float(self.voi.std())
         return scale
 
     def setup(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> None:
-        self.voi = self._get_voi(data, mask, modality)
+        self.voi = self._get_voi(image, mask, modality=modality)
 
     def teardown(self) -> None:
         del self.voi
+        self.voi = None
 
     @staticmethod
     def name() -> str:
@@ -59,13 +71,13 @@ class ZScoreNormalize(NormalizeBase):
     def description() -> str:
         return "Standardize an MR image by the foreground intensities."
 
-    def plot_histogram(
+    def plot_histogram_from_args(
         self,
-        args: Namespace,
-        normalized: NiftiImage,
-        mask: Optional[NiftiImage] = None,
+        args: argparse.Namespace,
+        /,
+        normalized: intnormt.Image,
+        mask: intnormt.Image | None = None,
     ) -> None:
         if mask is None:
-            mask_data = self.estimate_foreground(normalized.get_fdata())
-            mask = nib.Nifti1Image(mask_data, normalized.affine, normalized.header)
-        super().plot_histogram(args, normalized, mask)
+            mask = self.estimate_foreground(normalized)
+        super().plot_histogram_from_args(args, normalized, mask)

@@ -13,7 +13,6 @@ try:
 except RuntimeError:
     pytest.skip("ANTsPy required for these tests. Skipping.", allow_module_level=True)
 
-from common import base_cli_dir_args, base_cli_image_args, image, mask  # isort: skip
 
 ANTSPY_DIR = pathlib.Path.home() / ".antspy"
 ANTSPY_DIR_EXISTS = ANTSPY_DIR.is_dir()

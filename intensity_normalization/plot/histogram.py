@@ -17,16 +17,9 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 
-from intensity_normalization.base_cli import CLI
-from intensity_normalization.typing import (
-    Array,
-    ArrayOrNifti,
-    PathLike,
-    dir_path,
-    probability_float,
-    save_file_path,
-)
-from intensity_normalization.util.io import gather_images_and_masks
+import intensity_normalization.base_cli as intnormcli
+import intensity_normalization.typing as intnormt
+import intensity_normalization.util.io as intnormio
 
 logger = logging.getLogger(__name__)
 
@@ -36,38 +29,46 @@ try:
     sns.set(style="whitegrid", font_scale=2, rc={"grid.color": ".9"})
 except ImportError:
     logger.debug("Seaborn not installed. Plots won't look as pretty.")
+    sns = None
 
 
-class HistogramPlotter(CLI):
+class HistogramPlotter(intnormcli.CLI):
     def __init__(
         self,
-        figsize: Tuple[int, int] = (12, 10),
-        alpha: float = 0.8,
-        title: Optional[str] = None,
+        *,
+        figsize: typing.Tuple[builtins.int, builtins.int] = (12, 10),
+        alpha: builtins.float = 0.8,
+        title: builtins.str | None = None,
     ):
         self.figsize = figsize
         self.alpha = alpha
         self.title = title
 
-    def __call__(  # type: ignore[no-untyped-def,override]
+    def __call__(
         self,
-        images: List[ArrayOrNifti],
-        masks: List[Optional[ArrayOrNifti]],
+        images: typing.Sequence[intnormt.Image],
+        /,
+        masks: typing.Sequence[intnormt.Image | None] | None,
         **kwargs,
     ) -> plt.Axes:
         assert len(images) > 0
-        assert len(images) == len(masks)
         if hasattr(images[0], "get_fdata"):
             images = [img.get_fdata() for img in images]  # type: ignore[union-attr]
-        if hasattr(masks[0], "get_fdata"):
-            masks = [msk.get_fdata() for msk in masks]  # type: ignore[union-attr]
+        if masks is not None:
+            if hasattr(masks[0], "get_fdata"):
+                masks = [msk.get_fdata() for msk in masks]  # type: ignore[union-attr]
+        else:
+            masks = [None] * len(masks)
+        if len(images) != len(masks):
+            raise ValueError("number of images and masks must be equal")
         ax = self.plot_all_histograms(images, masks, **kwargs)
         return ax
 
-    def plot_all_histograms(  # type: ignore[no-untyped-def]
+    def plot_all_histograms(
         self,
-        images: List[Array],
-        masks: List[Optional[Array]],
+        images: typing.Sequence[intnormt.Image],
+        /,
+        masks: typing.Sequence[intnormt.Image | None],
         **kwargs,
     ) -> plt.Axes:
         _, ax = plt.subplots(figsize=self.figsize)
@@ -82,42 +83,52 @@ class HistogramPlotter(CLI):
             ax.set_title(self.title)
         return ax
 
-    def from_directories(  # type: ignore[no-untyped-def]
+    def from_directories(
         self,
-        image_dir: PathLike,
-        mask_dir: Optional[PathLike] = None,
-        ext: str = "nii*",
+        image_dir: intnormt.PathLike,
+        /,
+        mask_dir: intnormt.PathLike | None = None,
+        *,
+        ext: builtins.str = "nii*",
         **kwargs,
     ) -> plt.Axes:
-        images, masks = gather_images_and_masks(image_dir, mask_dir, ext, True)
+        images, masks = intnormio.gather_images_and_masks(image_dir, mask_dir, ext=ext)
         return self(images, masks, **kwargs)
 
     @staticmethod
-    def description() -> str:
+    def name() -> builtins.str:
+        return "hist"
+
+    @staticmethod
+    def fullname() -> builtins.str:
+        return "Histogram plotter"
+
+    @staticmethod
+    def description() -> builtins.str:
         return "Plot the histogram of an image."
 
     @staticmethod
-    def get_parent_parser(desc: str) -> ArgumentParser:
-        parser = ArgumentParser(
+    def get_parent_parser(desc: builtins.str, **kwargs) -> argparse.ArgumentParser:
+        parser = argparse.ArgumentParser(
             description=desc,
-            formatter_class=ArgumentDefaultsHelpFormatter,
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
             "image_dir",
-            type=dir_path(),
+            type=intnormt.dir_path(),
             help="Path of image directory to plot histograms for.",
         )
         parser.add_argument(
             "-m",
             "--mask-dir",
-            type=dir_path(),
+            type=intnormt.dir_path(),
             default=None,
             help="Path of directory to corresponding foreground masks for image_dir.",
         )
         parser.add_argument(
             "-o",
             "--output",
-            type=save_file_path(),
+            type=intnormt.save_file_path(),
             default=None,
             help="Path to save histogram.",
         )
@@ -132,7 +143,7 @@ class HistogramPlotter(CLI):
         parser.add_argument(
             "-a",
             "--alpha",
-            type=probability_float,  # type: ignore[arg-type]
+            type=intnormt.probability_float(),
             default=0.8,
             help="Alpha level for line representing histogram.",
         )
@@ -158,25 +169,27 @@ class HistogramPlotter(CLI):
         return parser
 
     @classmethod
-    def from_argparse_args(cls: Type[HP], args: Namespace) -> HP:
-        return cls(args.figsize, args.alpha, args.title)
+    def from_argparse_args(cls, args: argparse.Namespace) -> HistogramPlotter:
+        return cls(figsize=args.figsize, alpha=args.alpha, title=args.title)
 
-    def call_from_argparse_args(self, args: Namespace) -> None:
+    def call_from_argparse_args(self, args: argparse.Namespace) -> None:
         _ = self.from_directories(args.image_dir, args.mask_dir)
         if args.output is None:
-            args.output = Path.cwd().resolve() / "hist.pdf"
+            args.output = pathlib.Path.cwd().resolve() / "hist.pdf"
         logger.info(f"Saving histogram: {args.output}")
         plt.savefig(args.output)
 
 
-def plot_histogram(  # type: ignore[no-untyped-def]
-    image: Array,
-    mask: Optional[Array] = None,
-    ax: Optional[plt.Axes] = None,
-    n_bins: int = 200,
-    log: bool = True,
-    alpha: float = 0.8,
-    linewidth: float = 3.0,
+def plot_histogram(
+    image: intnormt.Image,
+    /,
+    mask: intnormt.Image | None = None,
+    *,
+    ax: plt.Axes | None = None,
+    n_bins: builtins.int = 200,
+    log: builtins.bool = True,
+    alpha: builtins.float = 0.8,
+    linewidth: builtins.float = 3.0,
     **kwargs,
 ) -> plt.Axes:
     """
@@ -190,6 +203,7 @@ def plot_histogram(  # type: ignore[no-untyped-def]
         n_bins: number of bins to use in histogram
         log: use log scale on the y-axis
         alpha: value in [0,1], controls opacity of line plot
+        linewidth: width of line in histogram plot
         kwargs: arguments to the histogram function
 
     Returns:

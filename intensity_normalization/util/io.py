@@ -12,66 +12,70 @@ __all__ = [
     "split_filename",
 ]
 
+import builtins
 import pathlib
 import typing
 
-import nibabel as nib
+import pymedio.image as mioi
 
-from intensity_normalization.typing import Array, NiftiImage, PathLike
+import intensity_normalization.typing as intnormt
 
 
 def gather_images(
-    dirpath: PathLike,
-    ext: str = "nii*",
-    return_data: bool = False,
-) -> Union[List[NiftiImage], List[Array]]:
+    dirpath: intnormt.PathLike,
+    *,
+    ext: builtins.str = "nii*",
+) -> typing.List[mioi.Image]:
     """return all images of extension `ext` from a directory"""
-    if isinstance(dirpath, str):
-        dirpath = Path(dirpath)
-    assert dirpath.is_dir()
-    image_filenames = glob_ext(dirpath, ext)
-    images = []
+    if not isinstance(dirpath, pathlib.Path):
+        dirpath = pathlib.Path(dirpath)
+    if not dirpath.is_dir():
+        raise ValueError("dirpath must be a valid directory.")
+    image_filenames = glob_ext(dirpath, ext=ext)
+    images: typing.List[mioi.Image] = []
     for fn in image_filenames:
-        image = nib.load(fn)
-        if return_data:
-            image = image.get_fdata()
+        image = mioi.Image.from_path(fn)
         images.append(image)
     return images
 
 
 def gather_images_and_masks(
-    image_dir: PathLike,
-    mask_dir: Optional[PathLike] = None,
-    ext: str = "nii*",
-    return_data: bool = False,
-) -> Tuple[Union[List[Any], List[Array]], Union[List[Any], List[Any]]]:
-    images = gather_images(image_dir, ext, return_data)
+    image_dir: intnormt.PathLike,
+    mask_dir: intnormt.PathLike | None = None,
+    *,
+    ext: builtins.str = "nii*",
+) -> typing.Tuple[typing.List[intnormt.Image], typing.Sequence[intnormt.Image | None]]:
+    images = gather_images(image_dir, ext=ext)
     if mask_dir is not None:
-        masks = gather_images(mask_dir, ext, return_data)
+        masks = gather_images(mask_dir, ext=ext)
     else:
         masks = [None] * len(images)
     return images, masks
 
 
-def glob_ext(dirpath: PathLike, ext: str = "nii*") -> List[Path]:
+def glob_ext(
+    dirpath: intnormt.PathLike, *, ext: builtins.str = "nii*"
+) -> typing.List[pathlib.Path]:
     """return a sorted list of ext files for a given directory path"""
-    if isinstance(dirpath, str):
-        dirpath = Path(dirpath)
+    if not isinstance(dirpath, pathlib.Path):
+        dirpath = pathlib.Path(dirpath)
     assert dirpath.is_dir()
     filenames = sorted(dirpath.resolve().glob(f"*.{ext}"))
     return filenames
 
 
 def split_filename(
-    filepath: Union[str, Path],
-    resolve: bool = False,
-) -> Tuple[Path, str, str]:
+    filepath: intnormt.PathLike,
+    /,
+    *,
+    resolve: builtins.bool = False,
+) -> intnormt.SplitFilename:
     """split a filepath into the directory, base, and extension"""
-    filepath = Path(filepath)
+    filepath = pathlib.Path(filepath)
     if resolve:
         filepath = filepath.resolve()
     path = filepath.parent
-    _base = Path(filepath.stem)
+    _base = pathlib.Path(filepath.stem)
     ext = filepath.suffix
     if ext == ".gz":
         ext2 = _base.suffix
@@ -79,4 +83,4 @@ def split_filename(
         ext = ext2 + ext
     else:
         base = str(_base)
-    return Path(path), base, ext
+    return intnormt.SplitFilename(pathlib.Path(path), base, ext)
