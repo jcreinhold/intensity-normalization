@@ -32,7 +32,7 @@ except ImportError:
     sns = None
 
 
-class HistogramPlotter(intnormcli.CLI):
+class HistogramPlotter(intnormcli.DirectoryCLI):
     def __init__(
         self,
         *,
@@ -49,16 +49,18 @@ class HistogramPlotter(intnormcli.CLI):
         images: typing.Sequence[intnormt.Image],
         /,
         masks: typing.Sequence[intnormt.Image | None] | None,
-        **kwargs,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        **kwargs: typing.Any,
     ) -> plt.Axes:
         assert len(images) > 0
         if hasattr(images[0], "get_fdata"):
-            images = [img.get_fdata() for img in images]  # type: ignore[union-attr]
+            images = [img.get_fdata() for img in images]  # type: ignore[attr-defined]
         if masks is not None:
             if hasattr(masks[0], "get_fdata"):
                 masks = [msk.get_fdata() for msk in masks]  # type: ignore[union-attr]
         else:
-            masks = [None] * len(masks)
+            masks = [None] * len(images)
         if len(images) != len(masks):
             raise ValueError("number of images and masks must be equal")
         ax = self.plot_all_histograms(images, masks, **kwargs)
@@ -69,7 +71,7 @@ class HistogramPlotter(intnormcli.CLI):
         images: typing.Sequence[intnormt.Image],
         /,
         masks: typing.Sequence[intnormt.Image | None],
-        **kwargs,
+        **kwargs: typing.Any,
     ) -> plt.Axes:
         _, ax = plt.subplots(figsize=self.figsize)
         n_images = len(images)
@@ -90,7 +92,7 @@ class HistogramPlotter(intnormcli.CLI):
         mask_dir: intnormt.PathLike | None = None,
         *,
         ext: builtins.str = "nii*",
-        **kwargs,
+        **kwargs: typing.Any,
     ) -> plt.Axes:
         images, masks = intnormio.gather_images_and_masks(image_dir, mask_dir, ext=ext)
         return self(images, masks, **kwargs)
@@ -108,7 +110,9 @@ class HistogramPlotter(intnormcli.CLI):
         return "Plot the histogram of an image."
 
     @staticmethod
-    def get_parent_parser(desc: builtins.str, **kwargs) -> argparse.ArgumentParser:
+    def get_parent_parser(
+        desc: builtins.str, **kwargs: typing.Any
+    ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description=desc,
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -190,7 +194,7 @@ def plot_histogram(
     log: builtins.bool = True,
     alpha: builtins.float = 0.8,
     linewidth: builtins.float = 3.0,
-    **kwargs,
+    **kwargs: typing.Any,
 ) -> plt.Axes:
     """
     plots the histogram of the intensities of a numpy array within a given brain mask

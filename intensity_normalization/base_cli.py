@@ -9,7 +9,7 @@ Created on: 06 Jun 2021
 
 from __future__ import annotations
 
-__all__ = ["CLI", "setup_log"]
+__all__ = ["CLI", "DirectoryCLI", "setup_log"]
 
 import abc
 import argparse
@@ -49,9 +49,9 @@ class CLI(metaclass=abc.ABCMeta):
         /,
         mask: intnormt.Image | None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
-        **kwargs,
-    ):
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        **kwargs: typing.Any,
+    ) -> typing.Any:
         raise NotImplementedError
 
     def __str__(self) -> builtins.str:
@@ -81,11 +81,14 @@ class CLI(metaclass=abc.ABCMeta):
         if alternate_path is not None:
             path = pathlib.Path(alternate_path).resolve()
             assert path.is_dir()
-        return path / (base + f"_{self.name()}" + ext)
+        new_path: pathlib.Path = path / (base + f"_{self.name()}" + ext)
+        return new_path
 
     @staticmethod
     @abc.abstractmethod
-    def get_parent_parser(desc: builtins.str, **kwargs) -> argparse.ArgumentParser:
+    def get_parent_parser(
+        desc: builtins.str, **kwargs: typing.Any
+    ) -> argparse.ArgumentParser:
         raise NotImplementedError
 
     @staticmethod
@@ -138,8 +141,35 @@ class CLI(metaclass=abc.ABCMeta):
         if args.output is None:
             args.output = self.append_name_to_file(args.image)
         logger.debug(f"Saving output: {args.output}")
-        out.to_filename(args.output)
+        out.save(args.output)
 
     @staticmethod
-    def load_image(image_path: intnormt.PathLike) -> mioi.Image:
-        return mioi.Image.from_path(image_path)
+    def load_image(image_path: intnormt.PathLike) -> intnormt.Image:
+        return typing.cast(intnormt.Image, mioi.Image.from_path(image_path))
+
+
+class DirectoryCLI(CLI, metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def __call__(  # type: ignore[override]
+        self,
+        images: typing.Sequence[intnormt.Image],
+        /,
+        masks: typing.Sequence[intnormt.Image | None] | None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        **kwargs: typing.Any,
+    ) -> typing.Any:
+        raise NotImplementedError
+
+    def call_from_argparse_args(self, args: argparse.Namespace) -> None:
+        # TODO: fix this to use directory arguments
+        image = self.load_image(args.image)
+        if hasattr(args, "mask"):
+            mask = args.mask and self.load_image(args.mask)
+        else:
+            mask = None
+        out = self(image, mask)
+        if args.output is None:
+            args.output = self.append_name_to_file(args.image)
+        logger.debug(f"Saving output: {args.output}")
+        out.save(args.output)

@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 class NormalizeBase(intnormcli.CLI, metaclass=abc.ABCMeta):
-    def __init__(self, *, norm_value: builtins.float = 1.0, **kwargs):
+    def __init__(self, *, norm_value: builtins.float = 1.0, **kwargs: typing.Any):
         self.norm_value = norm_value
 
     def __call__(
@@ -39,8 +39,8 @@ class NormalizeBase(intnormcli.CLI, metaclass=abc.ABCMeta):
         /,
         mask: intnormt.Image | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
-        **kwargs,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        **kwargs: typing.Any,
     ) -> intnormt.Image:
         return self.normalize_image(image, mask, modality=modality)
 
@@ -50,7 +50,7 @@ class NormalizeBase(intnormcli.CLI, metaclass=abc.ABCMeta):
         /,
         mask: intnormt.Image | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
     ) -> intnormt.Image:
         self.setup(image, mask, modality=modality)
         loc = self.calculate_location(image, mask, modality=modality)
@@ -66,7 +66,7 @@ class NormalizeBase(intnormcli.CLI, metaclass=abc.ABCMeta):
         mask_path: intnormt.PathLike | None = None,
         *,
         out_path: intnormt.PathLike | None = None,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
     ) -> intnormt.Image:
         image = mioi.Image.from_path(image_path)
         mask = mioi.Image.from_path(mask_path) if mask_path is not None else None
@@ -102,7 +102,7 @@ class NormalizeBase(intnormcli.CLI, metaclass=abc.ABCMeta):
         /,
         mask: intnormt.Image | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
     ) -> builtins.float:
         raise NotImplementedError
 
@@ -113,7 +113,7 @@ class NormalizeBase(intnormcli.CLI, metaclass=abc.ABCMeta):
         /,
         mask: intnormt.Image | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
     ) -> builtins.float:
         raise NotImplementedError
 
@@ -123,7 +123,7 @@ class NormalizeBase(intnormcli.CLI, metaclass=abc.ABCMeta):
         /,
         mask: intnormt.Image | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
     ) -> None:
         return
 
@@ -154,7 +154,7 @@ class NormalizeBase(intnormcli.CLI, metaclass=abc.ABCMeta):
         /,
         mask: intnormt.Image | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
         background_threshold: builtins.float = 1e-6,
     ) -> intnormt.Image:
         if mask is None:
@@ -170,7 +170,7 @@ class NormalizeBase(intnormcli.CLI, metaclass=abc.ABCMeta):
         /,
         mask: intnormt.Image | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
     ) -> intnormt.Image:
         voi: intnormt.Image = image[self._get_mask(image, mask, modality=modality)]
         return voi
@@ -256,7 +256,7 @@ class NormalizeBase(intnormcli.CLI, metaclass=abc.ABCMeta):
     def save_additional_info(
         self,
         args: argparse.Namespace,
-        **kwargs,
+        **kwargs: typing.Any,
     ) -> None:
         return
 
@@ -269,7 +269,7 @@ class NormalizeSampleBase(NormalizeBase, metaclass=abc.ABCMeta):
         masks: typing.Sequence[intnormt.Image] | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
-        **kwargs,
+        **kwargs: typing.Any,
     ) -> None:
         return None
 
@@ -279,10 +279,10 @@ class NormalizeSampleBase(NormalizeBase, metaclass=abc.ABCMeta):
         /,
         mask_dir: intnormt.PathLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
         ext: builtins.str = "nii*",
         return_normalized_and_masks: builtins.bool = False,
-        **kwargs,
+        **kwargs: typing.Any,
     ) -> typing.Tuple[
         typing.Sequence[intnormt.Image], typing.Sequence[intnormt.Image | None]
     ] | None:
@@ -320,7 +320,7 @@ class NormalizeSampleBase(NormalizeBase, metaclass=abc.ABCMeta):
         out = self.process_directories(
             args.image_dir,
             args.mask_dir,
-            modality=intnormt.Modalities.from_string(args.modality),
+            modality=intnormt.Modalities.from_string(args.modality),  # type: ignore[attr-defined]
             ext=args.extension,
             return_normalized_and_masks=True,
         )
@@ -349,6 +349,7 @@ class NormalizeSampleBase(NormalizeBase, metaclass=abc.ABCMeta):
     def get_parent_parser(
         desc: builtins.str,
         valid_modalities: typing.Set[builtins.str] = intnorm.VALID_MODALITIES,
+        **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description=desc,
@@ -421,8 +422,8 @@ class NormalizeFitBase(NormalizeSampleBase, metaclass=abc.ABCMeta):
         /,
         masks: typing.Sequence[intnormt.Image] | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
-        **kwargs,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        **kwargs: typing.Any,
     ) -> None:
         images, masks = self.before_fit(images, masks, modality=modality, **kwargs)
         logger.info("Fitting")
@@ -436,8 +437,8 @@ class NormalizeFitBase(NormalizeSampleBase, metaclass=abc.ABCMeta):
         /,
         masks: typing.Sequence[intnormt.Image] | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
-        **kwargs,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        **kwargs: typing.Any,
     ) -> None:
         raise NotImplementedError
 
@@ -447,18 +448,18 @@ class NormalizeFitBase(NormalizeSampleBase, metaclass=abc.ABCMeta):
         /,
         masks: typing.Sequence[intnormt.Image] | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
-        **kwargs,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        **kwargs: typing.Any,
     ) -> typing.Tuple[
         typing.Sequence[intnormt.Image], typing.Sequence[intnormt.Image] | None
     ]:
         assert len(images) > 0
         logger.info("Loading data")
         if hasattr(images[0], "get_fdata"):
-            images = [img.get_fdata() for img in images]  # type: ignore[union-attr]
+            images = [img.get_fdata() for img in images]  # type: ignore[attr-defined]
         if masks is not None:
             if hasattr(masks[0], "get_fdata"):
-                masks = [msk.get_fdata() for msk in masks]  # type: ignore[union-attr]
+                masks = [msk.get_fdata() for msk in masks]  # type: ignore[attr-defined]
         logger.debug("Loaded data")
         return images, masks
 
@@ -468,10 +469,10 @@ class NormalizeFitBase(NormalizeSampleBase, metaclass=abc.ABCMeta):
         /,
         mask_dir: intnormt.PathLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
         ext: builtins.str = "nii*",
         return_normalized_and_masks: builtins.bool = False,
-        **kwargs,
+        **kwargs: typing.Any,
     ) -> typing.Tuple[
         typing.Sequence[intnormt.Image], typing.Sequence[intnormt.Image | None]
     ] | None:

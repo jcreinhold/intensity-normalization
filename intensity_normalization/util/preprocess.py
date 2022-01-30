@@ -19,6 +19,8 @@ import logging
 import typing
 
 import nibabel as nib
+import numpy as np
+import pymedio.image as mioi
 
 import intensity_normalization.base_cli as intnormcli
 import intensity_normalization.typing as intnormt
@@ -69,45 +71,49 @@ def preprocess(
         n4_convergence_options = {"iters": [200, 200, 200, 200], "tol": 1e-7}
     logger.debug(f"N4 Options are: {n4_convergence_options}")
 
-    if isinstance(image, nib.Nifti1Image):
-        image = ants.from_nibabel(image)
+    ants_image = _to_ants(image)
+
     if mask is not None:
-        if isinstance(mask, nib.Nifti1Image):
-            mask = ants.from_nibabel(mask)
+        ants_mask = _to_ants(mask)
     else:
-        mask = image.get_mask()
+        ants_mask = ants_image.get_mask()
+
     logger.debug("Starting bias field correction")
-    image = ants.n4_bias_field_correction(image, convergence=n4_convergence_options)
+    ants_image = ants.n4_bias_field_correction(
+        ants_image, convergence=n4_convergence_options
+    )
     if second_n4_with_smoothed_mask:
-        smoothed_mask = ants.smooth_image(mask, 1.0)
+        smoothed_mask = ants.smooth_image(ants_mask, 1.0)
         logger.debug("Starting 2nd bias field correction")
-        image = ants.n4_bias_field_correction(
-            image,
+        ants_image = ants.n4_bias_field_correction(
+            ants_image,
             convergence=n4_convergence_options,
             weight_mask=smoothed_mask,
         )
     if resolution is not None:
-        if resolution != mask.spacing:
+        if resolution != ants_mask.spacing:
             logger.debug(f"Resampling mask to {resolution}")
-            mask = ants.resample_image(
-                mask,
+            ants_mask = ants.resample_image(
+                ants_mask,
                 resolution,
                 use_voxels=False,
                 interp_type=intnormt.interp_type_dict["nearest_neighbor"],
             )
-        if resolution != image.spacing:
+        if resolution != ants_image.spacing:
             logger.debug(f"Resampling image to {resolution}")
-            image = ants.resample_image(
-                image,
+            ants_image = ants.resample_image(
+                ants_image,
                 resolution,
                 use_voxels=False,
                 interp_type=intnormt.interp_type_dict[interp_type],
             )
-    image = image.reorient_image2(orientation)
-    mask = mask.reorient_image2(orientation)
-    image = image.to_nibabel()
-    mask = mask.to_nibabel()
-    return image, mask
+    ants_image = ants_image.reorient_image2(orientation)
+    ants_mask = ants_mask.reorient_image2(orientation)
+    _image = ants_image.to_nibabel()
+    pp_image = mioi.Image(_image.get_fdata(), _image.affine)
+    _mask = ants_mask.to_nibabel()
+    pp_mask = mioi.Image(_mask.get_fdate(), _mask.affine)
+    return typing.cast(intnormt.Image, pp_image), typing.cast(intnormt.Image, pp_mask)
 
 
 class Preprocessor(intnormcli.CLI):
@@ -127,7 +133,11 @@ class Preprocessor(intnormcli.CLI):
         self.second_n4_with_smoothed_mask = second_n4_with_smoothed_mask
 
     def __call__(
-        self, image: intnormt.Image, /, mask: intnormt.Image | None = None, **kwargs
+        self,
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        **kwargs: typing.Any,
     ) -> intnormt.Image:
         preprocessed, _ = preprocess(
             image,
@@ -155,7 +165,9 @@ class Preprocessor(intnormcli.CLI):
         return desc
 
     @staticmethod
-    def get_parent_parser(desc: builtins.str, **kwargs) -> argparse.ArgumentParser:
+    def get_parent_parser(
+        desc: builtins.str, **kwargs: typing.Any
+    ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description=desc,
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -238,3 +250,22 @@ class Preprocessor(intnormcli.CLI):
     @staticmethod
     def load_image(image_path: intnormt.PathLike) -> ants.ANTsImage:
         return ants.image_read(image_path)
+
+
+def _to_ants(image: typing.Any) -> ants.ANTsImage:
+    if isinstance(image, nib.Nifti1Image):
+        ants_image = ants.from_nibabel(image)
+    elif isinstance(image, mioi.Image):
+        ants_image = ants.from_numpy(
+            image, origin=image.origin, spacing=image.spacing, direction=image.direction
+        )
+    elif isinstance(image, np.ndarray):
+        ants_image = ants.from_numpy(image)
+    elif isinstance(image, ants.ANTsImage):
+        ants_image = image
+    else:
+        try:
+            ants_image = ants.ANTsImage(image.numpy())
+        except Exception:
+            raise ValueError("Unexpected image type.")
+    return ants_image

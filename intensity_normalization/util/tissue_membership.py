@@ -10,9 +10,10 @@ __all__ = ["find_tissue_memberships", "TissueMembershipFinder"]
 import argparse
 import builtins
 import operator
+import typing
 
-import nibabel as nib
 import numpy as np
+import pymedio.image as mioi
 from skfuzzy import cmeans
 
 import intensity_normalization.base_cli as intnormcli
@@ -45,6 +46,7 @@ def find_tissue_memberships(
         mask = image > 0.0
     else:
         mask = mask > 0.0
+    assert mask is not None
     foreground_size = mask.sum()
     foreground = image[mask].reshape(-1, foreground_size)
     centers, memberships_, *_ = cmeans(foreground, n_classes, 2, 0.005, 50)
@@ -56,10 +58,10 @@ def find_tissue_memberships(
         tissue_mask[..., i][mask] = memberships[i]
     if hard_segmentation:
         tmp_mask = np.zeros(image.shape)
-        masked = tissue_mask[mask]
+        masked = tissue_mask[mask]  # type: ignore[call-overload]
         tmp_mask[mask] = np.argmax(masked, axis=1) + 1
         tissue_mask = tmp_mask
-    return tissue_mask
+    return typing.cast(intnormt.Image, tissue_mask.view(mioi.Image))
 
 
 class TissueMembershipFinder(intnormcli.CLI):
@@ -67,15 +69,18 @@ class TissueMembershipFinder(intnormcli.CLI):
         self.hard_segmentation = hard_segmentation
 
     def __call__(
-        self, image: intnormt.Image, /, mask: intnormt.Image | None = None, **kwargs
+        self,
+        image: intnormt.Image,
+        /,
+        mask: intnormt.Image | None = None,
+        **kwargs: typing.Any,
     ) -> intnormt.Image:
         tissue_memberships = find_tissue_memberships(
             image,
             mask,
             hard_segmentation=self.hard_segmentation,
         )
-        out = nib.Nifti1Image(tissue_memberships, image.affine)
-        return out
+        return tissue_memberships
 
     @staticmethod
     def name() -> builtins.str:
@@ -90,7 +95,9 @@ class TissueMembershipFinder(intnormcli.CLI):
         return "Find tissue memberships of an MR image."
 
     @staticmethod
-    def get_parent_parser(desc: builtins.str, **kwargs) -> argparse.ArgumentParser:
+    def get_parent_parser(
+        desc: builtins.str, **kwargs: typing.Any
+    ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description=desc,
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
