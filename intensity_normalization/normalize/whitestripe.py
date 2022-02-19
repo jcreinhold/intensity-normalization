@@ -87,7 +87,7 @@ class WhiteStripeNormalize(
         ws_l: builtins.float
         ws_u: builtins.float
         ws_l, ws_u = np.quantile(voi, (lower_bound, upper_bound))  # type: ignore[misc]
-        self.whitestripe = (masked > ws_l) & (masked < ws_u)
+        self.whitestripe = (masked > ws_l) & (masked < ws_u)  # type: ignore[assignment]
 
     def teardown(self) -> None:
         del self.whitestripe

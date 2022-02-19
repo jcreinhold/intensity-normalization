@@ -126,8 +126,8 @@ class CLIMixin(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @staticmethod
-    def load_image(image_path: intnormt.PathLike) -> intnormt.Image:
-        return typing.cast(intnormt.Image, mioi.Image.from_path(image_path))
+    def load_image(image_path: intnormt.PathLike) -> mioi.Image:
+        return mioi.Image.from_path(image_path)
 
 
 class SingleImageCLI(CLIMixin, metaclass=abc.ABCMeta):
@@ -197,11 +197,12 @@ class SingleImageCLI(CLIMixin, metaclass=abc.ABCMeta):
 
     def call_from_argparse_args(self, args: argparse.Namespace) -> None:
         image = self.load_image(args.image)
-        if hasattr(args, "mask"):
-            mask = args.mask and self.load_image(args.mask)
+        mask: intnormt.Image | None
+        if hasattr(args, "mask") and args.mask is not None:
+            mask = self.load_image(args.mask)  # type: ignore[assignment]
         else:
             mask = None
-        out = self(image, mask)
+        out = self(image, mask)  # type: ignore[arg-type]
         if args.output is None:
             args.output = self.append_name_to_file(args.image)
         logger.debug(f"Saving output: {args.output}")

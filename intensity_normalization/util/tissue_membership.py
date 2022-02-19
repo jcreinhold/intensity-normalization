@@ -28,7 +28,7 @@ def find_tissue_memberships(
     *,
     hard_segmentation: builtins.bool = False,
     n_classes: builtins.int = 3,
-) -> intnormt.Image:
+) -> mioi.Image:
     """Tissue memberships for a T1-w brain image with fuzzy c-means
 
     Args:
@@ -62,7 +62,9 @@ def find_tissue_memberships(
         masked = tissue_mask[mask]  # type: ignore[call-overload]
         tmp_mask[mask] = np.argmax(masked, axis=1) + 1
         tissue_mask = tmp_mask
-    return typing.cast(intnormt.Image, mioi.Image(tissue_mask, affine=image.affine))
+    if hasattr(image, "affine"):
+        affine = image.affine  # type: ignore[attr-defined]
+    return mioi.Image(tissue_mask, affine=affine)
 
 
 class TissueMembershipFinder(intnormcli.SingleImageCLI):
@@ -82,7 +84,7 @@ class TissueMembershipFinder(intnormcli.SingleImageCLI):
             mask,
             hard_segmentation=self.hard_segmentation,
         )
-        return tissue_memberships
+        return tissue_memberships  # type: ignore[return-value]
 
     @staticmethod
     def name() -> builtins.str:

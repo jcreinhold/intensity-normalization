@@ -32,6 +32,8 @@ import intensity_normalization.util.io as intnormio
 logger = logging.getLogger(__name__)
 
 T = typing.TypeVar("T")
+ImageSeq = typing.Sequence[intnormt.Image]
+MaskSeqOrNone = typing.Union[ImageSeq, None]
 
 
 class NormalizeMixin(metaclass=abc.ABCMeta):
@@ -169,11 +171,8 @@ class NormalizeCLIMixin(NormalizeMixin, intnormcli.CLIMixin, metaclass=abc.ABCMe
         out_path: intnormt.PathLike | None = None,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> typing.Tuple[intnormt.Image, intnormt.Image | None]:
-        image = typing.cast(intnormt.Image, mioi.Image.from_path(image_path))
-        if mask_path is not None:
-            mask = typing.cast(intnormt.Image, mioi.Image.from_path(mask_path))
-        else:
-            mask = None
+        image = mioi.Image.from_path(image_path)
+        mask = None if mask_path is None else mioi.Image.from_path(mask_path)
         if out_path is None:
             out_path = self.append_name_to_file(image_path)
         logger.info(f"Normalizing image: {image_path}")
@@ -275,9 +274,9 @@ class SingleImageNormalizeCLI(NormalizeCLIMixin, intnormcli.SingleImageCLI):
 class SampleNormalizeCLIMixin(NormalizeCLIMixin, intnormcli.CLIMixin):
     def fit(
         self,
-        images: typing.Sequence[intnormt.Image],
+        images: ImageSeq,
         /,
-        masks: typing.Sequence[intnormt.Image] | None = None,
+        masks: MaskSeqOrNone = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
@@ -294,17 +293,15 @@ class SampleNormalizeCLIMixin(NormalizeCLIMixin, intnormcli.CLIMixin):
         ext: builtins.str = "nii*",
         return_normalized_and_masks: builtins.bool = False,
         **kwargs: typing.Any,
-    ) -> typing.Tuple[
-        typing.Sequence[intnormt.Image], typing.Sequence[intnormt.Image | None]
-    ] | None:
+    ) -> typing.Tuple[ImageSeq, MaskSeqOrNone] | None:
         logger.debug("Grabbing images")
         images, masks = intnormio.gather_images_and_masks(image_dir, mask_dir, ext=ext)
         self.fit(images, masks, modality=modality, **kwargs)
         if return_normalized_and_masks:
             normalized: typing.List[intnormt.Image] = []
             n_images = len(images)
-            assert n_images == len(masks)
-            for i, (image, mask) in enumerate(zip(images, masks), 1):
+            zipped = intnormio.zip_with_nones(images, masks)
+            for i, (image, mask) in enumerate(zipped, 1):
                 logger.info(f"Normalizing image {i}/{n_images}")
                 normalized.append(self(image, mask, modality=modality))
             return normalized, masks
@@ -314,8 +311,8 @@ class SampleNormalizeCLIMixin(NormalizeCLIMixin, intnormcli.CLIMixin):
         self,
         args: argparse.Namespace,
         /,
-        normalized: typing.Sequence[intnormt.Image],
-        masks: typing.Sequence[intnormt.Image | None] | None = None,
+        normalized: ImageSeq,
+        masks: MaskSeqOrNone = None,
     ) -> None:
         import matplotlib.pyplot as plt
 
@@ -366,11 +363,11 @@ class DirectoryNormalizeCLI(
 ):
     def fit(
         self,
-        images: typing.Sequence[intnormt.Image],
+        images: ImageSeq,
         /,
-        masks: typing.Sequence[intnormt.Image] | None = None,
+        masks: MaskSeqOrNone = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined] # noqa: E501
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
     ) -> None:
         images, masks = self.before_fit(images, masks, modality=modality, **kwargs)
@@ -380,9 +377,9 @@ class DirectoryNormalizeCLI(
 
     def _fit(
         self,
-        images: typing.Sequence[intnormt.Image],
+        images: ImageSeq,
         /,
-        masks: typing.Sequence[intnormt.Image] | None = None,
+        masks: MaskSeqOrNone = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
@@ -397,9 +394,7 @@ class DirectoryNormalizeCLI(
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
-    ) -> typing.Tuple[
-        typing.Sequence[intnormt.Image], typing.Sequence[intnormt.Image] | None
-    ]:
+    ) -> typing.Tuple[ImageSeq, MaskSeqOrNone]:
         assert len(images) > 0
         logger.info("Loading data")
         if hasattr(images[0], "get_fdata"):
@@ -420,9 +415,7 @@ class DirectoryNormalizeCLI(
         ext: builtins.str = "nii*",
         return_normalized_and_masks: builtins.bool = False,
         **kwargs: typing.Any,
-    ) -> typing.Tuple[
-        typing.Sequence[intnormt.Image], typing.Sequence[intnormt.Image | None]
-    ] | None:
+    ) -> typing.Tuple[ImageSeq, MaskSeqOrNone] | None:
         return self.process_directories(
             image_dir,
             mask_dir,

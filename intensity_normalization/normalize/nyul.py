@@ -17,6 +17,7 @@ from scipy.interpolate import interp1d
 
 import intensity_normalization.normalize.base as intnormb
 import intensity_normalization.typing as intnormt
+import intensity_normalization.util.io as intnormio
 
 
 class NyulNormalize(intnormb.DirectoryNormalizeCLI):
@@ -88,7 +89,7 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
         return self._percentiles
 
     def get_landmarks(self, image: intnormt.Image, /) -> npt.NDArray:
-        landmarks: npt.NDArray = np.percentile(image, self.percentiles)  # type: ignore[call-overload] # noqa: E501
+        landmarks: npt.NDArray = np.percentile(image, self.percentiles)  # type: ignore[assignment, call-overload] # noqa: E501
         return landmarks
 
     def _fit(
@@ -109,12 +110,10 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
         """
         n_percs = len(self.percentiles)
         standard_scale = np.zeros(n_percs)
-        _masks: typing.Sequence[intnormt.Image] | typing.List[None]
-        _masks = masks or ([None] * len(images))
         n_images = len(images)
-        if n_images != len(_masks):
+        if masks is not None and n_images != len(masks):
             raise ValueError("There must be an equal number of images and masks")
-        for i, (image, mask) in enumerate(zip(images, _masks)):
+        for i, (image, mask) in enumerate(intnormio.zip_with_nones(images, masks)):
             voi = self._get_voi(image, mask, modality=modality)
             landmarks = self.get_landmarks(voi)
             min_p = np.percentile(voi, self.min_percentile)  # type: ignore[call-overload] # noqa: E501

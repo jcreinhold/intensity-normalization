@@ -31,7 +31,7 @@ class LeastSquaresNormalize(
 ):
     def __init__(self, *, norm_value: float = 1.0, **kwargs: typing.Any):
         super().__init__(norm_value=norm_value, **kwargs)
-        self.tissue_memberships: typing.List[intnormt.Image] = []
+        self.tissue_memberships: typing.List[mioi.Image] = []
         self.standard_tissue_means: npt.NDArray | None = None
 
     def calculate_location(
@@ -78,7 +78,7 @@ class LeastSquaresNormalize(
         image = images[0]  # only need one image to fit this method
         mask = masks[0] if masks is not None else None
         if not isinstance(mask, np.ndarray) and mask is not None:
-            raise ValueError("mask must be either none or subclass of ndarray")
+            raise ValueError("Mask must be either none or subclass of ndarray")
         if modality == intnormt.Modalities.T1:
             tissue_membership = intnormtm.find_tissue_memberships(image, mask)
         elif mask is not None:
@@ -158,6 +158,9 @@ class LeastSquaresNormalize(
             self.save_standard_tissue_means(args.save_standard_tissue_means)
 
     def save_standard_tissue_means(self, filename: intnormt.PathLike, /) -> None:
+        if self.standard_tissue_means is None:
+            msg = "Fit required before saving standard tissue means."
+            raise RuntimeError(msg)
         np.save(filename, self.standard_tissue_means)
 
     def load_standard_tissue_means(self, filename: intnormt.PathLike, /) -> None:
