@@ -16,6 +16,7 @@ import numpy as np
 import pymedio.image as mioi
 from skfuzzy import cmeans
 
+import intensity_normalization as intnorm
 import intensity_normalization.base_cli as intnormcli
 import intensity_normalization.typing as intnormt
 
@@ -41,7 +42,7 @@ def find_tissue_memberships(
             (or class determinations w/ hard_seg)
     """
     if n_classes <= 0:
-        raise ValueError(f"n_classes must be positive. Got {n_classes}")
+        raise ValueError(f"n_classes must be positive. Got '{n_classes}'.")
     if mask is None:
         mask = image > 0.0
     else:
@@ -61,11 +62,12 @@ def find_tissue_memberships(
         masked = tissue_mask[mask]  # type: ignore[call-overload]
         tmp_mask[mask] = np.argmax(masked, axis=1) + 1
         tissue_mask = tmp_mask
-    return typing.cast(intnormt.Image, tissue_mask.view(mioi.Image))
+    return typing.cast(intnormt.Image, mioi.Image(tissue_mask, affine=image.affine))
 
 
 class TissueMembershipFinder(intnormcli.SingleImageCLI):
     def __init__(self, hard_segmentation: builtins.bool = False):
+        super().__init__()
         self.hard_segmentation = hard_segmentation
 
     def __call__(
@@ -96,7 +98,10 @@ class TissueMembershipFinder(intnormcli.SingleImageCLI):
 
     @classmethod
     def get_parent_parser(
-        cls, desc: builtins.str, **kwargs: typing.Any
+        cls,
+        desc: builtins.str,
+        valid_modalities: typing.FrozenSet[builtins.str] = intnorm.VALID_MODALITIES,
+        **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description=desc,

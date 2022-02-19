@@ -35,7 +35,7 @@ def smooth_histogram(
         grid: domain of the pdf
         pdf: kernel density estimate of the pdf of data
     """
-    image_vec = np.asanyarray(image.flatten(), dtype=np.float64)
+    image_vec: np.ndarray = np.asarray(image.flatten(), dtype=np.float64)
     bandwidth = image_vec.max() / 80
     kde = sm.nonparametric.KDEUnivariate(image_vec)
     kde.fit(kernel="gau", bw=bandwidth, gridsize=80, fft=True)
@@ -77,9 +77,10 @@ def get_last_tissue_mode(
         last_tissue_mode: mode of the highest-intensity tissue class
     """
     if not (0.0 < tail_percentage < 100.0):
-        raise ValueError(f"tail_percentage must be in (0,100). Got {tail_percentage}.")
+        msg = f"tail_percentage must be in (0, 100). Got '{tail_percentage}'."
+        raise ValueError(msg)
     if remove_tail:
-        threshold: builtins.float = np.percentile(image, tail_percentage)  # type: ignore[call-overload]
+        threshold: builtins.float = float(np.percentile(image, tail_percentage))  # type: ignore[call-overload] # noqa: E501
         valid_mask: intnormt.Image = image <= threshold
         image = image[valid_mask]
     grid, pdf = smooth_histogram(image)
@@ -107,9 +108,10 @@ def get_first_tissue_mode(
         first_tissue_mode: mode of the lowest-intensity tissue class
     """
     if not (0.0 < tail_percentage < 100.0):
-        raise ValueError(f"tail_percentage must be in (0,100). Got {tail_percentage}.")
+        msg = f"tail_percentage must be in (0, 100). Got '{tail_percentage}'."
+        raise ValueError(msg)
     if remove_tail:
-        threshold: builtins.float = np.percentile(image, tail_percentage)  # type: ignore[call-overload]
+        threshold: builtins.float = float(np.percentile(image, tail_percentage))  # type: ignore[call-overload] # noqa: E501
         valid_mask: intnormt.Image = image <= threshold
         image = image[valid_mask]
     grid, pdf = smooth_histogram(image)

@@ -1,5 +1,5 @@
 """Least-squares fit tissue modes of a set of images
-Author: Jacob Reinhold (jcreinhold@gmail.com)
+Author: Jacob Reinhold <jcreinhold@gmail.com>
 Created on: 01 Jun 2021
 """
 
@@ -29,8 +29,8 @@ logger = logging.getLogger(__name__)
 class LeastSquaresNormalize(
     intnormb.LocationScaleCLIMixin, intnormb.DirectoryNormalizeCLI
 ):
-    def __init__(self, *, norm_value: float = 1.0, **kwargs):
-        super().__init__(norm_value=norm_value)
+    def __init__(self, *, norm_value: float = 1.0, **kwargs: typing.Any):
+        super().__init__(norm_value=norm_value, **kwargs)
         self.tissue_memberships: typing.List[intnormt.Image] = []
         self.standard_tissue_means: npt.NDArray | None = None
 
@@ -73,7 +73,7 @@ class LeastSquaresNormalize(
         masks: typing.Sequence[intnormt.Image] | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
-        **kwargs,
+        **kwargs: typing.Any,
     ) -> None:
         image = images[0]  # only need one image to fit this method
         mask = masks[0] if masks is not None else None
@@ -100,7 +100,9 @@ class LeastSquaresNormalize(
     ) -> intnormt.Image:
         if tissue_membership.shape[: image.ndim] != image.shape:
             # try to swap last axes b/c sitk, if still doesn't match then fail
-            tissue_membership = np.swapaxes(tissue_membership, -2, -1)
+            tissue_membership = typing.cast(
+                intnormt.Image, np.swapaxes(tissue_membership, -2, -1)
+            )
         if tissue_membership.shape[: image.ndim] != image.shape:
             msg = "If masks provided, need to have same spatial shape as image"
             raise RuntimeError(msg)
@@ -140,7 +142,7 @@ class LeastSquaresNormalize(
     def save_additional_info(
         self,
         args: argparse.Namespace,
-        **kwargs,
+        **kwargs: typing.Any,
     ) -> None:
         for memberships, fn in zip(self.tissue_memberships, kwargs["image_filenames"]):
             tissue_memberships = mioi.Image(memberships)
@@ -175,7 +177,7 @@ class LeastSquaresNormalize(
         args.modality = intnormt.Modalities.from_string(args.modality)
         if args.mask_dir is not None:
             if args.modality != intnormt.Modalities.T1:
-                msg = f"If brain masks provided, modality must be `t1`. Got {args.modality}."  # noqa: E501
+                msg = f"If brain masks provided, modality must be `T1`. Got '{args.modality}'."  # noqa: E501
                 raise ValueError(msg)
         elif args.tissue_membership_dir is not None:
             args.mask_dir = args.tissue_membership_dir
@@ -185,8 +187,8 @@ class LeastSquaresNormalize(
     def get_parent_parser(
         cls,
         desc: builtins.str,
-        valid_modalities: typing.Set[builtins.str] = intnorm.VALID_MODALITIES,
-        **kwargs,
+        valid_modalities: typing.FrozenSet[builtins.str] = intnorm.VALID_MODALITIES,
+        **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description=desc,

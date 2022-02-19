@@ -29,8 +29,8 @@ necessary)::
 
     fcm-normalize t1w_image.nii.gz -m brain_mask.nii.gz -o t1w_norm.nii.gz -v -mo t1 -tt wm
 
-This will output the normalized T1-w image to `t1w_norm.nii.gz` and will additionally create a tissue
-mask for the WM in the same directory with `wm_membership` appended to the filename. You can then input
+This will output the normalized T1-w image to ``t1w_norm.nii.gz`` and will additionally create a tissue
+mask for the WM in the same directory with ``wm_membership`` appended to the filename. You can then input
 the WM membership back in to the program to normalize an image of a different contrast, e.g. for T2::
 
     fcm-normalize t2w_image.nii.gz -tm t1w_image_wm_membership.nii.gz -o t2w_norm.nii.gz -v -mo t2

@@ -18,6 +18,7 @@
 	release \
 	security \
 	servedocs \
+	snyk \
 	test \
 	test-all
 
@@ -120,13 +121,15 @@ release: dist  ## package and upload a release
 security:  ## run various code quality checks and formatters
 	bandit -r medio -c pyproject.toml
 	bandit -r tests -c pyproject.toml
-	snyk test --file=requirements_dev.txt --package-manager=pip --fail-on=all
 
 servedocs: docs  ## compile the docs watching for changes
 	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
+snyk:  security  ## run snyk for dependency security checks
+	snyk test --file=requirements_dev.txt --package-manager=pip --fail-on=all
+
 test:  ## run tests quickly with the default Python
-	pytest --cov=intensity_normalization --disable-pytest-warnings
+	pytest --cov=intensity_normalization --disable-pytest-warnings --doctest-modules
 
 test-all:  ## run tests on every Python version with tox
 	tox

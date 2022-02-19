@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-intensity_normalization.normalize.ravel
-
-Author: Jacob Reinhold (jcreinhold@gmail.com)
+"""RAVEL normalization (WhiteStripe then CSF correction)
+Author: Jacob Reinhold <jcreinhold@gmail.com>
 Created on: Jun 02, 2021
 """
 
@@ -63,9 +60,9 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         if register and masks_are_csf:
             msg = "If masks_are_csf, then images are assumed to be co-registered."
             raise ValueError(msg)
-        self._template = None
-        self._template_mask = None
-        self._normalized = None
+        self._template: intnormt.Image | None = None
+        self._template_mask: intnormt.Image | None = None
+        self._normalized: intnormt.Image | None = None
 
     def normalize_image(
         self,
@@ -73,7 +70,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         /,
         mask: intnormt.Image | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> intnormt.Image:
         return NotImplemented
 
@@ -273,7 +270,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         masks: typing.Sequence[intnormt.Image] | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
-        **kwargs,
+        **kwargs: typing.Any,
     ) -> None:
         image_matrix, control_voxels = self.create_image_matrix_and_control_voxels(
             images,
@@ -293,7 +290,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         modality: intnormt.Modalities = intnormt.Modalities.T1,
         ext: builtins.str = "nii*",
         return_normalized_and_masks: builtins.bool = False,
-        **kwargs,
+        **kwargs: typing.Any,
     ) -> typing.Tuple[
         typing.Sequence[intnormt.Image], typing.Sequence[intnormt.Image | None]
     ] | None:
@@ -304,8 +301,13 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         assert self._normalized is not None
         if return_normalized_and_masks:
             norm_lst: typing.List[intnormt.Image] = []
-            for normed, image in zip(self._normalized, images):
-                norm_lst.append(mioi.Image(normed.reshape(image.shape), image.affine))
+            for normed, image in zip(self._normalized, images):  # type: ignore[call-overload] # noqa: E501
+                norm_lst.append(
+                    typing.cast(
+                        intnormt.Image,
+                        mioi.Image(normed.reshape(image.shape), image.affine),
+                    )
+                )
             return norm_lst, _masks
         return None
 

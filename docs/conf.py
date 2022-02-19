@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-#
 # intensity_normalization documentation build configuration file, created by
 # sphinx-quickstart on Fri Jun  9 13:47:02 2017.
 #
@@ -16,9 +15,11 @@
 # directory, add these directories to sys.path here. If the directory is
 # relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
-#
+
+import builtins
 import os
 import sys
+import typing
 
 sys.path.insert(0, os.path.abspath(".."))
 
@@ -34,7 +35,7 @@ autodoc_mock_imports = [
     "seaborn",
 ]
 
-import intensity_normalization
+import intensity_normalization  # noqa: E402
 
 # -- General configuration ---------------------------------------------
 
@@ -125,7 +126,7 @@ htmlhelp_basename = "intensity_normalizationdoc"
 
 # -- Options for LaTeX output ------------------------------------------
 
-latex_elements = {
+latex_elements: typing.Dict[builtins.str, typing.Any] = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',

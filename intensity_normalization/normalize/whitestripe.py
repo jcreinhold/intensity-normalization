@@ -15,7 +15,6 @@ import warnings
 import numpy as np
 import numpy.typing as npt
 
-import intensity_normalization as intnorm
 import intensity_normalization.normalize.base as intnormb
 import intensity_normalization.typing as intnormt
 import intensity_normalization.util.histogram_tools as intnormhisttool
@@ -37,8 +36,9 @@ class WhiteStripeNormalize(
         width: builtins.float = 0.05,
         width_l: builtins.float | None = None,
         width_u: builtins.float | None = None,
+        **kwargs: typing.Any,
     ):
-        super().__init__(norm_value=norm_value)
+        super().__init__(norm_value=norm_value, **kwargs)
         if norm_value != 1.0:
             warnings.warn("norm_value not used in RavelNormalize")
         self.width_l = width_l or width
@@ -86,7 +86,7 @@ class WhiteStripeNormalize(
         upper_bound = min(wm_mode_quantile + self.width_u, 1.0)
         ws_l: builtins.float
         ws_u: builtins.float
-        ws_l, ws_u = np.quantile(voi, (lower_bound, upper_bound))
+        ws_l, ws_u = np.quantile(voi, (lower_bound, upper_bound))  # type: ignore[misc]
         self.whitestripe = (masked > ws_l) & (masked < ws_u)
 
     def teardown(self) -> None:
@@ -116,17 +116,6 @@ class WhiteStripeNormalize(
             help="width of the whitestripe",
         )
         return parent_parser
-
-    @classmethod
-    def get_parent_parser(
-        cls,
-        desc: builtins.str,
-        valid_modalities: typing.Set[builtins.str] = intnorm.VALID_PEAKS,
-        **kwargs,
-    ) -> argparse.ArgumentParser:
-        return super().get_parent_parser(
-            desc, valid_modalities=valid_modalities, **kwargs
-        )
 
     @classmethod
     def from_argparse_args(cls, args: argparse.Namespace, /) -> WhiteStripeNormalize:

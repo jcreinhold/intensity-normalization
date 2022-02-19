@@ -73,7 +73,13 @@ def split_filename(
     *,
     resolve: builtins.bool = False,
 ) -> intnormt.SplitFilename:
-    """split a filepath into the directory, base, and extension"""
+    """split a filepath into the directory, base, and extension
+    Examples:
+        >>> split_filename("path/base.ext")
+        SplitFilename(path='path', base='base', ext='.ext')
+    """
+    if not str(filepath):
+        raise ValueError("filepath must be a non-empty string.")
     filepath = pathlib.Path(filepath)
     if resolve:
         filepath = filepath.resolve()
@@ -87,3 +93,7 @@ def split_filename(
     else:
         base = str(_base)
     return intnormt.SplitFilename(pathlib.Path(path), base, ext)
+
+
+# def zip_or_none(*args: typing.Sequence[typing.Any]):
+#     ...

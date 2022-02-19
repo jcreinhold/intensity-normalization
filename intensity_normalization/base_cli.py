@@ -1,8 +1,4 @@
 """CLI base class for normalization/preprocessing methods
-
-process command-line arguments for
-normalization or other utility scripts
-
 Author: Jacob Reinhold <jcreinhold@gmail.com>
 Created on: 06 Jun 2021
 """
@@ -27,6 +23,8 @@ import intensity_normalization.util.io as intnormio
 from intensity_normalization import __version__ as int_norm_version
 
 logger = logging.getLogger(__name__)
+
+T = typing.TypeVar("T")
 
 
 def setup_log(verbosity: builtins.int) -> None:
@@ -76,7 +74,10 @@ class CLIMixin(metaclass=abc.ABCMeta):
     @classmethod
     @abc.abstractmethod
     def get_parent_parser(
-        cls, desc: builtins.str, **kwargs: typing.Any
+        cls,
+        desc: builtins.str,
+        valid_modalities: typing.FrozenSet[builtins.str] = intnorm.VALID_MODALITIES,
+        **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         raise NotImplementedError
 
@@ -117,7 +118,11 @@ class CLIMixin(metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def from_argparse_args(cls, args: argparse.Namespace) -> SingleImageCLI:
+    def from_argparse_args(cls: typing.Type[T], args: argparse.Namespace) -> T:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def call_from_argparse_args(self, args: argparse.Namespace) -> None:
         raise NotImplementedError
 
     @staticmethod
@@ -133,7 +138,7 @@ class SingleImageCLI(CLIMixin, metaclass=abc.ABCMeta):
         /,
         mask: intnormt.Image | None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
     ) -> typing.Any:
         raise NotImplementedError
@@ -142,7 +147,7 @@ class SingleImageCLI(CLIMixin, metaclass=abc.ABCMeta):
     def get_parent_parser(
         cls,
         desc: builtins.str,
-        valid_modalities: typing.Set[builtins.str] = intnorm.VALID_MODALITIES,
+        valid_modalities: typing.FrozenSet[builtins.str] = intnorm.VALID_MODALITIES,
         **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
@@ -209,23 +214,11 @@ class SingleImageCLI(CLIMixin, metaclass=abc.ABCMeta):
 
 
 class DirectoryCLI(CLIMixin, metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def __call__(
-        self,
-        images: typing.Sequence[intnormt.Image],
-        /,
-        masks: typing.Sequence[intnormt.Image | None] | None,
-        *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
-        **kwargs: typing.Any,
-    ) -> typing.Any:
-        raise NotImplementedError
-
     @classmethod
     def get_parent_parser(
         cls,
         desc: builtins.str,
-        valid_modalities: typing.Set[builtins.str] = intnorm.VALID_MODALITIES,
+        valid_modalities: typing.FrozenSet[builtins.str] = intnorm.VALID_MODALITIES,
         **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
@@ -264,7 +257,7 @@ class DirectoryCLI(CLIMixin, metaclass=abc.ABCMeta):
             "--extension",
             type=str,
             default="nii*",
-            help="Extension of images (must be nibabel readable).",
+            help="Extension of images.",
         )
         parser.add_argument(
             "-v",
@@ -280,20 +273,6 @@ class DirectoryCLI(CLIMixin, metaclass=abc.ABCMeta):
         )
         return parser
 
+    @abc.abstractmethod
     def call_from_argparse_args(self, args: argparse.Namespace) -> None:
-        # TODO: fix for directory
-        image = self.load_image(args.image)
-        if hasattr(args, "mask"):
-            mask = args.mask and self.load_image(args.mask)
-        else:
-            mask = None
-        out = self(image, mask)
-        if args.output is None:
-            args.output = self.append_name_to_file(args.image)
-        logger.debug(f"Saving output: {args.output}")
-        if hasattr(out, "save"):
-            out.save(args.output)
-        elif hasattr(out, "to_filename"):
-            out.to_filename(args.output)
-        else:
-            raise ValueError("Unexpected image type")
+        raise NotImplementedError

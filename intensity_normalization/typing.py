@@ -46,27 +46,35 @@ import intensity_normalization as intnorm
 
 ArgType = typing.Optional[typing.Union[argparse.Namespace, typing.List[builtins.str]]]
 PathLike = typing.Union[builtins.str, os.PathLike]
+ShapeLike = typing.Union[typing.SupportsIndex, typing.Sequence[typing.SupportsIndex]]
 
 _MODALITIES = [(vm.upper(), vm) for vm in sorted(intnorm.VALID_MODALITIES)]
 
-Modalities = enum.Enum("Modalities", _MODALITIES, module=__name__)  # type: ignore[misc]
 
+class Modalities(enum.Enum):
+    FLAIR: builtins.str = "flair"
+    MD: builtins.str = "md"
+    OTHER: builtins.str = "other"
+    PD: builtins.str = "pd"
+    T1: builtins.str = "t1"
+    T2: builtins.str = "t2"
 
-def _modality_from_string(
-    cls: typing.Type, string: builtins.str | Modalities
-) -> Modalities:
-    if isinstance(string, cls):
-        modality: Modalities = string
-        return modality
-    for name, value in _MODALITIES:
-        if string == value:
-            modality = getattr(cls, name)
+    @classmethod
+    def from_string(cls: typing.Type, string: builtins.str | Modalities) -> Modalities:
+        if isinstance(string, cls):
+            modality: Modalities = string
             return modality
-    msg = f"string must be one of {intnorm.VALID_MODALITIES}. Got {string}"
-    raise ValueError(msg)
+        for name, value in _MODALITIES:
+            if string == value:
+                modality = getattr(cls, name)
+                return modality
+        msg = f"string must be one of {intnorm.VALID_MODALITIES}. Got '{string}'."
+        raise ValueError(msg)
 
 
-Modalities.from_string = classmethod(_modality_from_string)  # type: ignore[attr-defined]
+# not ideal DRY, but avoid functional enum API for better IDE support & flake8
+if set(m.value for m in Modalities) != set(intnorm.VALID_MODALITIES):
+    raise RuntimeError("Modalities enum out of sync with VALID_MODALITIES.")
 
 
 class TissueTypes(enum.Enum):
@@ -83,7 +91,7 @@ class TissueTypes(enum.Enum):
         elif string.lower() == "wm":
             return TissueTypes.WM
         else:
-            raise ValueError(f"string must be 'csf', 'gm', or 'wm'. Got {string}")
+            raise ValueError(f"string must be 'csf', 'gm', or 'wm'. Got '{string}'.")
 
     def to_int(self) -> builtins.int:
         if self == TissueTypes.CSF:
@@ -114,6 +122,10 @@ class SplitFilename:
 
     def __iter__(self) -> typing.Iterator[typing.Any]:
         return iter(dataclasses.astuple(self))
+
+    def __repr__(self) -> builtins.str:
+        s = f"SplitFilename(path='{self.path!s}', base='{self.base}', ext='{self.ext}')"
+        return s
 
 
 interp_type_dict = dict(
@@ -435,40 +447,49 @@ def new_parse_type(
     return NewParseType(func, name)
 
 
+_Image = typing.TypeVar("_Image", bound="Image")
+
+
 class Image(typing.Protocol):
     """support anything that implements the methods here"""
 
-    def __gt__(self, other: typing.Any) -> Image:
+    def __gt__(self: _Image, other: typing.Any) -> _Image:
         ...
 
-    def __ge__(self, other: typing.Any) -> Image:
+    def __ge__(self: _Image, other: typing.Any) -> _Image:
         ...
 
-    def __lt__(self, other: typing.Any) -> Image:
+    def __lt__(self: _Image, other: typing.Any) -> _Image:
         ...
 
-    def __le__(self, other: typing.Any) -> Image:
+    def __le__(self: _Image, other: typing.Any) -> _Image:
         ...
 
-    def __and__(self, other: typing.Any) -> Image:
+    def __and__(self: _Image, other: typing.Any) -> _Image:
         ...
 
-    def __or__(self, other: typing.Any) -> Image:
+    def __or__(self: _Image, other: typing.Any) -> _Image:
         ...
 
-    def __add__(self, other: typing.Any) -> Image:
+    def __add__(self: _Image, other: typing.Any) -> _Image:
         ...
 
-    def __sub__(self, other: typing.Any) -> Image:
+    def __sub__(self: _Image, other: typing.Any) -> _Image:
         ...
 
-    def __mul__(self, other: typing.Any) -> Image:
+    def __mul__(self: _Image, other: typing.Any) -> _Image:
         ...
 
-    def __truediv__(self, other: typing.Any) -> Image:
+    def __truediv__(self: _Image, other: typing.Any) -> _Image:
         ...
 
-    def __getitem__(self, item: typing.Any) -> typing.Any:
+    def __getitem__(self: _Image, item: typing.Any) -> typing.Any:
+        ...
+
+    def __iter__(self: _Image) -> _Image:
+        ...
+
+    def __array__(self: _Image) -> npt.NDArray:
         ...
 
     def sum(self) -> builtins.float:
@@ -503,12 +524,16 @@ class Image(typing.Protocol):
     def min(self) -> builtins.float:
         ...
 
-    def flatten(self) -> Image:
+    def flatten(self: _Image) -> _Image:
         ...
 
     @property
     def affine(self) -> npt.NDArray:
         ...
 
-    def reshape(self, shape: typing.Sequence[builtins.int]) -> Image:
+    def reshape(
+        self: _Image,
+        *shape: typing.SupportsIndex,
+        order: typing.Literal["A", "C", "F"] | None = ...,
+    ) -> _Image:
         ...
