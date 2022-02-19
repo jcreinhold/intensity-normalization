@@ -2,12 +2,12 @@ name: "CodeQL"
 
 on:
   release:
-    types: [ published ]
+    types: [published]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [ master ]
+    branches: [master]
   schedule:
-    - cron: '22 1 15 */2 *'
+  - cron: '22 1 15 */2 *'
 
 jobs:
   analyze:
@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'python' ]
+        language: ['python']
 
     steps:
     - name: Checkout repository

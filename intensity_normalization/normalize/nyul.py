@@ -20,7 +20,8 @@ import intensity_normalization.typing as intnormt
 
 
 class NyulNormalize(intnormb.DirectoryNormalizeCLI):
-    """
+    """Nyul & Udupa piecewise linear histogram matching normalization
+
     Args:
         output_min_value: where min-percentile mapped for output normalized image
         output_max_value: where max-percentile mapped for output normalized image
@@ -32,20 +33,20 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
             standard histogram (percentile-step creates intermediate percentiles)
         prev_percentile_before_max: previous percentile before max for finding
             standard histogram (percentile-step creates intermediate percentiles)
-        percentile_step: percentile steps btwn next-percentile-after-min and
+        percentile_step: percentile steps between next-percentile-after-min and
              prev-percentile-before-max for finding standard histogram
     """
 
     def __init__(
         self,
         *,
-        output_min_value: float = 1.0,
-        output_max_value: float = 100.0,
-        min_percentile: float = 1.0,
-        max_percentile: float = 99.0,
-        percentile_after_min: float = 10.0,
-        percentile_before_max: float = 90.0,
-        percentile_step: float = 10.0,
+        output_min_value: builtins.float = 1.0,
+        output_max_value: builtins.float = 100.0,
+        min_percentile: builtins.float = 1.0,
+        max_percentile: builtins.float = 99.0,
+        percentile_after_min: builtins.float = 10.0,
+        percentile_before_max: builtins.float = 90.0,
+        percentile_step: builtins.float = 10.0,
     ):
         super().__init__()
         self.output_min_value = output_min_value
@@ -87,7 +88,7 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
         return self._percentiles
 
     def get_landmarks(self, image: intnormt.Image, /) -> npt.NDArray:
-        landmarks: npt.NDArray = np.percentile(image, self.percentiles)  # type: ignore[call-overload]
+        landmarks: npt.NDArray = np.percentile(image, self.percentiles)  # type: ignore[call-overload] # noqa: E501
         return landmarks
 
     def _fit(
@@ -97,7 +98,7 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
         masks: typing.Sequence[intnormt.Image] | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
-        **kwargs,
+        **kwargs: typing.Any,
     ) -> None:
         """Compute standard scale for piecewise linear histogram matching
 
@@ -108,6 +109,7 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
         """
         n_percs = len(self.percentiles)
         standard_scale = np.zeros(n_percs)
+        _masks: typing.Sequence[intnormt.Image] | typing.List[None]
         _masks = masks or ([None] * len(images))
         n_images = len(images)
         if n_images != len(_masks):
@@ -115,8 +117,8 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
         for i, (image, mask) in enumerate(zip(images, _masks)):
             voi = self._get_voi(image, mask, modality=modality)
             landmarks = self.get_landmarks(voi)
-            min_p = np.percentile(voi, self.min_percentile)  # type: ignore[call-overload]
-            max_p = np.percentile(voi, self.max_percentile)  # type: ignore[call-overload]
+            min_p = np.percentile(voi, self.min_percentile)  # type: ignore[call-overload] # noqa: E501
+            max_p = np.percentile(voi, self.max_percentile)  # type: ignore[call-overload] # noqa: E501
             f = interp1d([min_p, max_p], [self.output_min_value, self.output_max_value])
             landmarks = np.array(f(landmarks))
             standard_scale += landmarks
@@ -230,7 +232,7 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
 
     @classmethod
     def from_argparse_args(cls, args: argparse.Namespace, /) -> NyulNormalize:
-        out = cls(
+        return cls(
             output_min_value=args.output_min_value,
             output_max_value=args.output_max_value,
             min_percentile=args.min_percentile,
@@ -239,4 +241,3 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
             percentile_before_max=args.percentile_before_max,
             percentile_step=args.percentile_step,
         )
-        return out

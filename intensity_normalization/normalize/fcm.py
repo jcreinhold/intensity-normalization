@@ -27,16 +27,16 @@ logger = logging.getLogger(__name__)
 
 class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalizeCLI):
     """
-    use fuzzy c-means-generated tissue membership (found on a T1-w
-    image) to normalize the tissue to norm_value (default = 1.)
+    Use fuzzy c-means-generated tissue membership (found on a T1-w
+    image) to normalize the tissue mean to norm_value (default = 1.)
     """
 
     def __init__(
         self,
         *,
-        norm_value: float = 1.0,
+        norm_value: builtins.float = 1.0,
         tissue_type: intnormt.TissueTypes = intnormt.TissueTypes.WM,
-        **kwargs,
+        **kwargs: typing.Any,
     ):
         super().__init__(norm_value=norm_value, **kwargs)
         self.tissue_membership = None
@@ -60,7 +60,7 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> builtins.float:
-        tissue_mean: float
+        tissue_mean: builtins.float
         if modality == intnormt.Modalities.T1:
             mask = self._get_mask(image, mask, modality=modality)
             tissue_name = self.tissue_type.to_fullname()
@@ -68,11 +68,11 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
             tissue_memberships = intnormtm.find_tissue_memberships(image, mask)
             self.tissue_membership = tissue_memberships[..., self.tissue_type.to_int()]
             logger.debug(f"Calculated {tissue_name} membership")
-            tissue_mean = np.average(image, weights=self.tissue_membership)
+            tissue_mean = float(np.average(image, weights=self.tissue_membership))
         elif modality != intnormt.Modalities.T1 and mask is None and self.is_fit:
-            tissue_mean = np.average(image, weights=self.tissue_membership)
+            tissue_mean = float(np.average(image, weights=self.tissue_membership))
         elif modality != intnormt.Modalities.T1 and mask is not None:
-            tissue_mean = np.average(image, weights=mask)
+            tissue_mean = float(np.average(image, weights=mask))
         else:
             msg = "Either a T1-w image must be passed to initialize a tissue "
             msg += "membership mask or the tissue memberships must be provided."
@@ -101,8 +101,8 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
     def get_parent_parser(
         cls,
         desc: builtins.str,
-        valid_modalities: typing.Set[builtins.str] = intnorm.VALID_MODALITIES,
-        **kwargs,
+        valid_modalities: typing.FrozenSet[builtins.str] = intnorm.VALID_MODALITIES,
+        **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description=desc,
@@ -199,7 +199,7 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
             if args.modality is not None:
                 if args.modality.lower() != "t1":
                     msg = "If a brain mask is provided, modality must be `t1`. "
-                    msg += f"Got {args.modality}."
+                    msg += f"Got '{args.modality}'."
                     raise ValueError(msg)
         elif args.tissue_mask is not None:
             args.mask = args.tissue_mask
@@ -208,7 +208,7 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
     def save_additional_info(
         self,
         args: argparse.Namespace,
-        **kwargs,
+        **kwargs: typing.Any,
     ) -> None:
         if self.is_fit and args.tissue_mask is None:
             tissue_membership = mioi.Image(

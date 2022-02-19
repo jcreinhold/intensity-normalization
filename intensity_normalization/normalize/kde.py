@@ -14,9 +14,10 @@ import intensity_normalization.util.histogram_tools as intnormhisttool
 
 class KDENormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalizeCLI):
     """
-    use kernel density estimation to find the peak of the white
-    matter in the histogram of a (skull-stripped) brain MR image.
-    Normalize the WM of the image to norm_value (default = 1.)
+    Use kernel density estimation to fit a smoothed histogram of intensities
+    of a (skull-stripped) brain MR image, then find the peak of the white
+    matter (by default) in the smoothed histogram. Finally, normalize the
+    white matter mode of the image to norm_value (default = 1.)
     """
 
     def calculate_location(

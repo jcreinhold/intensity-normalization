@@ -4,6 +4,7 @@ import builtins
 import pathlib
 import typing
 
+import numpy as np
 import pytest
 
 try:
@@ -56,5 +57,6 @@ def test_preprocess_cli(preprocess_cli_args: typing.List[builtins.str]) -> None:
 
 
 def test_ravel_normalization_cli(base_cli_dir_args: typing.List[builtins.str]) -> None:
+    np.random.seed(1337)
     retval = ravel_main(base_cli_dir_args)
     assert retval == 0

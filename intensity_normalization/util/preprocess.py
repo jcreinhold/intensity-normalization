@@ -22,6 +22,7 @@ import nibabel as nib
 import numpy as np
 import pymedio.image as mioi
 
+import intensity_normalization as intnorm
 import intensity_normalization.base_cli as intnormcli
 import intensity_normalization.typing as intnormt
 
@@ -126,6 +127,7 @@ class Preprocessor(intnormcli.SingleImageCLI):
         interp_type: builtins.str = "linear",
         second_n4_with_smoothed_mask: builtins.bool = True,
     ):
+        super().__init__()
         self.resolution = resolution
         self.orientation = orientation
         self.n4_convergence_options = n4_convergence_options
@@ -166,7 +168,10 @@ class Preprocessor(intnormcli.SingleImageCLI):
 
     @classmethod
     def get_parent_parser(
-        cls, desc: builtins.str, **kwargs: typing.Any
+        cls,
+        desc: builtins.str,
+        valid_modalities: typing.FrozenSet[builtins.str] = intnorm.VALID_MODALITIES,
+        **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description=desc,

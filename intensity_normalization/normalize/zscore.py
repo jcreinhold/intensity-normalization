@@ -9,14 +9,15 @@ __all__ = ["ZScoreNormalize"]
 
 import argparse
 import builtins
+import typing
 
 import intensity_normalization.normalize.base as intnormb
 import intensity_normalization.typing as intnormt
 
 
 class ZScoreNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalizeCLI):
-    def __init__(self, *, norm_value: builtins.float = 1.0, **kwargs):
-        super().__init__(norm_value=norm_value)
+    def __init__(self, *, norm_value: builtins.float = 1.0, **kwargs: typing.Any):
+        super().__init__(norm_value=norm_value, **kwargs)
         self.voi: intnormt.Image | None = None
 
     def calculate_location(

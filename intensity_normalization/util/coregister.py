@@ -15,6 +15,7 @@ import typing
 import nibabel as nib
 import numpy as np
 
+import intensity_normalization as intnorm
 import intensity_normalization.base_cli as intnormcli
 import intensity_normalization.typing as intnormt
 
@@ -36,7 +37,7 @@ def to_ants(image: intnormt.Image, /) -> ants.ANTsImage:
         ants_image = ants.from_numpy(image)
     else:
         msg = "Provided image must be an ANTsImage, Nifti1Image,"
-        msg += f" or (a subclass of) np.ndarray. Got {type(image)}."
+        msg += f" or (a subclass of) np.ndarray. Got '{type(image)}'."
         raise ValueError(msg)
     return ants_image
 
@@ -101,6 +102,7 @@ class Registrator(intnormcli.SingleImageCLI):
         metric: builtins.str = "mattes",
         initial_rigid: builtins.bool = True,
     ):
+        super().__init__()
         if template is None:
             logger.info("Using MNI (in RAS orientation) as template")
             standard_mni = ants.get_ants_data("mni")
@@ -164,7 +166,10 @@ class Registrator(intnormcli.SingleImageCLI):
 
     @classmethod
     def get_parent_parser(
-        cls, desc: builtins.str, **kwargs: typing.Any
+        cls,
+        desc: builtins.str,
+        valid_modalities: typing.FrozenSet[builtins.str] = intnorm.VALID_MODALITIES,
+        **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description=desc,

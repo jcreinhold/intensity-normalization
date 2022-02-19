@@ -1,4 +1,4 @@
-"""Tests for `intensity_normalization` package."""
+"""Tests for non-antspy `intensity_normalization` functions."""
 
 import builtins
 import os

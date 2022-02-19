@@ -17,6 +17,7 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 
+import intensity_normalization as intnorm
 import intensity_normalization.base_cli as intnormcli
 import intensity_normalization.typing as intnormt
 import intensity_normalization.util.io as intnormio
@@ -40,6 +41,7 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
         alpha: builtins.float = 0.8,
         title: builtins.str | None = None,
     ):
+        super().__init__()
         self.figsize = figsize
         self.alpha = alpha
         self.title = title
@@ -50,7 +52,7 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
         /,
         masks: typing.Sequence[intnormt.Image | None] | None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
     ) -> plt.Axes:
         assert len(images) > 0
@@ -113,7 +115,7 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
     def get_parent_parser(
         cls,
         desc: builtins.str,
-        valid_modalities: typing.Set[builtins.str] = None,
+        valid_modalities: typing.FrozenSet[builtins.str] = intnorm.VALID_MODALITIES,
         **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(

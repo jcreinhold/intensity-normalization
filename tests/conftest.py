@@ -49,7 +49,7 @@ def out_dir(temp_dir: pathlib.Path) -> pathlib.Path:
 
 @pytest.fixture
 def mask(mask_dir: pathlib.Path) -> pathlib.Path:
-    mask_data = np.random.randint(0, 2, (5, 5, 5)).astype(float)
+    mask_data: np.ndarray = np.random.randint(0, 2, (5, 5, 5)).astype(np.float32)
     mask_path = mask_dir / "test_mask.nii"
     mask = nib.Nifti1Image(mask_data, np.eye(4))
     mask.to_filename(mask_path)

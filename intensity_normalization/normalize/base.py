@@ -23,6 +23,7 @@ import warnings
 
 import pymedio.image as mioi
 
+import intensity_normalization as intnorm
 import intensity_normalization.base_cli as intnormcli
 import intensity_normalization.plot.histogram as intnormhist
 import intensity_normalization.typing as intnormt
@@ -40,7 +41,7 @@ class NormalizeMixin(metaclass=abc.ABCMeta):
         /,
         mask: intnormt.Image | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
     ) -> intnormt.Image:
         return self.normalize_image(image, mask, modality=modality)
@@ -52,7 +53,7 @@ class NormalizeMixin(metaclass=abc.ABCMeta):
         /,
         mask: intnormt.Image | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> intnormt.Image:
         raise NotImplementedError
 
@@ -62,7 +63,7 @@ class NormalizeMixin(metaclass=abc.ABCMeta):
         /,
         mask: intnormt.Image | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> None:
         return
 
@@ -93,7 +94,7 @@ class NormalizeMixin(metaclass=abc.ABCMeta):
         /,
         mask: intnormt.Image | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
         background_threshold: builtins.float = 1e-6,
     ) -> intnormt.Image:
         if mask is None:
@@ -109,7 +110,7 @@ class NormalizeMixin(metaclass=abc.ABCMeta):
         /,
         mask: intnormt.Image | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> intnormt.Image:
         voi: intnormt.Image = image[self._get_mask(image, mask, modality=modality)]
         return voi
@@ -127,7 +128,7 @@ class LocationScaleMixin(NormalizeMixin, metaclass=abc.ABCMeta):
         /,
         mask: intnormt.Image | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> builtins.float:
         raise NotImplementedError
 
@@ -138,7 +139,7 @@ class LocationScaleMixin(NormalizeMixin, metaclass=abc.ABCMeta):
         /,
         mask: intnormt.Image | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> builtins.float:
         raise NotImplementedError
 
@@ -148,7 +149,7 @@ class LocationScaleMixin(NormalizeMixin, metaclass=abc.ABCMeta):
         /,
         mask: intnormt.Image | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> intnormt.Image:
         self.setup(image, mask, modality=modality)
         loc = self.calculate_location(image, mask, modality=modality)
@@ -166,10 +167,13 @@ class NormalizeCLIMixin(NormalizeMixin, intnormcli.CLIMixin, metaclass=abc.ABCMe
         mask_path: intnormt.PathLike | None = None,
         *,
         out_path: intnormt.PathLike | None = None,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
-    ) -> intnormt.Image:
-        image = mioi.Image.from_path(image_path)
-        mask = mioi.Image.from_path(mask_path) if mask_path is not None else None
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
+    ) -> typing.Tuple[intnormt.Image, intnormt.Image | None]:
+        image = typing.cast(intnormt.Image, mioi.Image.from_path(image_path))
+        if mask_path is not None:
+            mask = typing.cast(intnormt.Image, mioi.Image.from_path(mask_path))
+        else:
+            mask = None
         if out_path is None:
             out_path = self.append_name_to_file(image_path)
         logger.info(f"Normalizing image: {image_path}")
@@ -178,23 +182,16 @@ class NormalizeCLIMixin(NormalizeMixin, intnormcli.CLIMixin, metaclass=abc.ABCMe
         normalized.save(out_path, squeeze=False)
         return normalized, mask
 
-    @abc.abstractmethod
-    def plot_histogram_from_args(
-        self,
-        args: argparse.Namespace,
-        /,
-        normalized: intnormt.Image,
-        mask: intnormt.Image | None = None,
-    ) -> None:
-        raise NotImplementedError
-
     @classmethod
     def get_parent_parser(
         cls,
         desc: builtins.str,
-        **kwargs,
+        valid_modalities: typing.FrozenSet[builtins.str] = intnorm.VALID_MODALITIES,
+        **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
-        parser = super().get_parent_parser(desc, **kwargs)
+        parser = super().get_parent_parser(
+            desc, valid_modalities=valid_modalities, **kwargs
+        )
         parser.add_argument(
             "-p",
             "--plot-histogram",
@@ -225,9 +222,12 @@ class LocationScaleCLIMixin(LocationScaleMixin, NormalizeCLIMixin):
     def get_parent_parser(
         cls,
         desc: builtins.str,
-        **kwargs,
+        valid_modalities: typing.FrozenSet[builtins.str] = intnorm.VALID_MODALITIES,
+        **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
-        parser = super().get_parent_parser(desc, **kwargs)
+        parser = super().get_parent_parser(
+            desc, valid_modalities=valid_modalities, **kwargs
+        )
         parser.add_argument(
             "-n",
             "--norm-value",
@@ -239,7 +239,7 @@ class LocationScaleCLIMixin(LocationScaleMixin, NormalizeCLIMixin):
 
     @classmethod
     def from_argparse_args(cls: typing.Type[T], args: argparse.Namespace, /) -> T:
-        return cls(norm_value=args.norm_value)
+        return cls(norm_value=args.norm_value)  # type: ignore[call-arg]
 
 
 class SingleImageNormalizeCLI(NormalizeCLIMixin, intnormcli.SingleImageCLI):
@@ -290,7 +290,7 @@ class SampleNormalizeCLIMixin(NormalizeCLIMixin, intnormcli.CLIMixin):
         /,
         mask_dir: intnormt.PathLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
         ext: builtins.str = "nii*",
         return_normalized_and_masks: builtins.bool = False,
         **kwargs: typing.Any,
@@ -331,7 +331,7 @@ class SampleNormalizeCLIMixin(NormalizeCLIMixin, intnormcli.CLIMixin):
         out = self.process_directories(
             args.image_dir,
             args.mask_dir,
-            modality=intnormt.Modalities.from_string(args.modality),  # type: ignore[attr-defined]
+            modality=intnormt.Modalities.from_string(args.modality),
             ext=args.extension,
             return_normalized_and_masks=True,
         )
@@ -370,7 +370,7 @@ class DirectoryNormalizeCLI(
         /,
         masks: typing.Sequence[intnormt.Image] | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined] # noqa: E501
         **kwargs: typing.Any,
     ) -> None:
         images, masks = self.before_fit(images, masks, modality=modality, **kwargs)
@@ -384,7 +384,7 @@ class DirectoryNormalizeCLI(
         /,
         masks: typing.Sequence[intnormt.Image] | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
     ) -> None:
         raise NotImplementedError
@@ -395,7 +395,7 @@ class DirectoryNormalizeCLI(
         /,
         masks: typing.Sequence[intnormt.Image] | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
     ) -> typing.Tuple[
         typing.Sequence[intnormt.Image], typing.Sequence[intnormt.Image] | None
@@ -416,7 +416,7 @@ class DirectoryNormalizeCLI(
         /,
         mask_dir: intnormt.PathLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,  # type: ignore[attr-defined]
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
         ext: builtins.str = "nii*",
         return_normalized_and_masks: builtins.bool = False,
         **kwargs: typing.Any,
