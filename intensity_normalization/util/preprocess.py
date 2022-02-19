@@ -45,7 +45,7 @@ def preprocess(
     n4_convergence_options: typing.Dict[builtins.str, typing.Any] | None = None,
     interp_type: builtins.str = "linear",
     second_n4_with_smoothed_mask: builtins.bool = True,
-) -> typing.Tuple[intnormt.Image, intnormt.Image]:
+) -> typing.Tuple[mioi.Image, mioi.Image]:
     """Preprocess an MR image
 
     Preprocess an MR image according to a simple scheme:
@@ -114,7 +114,7 @@ def preprocess(
     pp_image = mioi.Image(_image.get_fdata(), _image.affine)
     _mask = ants_mask.to_nibabel()
     pp_mask = mioi.Image(_mask.get_fdate(), _mask.affine)
-    return typing.cast(intnormt.Image, pp_image), typing.cast(intnormt.Image, pp_mask)
+    return pp_image, pp_mask
 
 
 class Preprocessor(intnormcli.SingleImageCLI):
@@ -150,7 +150,7 @@ class Preprocessor(intnormcli.SingleImageCLI):
             interp_type=self.interp_type,
             second_n4_with_smoothed_mask=self.second_n4_with_smoothed_mask,
         )
-        return preprocessed
+        return preprocessed  # type: ignore[return-value]
 
     @staticmethod
     def name() -> str:

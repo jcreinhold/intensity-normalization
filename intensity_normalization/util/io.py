@@ -10,6 +10,7 @@ __all__ = [
     "gather_images_and_masks",
     "glob_ext",
     "split_filename",
+    "zip_with_nones",
 ]
 
 import builtins
@@ -20,21 +21,24 @@ import pymedio.image as mioi
 
 import intensity_normalization.typing as intnormt
 
+PymedioImageList = typing.List[mioi.Image]
+PymedioMaskListOrNone = typing.Union[PymedioImageList, None]
+
 
 def gather_images(
     dirpath: intnormt.PathLike,
     *,
     ext: builtins.str = "nii*",
-) -> typing.List[intnormt.Image]:
+) -> PymedioImageList:
     """return all images of extension `ext` from a directory"""
     if not isinstance(dirpath, pathlib.Path):
         dirpath = pathlib.Path(dirpath)
     if not dirpath.is_dir():
         raise ValueError("dirpath must be a valid directory.")
     image_filenames = glob_ext(dirpath, ext=ext)
-    images: typing.List[intnormt.Image] = []
+    images: PymedioImageList = []
     for fn in image_filenames:
-        image = typing.cast(intnormt.Image, mioi.Image.from_path(fn))
+        image = mioi.Image.from_path(fn)
         images.append(image)
     return images
 
@@ -44,15 +48,13 @@ def gather_images_and_masks(
     mask_dir: intnormt.PathLike | None = None,
     *,
     ext: builtins.str = "nii*",
-) -> typing.Tuple[
-    typing.List[intnormt.Image], typing.List[intnormt.Image] | typing.List[None]
-]:
+) -> typing.Tuple[PymedioImageList, PymedioMaskListOrNone]:
     images = gather_images(image_dir, ext=ext)
-    masks: typing.List[intnormt.Image] | typing.List[None]
+    masks: PymedioMaskListOrNone
     if mask_dir is not None:
         masks = gather_images(mask_dir, ext=ext)
     else:
-        masks = [None] * len(images)
+        masks = None
     return images, masks
 
 
@@ -95,5 +97,35 @@ def split_filename(
     return intnormt.SplitFilename(pathlib.Path(path), base, ext)
 
 
-# def zip_or_none(*args: typing.Sequence[typing.Any]):
-#     ...
+Zipped = typing.Generator[typing.Tuple[typing.Any, ...], None, None]
+
+
+def zip_with_nones(*args: typing.Sequence[typing.Any] | None) -> Zipped:
+
+    _args: typing.List[typing.Any] = list(args)
+    none_indices: typing.List[builtins.int] = []
+    length: builtins.int | None = None
+    for i, seq_or_none in enumerate(args):
+        try:
+            _length = len(seq_or_none)  # type: ignore[arg-type]
+        except TypeError:
+            if seq_or_none is not None:
+                raise RuntimeError("Only sequences or 'None' allowed.")
+            none_indices.append(i)
+        else:
+            if length is None:
+                length = _length
+            elif length is not None and length != _length:
+                raise RuntimeError("All sequences should be the same length.")
+
+    def nones(length: builtins.int) -> typing.Generator[None, None, None]:
+        for _ in range(length):
+            yield None
+
+    if length is None:
+        raise RuntimeError("At least one argument needs to be a sequence.")
+
+    for idx in none_indices:
+        _args[idx] = nones(length)
+
+    return typing.cast(Zipped, zip(*_args))

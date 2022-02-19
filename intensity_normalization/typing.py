@@ -44,7 +44,7 @@ import numpy.typing as npt
 
 import intensity_normalization as intnorm
 
-ArgType = typing.Optional[typing.Union[argparse.Namespace, typing.List[builtins.str]]]
+ArgType = typing.Union[argparse.Namespace, typing.List[builtins.str], None]
 PathLike = typing.Union[builtins.str, os.PathLike]
 ShapeLike = typing.Union[typing.SupportsIndex, typing.Sequence[typing.SupportsIndex]]
 
@@ -447,49 +447,49 @@ def new_parse_type(
     return NewParseType(func, name)
 
 
-_Image = typing.TypeVar("_Image", bound="Image")
+T = typing.TypeVar("T")
 
 
 class Image(typing.Protocol):
     """support anything that implements the methods here"""
 
-    def __gt__(self: _Image, other: typing.Any) -> _Image:
+    def __gt__(self: T, other: typing.Any) -> T:
         ...
 
-    def __ge__(self: _Image, other: typing.Any) -> _Image:
+    def __ge__(self: T, other: typing.Any) -> T:
         ...
 
-    def __lt__(self: _Image, other: typing.Any) -> _Image:
+    def __lt__(self: T, other: typing.Any) -> T:
         ...
 
-    def __le__(self: _Image, other: typing.Any) -> _Image:
+    def __le__(self: T, other: typing.Any) -> T:
         ...
 
-    def __and__(self: _Image, other: typing.Any) -> _Image:
+    def __and__(self: T, other: typing.Any) -> T:
         ...
 
-    def __or__(self: _Image, other: typing.Any) -> _Image:
+    def __or__(self: T, other: typing.Any) -> T:
         ...
 
-    def __add__(self: _Image, other: typing.Any) -> _Image:
+    def __add__(self: T, other: typing.Any) -> T:
         ...
 
-    def __sub__(self: _Image, other: typing.Any) -> _Image:
+    def __sub__(self: T, other: typing.Any) -> T:
         ...
 
-    def __mul__(self: _Image, other: typing.Any) -> _Image:
+    def __mul__(self: T, other: typing.Any) -> T:
         ...
 
-    def __truediv__(self: _Image, other: typing.Any) -> _Image:
+    def __truediv__(self: T, other: typing.Any) -> T:
         ...
 
-    def __getitem__(self: _Image, item: typing.Any) -> typing.Any:
+    def __getitem__(self: T, item: typing.Any) -> typing.Any:
         ...
 
-    def __iter__(self: _Image) -> _Image:
+    def __iter__(self: T) -> T:
         ...
 
-    def __array__(self: _Image) -> npt.NDArray:
+    def __array__(self) -> npt.NDArray:
         ...
 
     def sum(self) -> builtins.float:
@@ -524,16 +524,12 @@ class Image(typing.Protocol):
     def min(self) -> builtins.float:
         ...
 
-    def flatten(self: _Image) -> _Image:
-        ...
-
-    @property
-    def affine(self) -> npt.NDArray:
+    def flatten(self: T) -> T:
         ...
 
     def reshape(
-        self: _Image,
+        self: T,
         *shape: typing.SupportsIndex,
         order: typing.Literal["A", "C", "F"] | None = ...,
-    ) -> _Image:
+    ) -> T:
         ...

@@ -170,7 +170,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         self,
         images: typing.Sequence[intnormt.Image],
         /,
-        masks: typing.Sequence[intnormt.Image | None] | None = None,
+        masks: typing.Sequence[intnormt.Image] | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> typing.Tuple[npt.NDArray, npt.NDArray]:
@@ -194,10 +194,8 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         whitestripe_norm = intnormws.WhiteStripeNormalize(**self.whitestripe_kwargs)
         control_masks = []
         registered_images = []
-        masks = ([None] * n_images) if masks is None else masks
-        assert n_images == len(masks)
 
-        for i, (image, mask) in enumerate(zip(images, masks), 1):
+        for i, (image, mask) in enumerate(intnormio.zip_with_nones(images, masks), 1):
             image_ws = whitestripe_norm(image, mask)
             image_matrix[:, i - 1] = image_ws.flatten()
             logger.info(f"Processing image {i}/{n_images}")
@@ -291,24 +289,16 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         ext: builtins.str = "nii*",
         return_normalized_and_masks: builtins.bool = False,
         **kwargs: typing.Any,
-    ) -> typing.Tuple[
-        typing.Sequence[intnormt.Image], typing.Sequence[intnormt.Image | None]
-    ] | None:
+    ) -> typing.Tuple[typing.List[mioi.Image], typing.List[mioi.Image] | None] | None:
         logger.debug("Grabbing images")
-        images, _masks = intnormio.gather_images_and_masks(image_dir, mask_dir, ext=ext)
-        masks = None if _masks[0] is None else _masks
+        images, masks = intnormio.gather_images_and_masks(image_dir, mask_dir, ext=ext)
         self.fit(images, masks, modality=modality, **kwargs)
         assert self._normalized is not None
         if return_normalized_and_masks:
-            norm_lst: typing.List[intnormt.Image] = []
+            norm_lst: typing.List[mioi.Image] = []
             for normed, image in zip(self._normalized, images):  # type: ignore[call-overload] # noqa: E501
-                norm_lst.append(
-                    typing.cast(
-                        intnormt.Image,
-                        mioi.Image(normed.reshape(image.shape), image.affine),
-                    )
-                )
-            return norm_lst, _masks
+                norm_lst.append(mioi.Image(normed.reshape(image.shape), image.affine))
+            return norm_lst, masks
         return None
 
     @staticmethod

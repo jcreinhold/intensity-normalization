@@ -50,7 +50,7 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
         self,
         images: typing.Sequence[intnormt.Image],
         /,
-        masks: typing.Sequence[intnormt.Image | None] | None,
+        masks: typing.Sequence[intnormt.Image] | None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
@@ -60,11 +60,9 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
             images = [img.get_fdata() for img in images]  # type: ignore[attr-defined]
         if masks is not None:
             if hasattr(masks[0], "get_fdata"):
-                masks = [msk.get_fdata() for msk in masks]  # type: ignore[union-attr]
-        else:
-            masks = [None] * len(images)
-        if len(images) != len(masks):
-            raise ValueError("number of images and masks must be equal")
+                masks = [msk.get_fdata() for msk in masks]  # type: ignore[attr-defined,union-attr] # noqa: E501
+            if len(images) != len(masks):
+                raise ValueError("number of images and masks must be equal")
         ax = self.plot_all_histograms(images, masks, **kwargs)
         return ax
 
@@ -72,12 +70,12 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
         self,
         images: typing.Sequence[intnormt.Image],
         /,
-        masks: typing.Sequence[intnormt.Image | None],
+        masks: typing.Sequence[intnormt.Image] | None,
         **kwargs: typing.Any,
     ) -> plt.Axes:
         _, ax = plt.subplots(figsize=self.figsize)
         n_images = len(images)
-        for i, (image, mask) in enumerate(zip(images, masks), 1):
+        for i, (image, mask) in enumerate(intnormio.zip_with_nones(images, masks), 1):
             logger.info(f"Creating histogram ({i:d}/{n_images:d})")
             _ = plot_histogram(image, mask, ax=ax, alpha=self.alpha, **kwargs)
         ax.set_xlabel("Intensity")
@@ -97,7 +95,7 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
         **kwargs: typing.Any,
     ) -> plt.Axes:
         images, masks = intnormio.gather_images_and_masks(image_dir, mask_dir, ext=ext)
-        return self(images, masks, **kwargs)
+        return self(images, masks, **kwargs)  # type: ignore[arg-type, return-value]
 
     @staticmethod
     def name() -> builtins.str:
