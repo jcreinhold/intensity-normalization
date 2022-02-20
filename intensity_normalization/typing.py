@@ -13,7 +13,7 @@ __all__ = [
     "ArgType",
     "dir_path",
     "file_path",
-    "Image",
+    "ImageLike",
     "interp_type_dict",
     "Modalities",
     "new_parse_type",
@@ -447,46 +447,47 @@ def new_parse_type(
     return NewParseType(func, name)
 
 
-T = typing.TypeVar("T")
+S_co = typing.TypeVar("S_co", bound="ImageLike", covariant=True)
+T_co = typing.TypeVar("T_co", bound="ImageLike", covariant=True)
 
 
-class Image(typing.Protocol):
+class ImageLike(typing.Protocol[S_co, T_co]):
     """support anything that implements the methods here"""
 
-    def __gt__(self: T, other: typing.Any) -> T:
+    def __gt__(self: T_co, other: typing.Any) -> S_co:
         ...
 
-    def __ge__(self: T, other: typing.Any) -> T:
+    def __ge__(self: T_co, other: typing.Any) -> S_co:
         ...
 
-    def __lt__(self: T, other: typing.Any) -> T:
+    def __lt__(self: T_co, other: typing.Any) -> S_co:
         ...
 
-    def __le__(self: T, other: typing.Any) -> T:
+    def __le__(self: T_co, other: typing.Any) -> S_co:
         ...
 
-    def __and__(self: T, other: typing.Any) -> T:
+    def __and__(self: T_co, other: typing.Any) -> T_co:
         ...
 
-    def __or__(self: T, other: typing.Any) -> T:
+    def __or__(self: T_co, other: typing.Any) -> T_co:
         ...
 
-    def __add__(self: T, other: typing.Any) -> T:
+    def __add__(self: T_co, other: typing.Any) -> T_co:
         ...
 
-    def __sub__(self: T, other: typing.Any) -> T:
+    def __sub__(self: T_co, other: typing.Any) -> T_co:
         ...
 
-    def __mul__(self: T, other: typing.Any) -> T:
+    def __mul__(self: T_co, other: typing.Any) -> T_co:
         ...
 
-    def __truediv__(self: T, other: typing.Any) -> T:
+    def __truediv__(self: T_co, other: typing.Any) -> T_co:
         ...
 
-    def __getitem__(self: T, item: typing.Any) -> typing.Any:
+    def __getitem__(self: T_co, item: typing.Any) -> typing.Any:
         ...
 
-    def __iter__(self: T) -> T:
+    def __iter__(self: T_co) -> T_co:
         ...
 
     def __array__(self) -> npt.NDArray:
@@ -524,12 +525,12 @@ class Image(typing.Protocol):
     def min(self) -> builtins.float:
         ...
 
-    def flatten(self: T) -> T:
+    def flatten(self: T_co) -> T_co:
         ...
 
     def reshape(
-        self: T,
+        self: T_co,
         *shape: typing.SupportsIndex,
         order: typing.Literal["A", "C", "F"] | None = ...,
-    ) -> T:
+    ) -> T_co:
         ...

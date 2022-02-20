@@ -24,8 +24,8 @@ import intensity_normalization.typing as intnormt
 
 
 def smooth_histogram(
-    image: intnormt.Image, /
-) -> typing.Tuple[intnormt.Image, intnormt.Image]:
+    image: intnormt.ImageLike, /
+) -> typing.Tuple[intnormt.ImageLike, intnormt.ImageLike]:
     """Use kernel density estimate to get smooth histogram
 
     Args:
@@ -44,7 +44,7 @@ def smooth_histogram(
     return grid, pdf
 
 
-def get_largest_tissue_mode(image: intnormt.Image, /) -> builtins.float:
+def get_largest_tissue_mode(image: intnormt.ImageLike, /) -> builtins.float:
     """Mode of the largest tissue class
 
     Args:
@@ -54,12 +54,12 @@ def get_largest_tissue_mode(image: intnormt.Image, /) -> builtins.float:
         largest_tissue_mode: value of the largest tissue mode
     """
     grid, pdf = smooth_histogram(image)
-    largest_tissue_mode: float = grid[np.argmax(pdf)]  # type: ignore[call-overload]
+    largest_tissue_mode: builtins.float = float(grid[int(np.argmax(pdf))])
     return largest_tissue_mode
 
 
 def get_last_tissue_mode(
-    image: intnormt.Image,
+    image: intnormt.ImageLike,
     /,
     *,
     remove_tail: builtins.bool = True,
@@ -80,8 +80,8 @@ def get_last_tissue_mode(
         msg = f"tail_percentage must be in (0, 100). Got '{tail_percentage}'."
         raise ValueError(msg)
     if remove_tail:
-        threshold: builtins.float = float(np.percentile(image, tail_percentage))  # type: ignore[call-overload] # noqa: E501
-        valid_mask: intnormt.Image = image <= threshold
+        threshold: builtins.float = float(np.percentile(image, tail_percentage))
+        valid_mask: intnormt.ImageLike = image <= threshold
         image = image[valid_mask]
     grid, pdf = smooth_histogram(image)
     maxima = scipy.signal.argrelmax(pdf)[0]
@@ -90,7 +90,7 @@ def get_last_tissue_mode(
 
 
 def get_first_tissue_mode(
-    image: intnormt.Image,
+    image: intnormt.ImageLike,
     /,
     *,
     remove_tail: builtins.bool = True,
@@ -111,8 +111,8 @@ def get_first_tissue_mode(
         msg = f"tail_percentage must be in (0, 100). Got '{tail_percentage}'."
         raise ValueError(msg)
     if remove_tail:
-        threshold: builtins.float = float(np.percentile(image, tail_percentage))  # type: ignore[call-overload] # noqa: E501
-        valid_mask: intnormt.Image = image <= threshold
+        threshold: builtins.float = float(np.percentile(image, tail_percentage))
+        valid_mask: intnormt.ImageLike = image <= threshold
         image = image[valid_mask]
     grid, pdf = smooth_histogram(image)
     maxima = scipy.signal.argrelmax(pdf)[0]
@@ -121,7 +121,7 @@ def get_first_tissue_mode(
 
 
 def get_tissue_mode(
-    image: intnormt.Image, /, *, modality: intnormt.Modalities
+    image: intnormt.ImageLike, /, *, modality: intnormt.Modalities
 ) -> builtins.float:
     """Find the appropriate tissue mode given a modality"""
     modality_ = modality.value

@@ -36,9 +36,9 @@ except ImportError as ants_imp_exn:
 
 
 def preprocess(
-    image: intnormt.Image,
+    image: intnormt.ImageLike,
     /,
-    mask: intnormt.Image | None = None,
+    mask: intnormt.ImageLike | None = None,
     *,
     resolution: typing.Tuple[builtins.float, ...] | None = None,
     orientation: builtins.str = "RAS",
@@ -136,11 +136,11 @@ class Preprocessor(intnormcli.SingleImageCLI):
 
     def __call__(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         **kwargs: typing.Any,
-    ) -> intnormt.Image:
+    ) -> intnormt.ImageLike:
         preprocessed, _ = preprocess(
             image,
             mask,
@@ -150,7 +150,7 @@ class Preprocessor(intnormcli.SingleImageCLI):
             interp_type=self.interp_type,
             second_n4_with_smoothed_mask=self.second_n4_with_smoothed_mask,
         )
-        return preprocessed  # type: ignore[return-value]
+        return preprocessed
 
     @staticmethod
     def name() -> str:

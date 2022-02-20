@@ -60,18 +60,18 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         if register and masks_are_csf:
             msg = "If masks_are_csf, then images are assumed to be co-registered."
             raise ValueError(msg)
-        self._template: intnormt.Image | None = None
-        self._template_mask: intnormt.Image | None = None
-        self._normalized: intnormt.Image | None = None
+        self._template: intnormt.ImageLike | None = None
+        self._template_mask: intnormt.ImageLike | None = None
+        self._normalized: intnormt.ImageLike | None = None
 
     def normalize_image(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
-    ) -> intnormt.Image:
+    ) -> intnormt.ImageLike:
         return NotImplemented
 
     def teardown(self) -> None:
@@ -88,13 +88,13 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
 
     def set_template(
         self,
-        template: intnormt.Image | ants.ANTsImage,
+        template: intnormt.ImageLike | ants.ANTsImage,
     ) -> None:
         self._template = to_ants(template)
 
     def set_template_mask(
         self,
-        template_mask: intnormt.Image | ants.ANTsImage | None,
+        template_mask: intnormt.ImageLike | ants.ANTsImage | None,
     ) -> None:
         if template_mask is None:
             self._template_mask = None
@@ -109,12 +109,12 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
 
     def _find_csf_mask(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
-    ) -> intnormt.Image:
+    ) -> intnormt.ImageLike:
         if self.masks_are_csf:
             if mask is None:
                 raise ValueError("mask must be defined if masks are CSF masks.")
@@ -168,9 +168,9 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
 
     def create_image_matrix_and_control_voxels(
         self,
-        images: typing.Sequence[intnormt.Image],
+        images: typing.Sequence[intnormt.ImageLike],
         /,
-        masks: typing.Sequence[intnormt.Image] | None = None,
+        masks: typing.Sequence[intnormt.ImageLike] | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> typing.Tuple[npt.NDArray, npt.NDArray]:
@@ -222,7 +222,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
 
         control_mask_sum = functools.reduce(operator.add, control_masks)
         threshold = np.floor(len(control_masks) * self.quantile_to_label_csf)
-        intersection: intnormt.Image = control_mask_sum >= threshold
+        intersection: intnormt.ImageLike = control_mask_sum >= threshold
         num_control_voxels = int(intersection.sum())
         if num_control_voxels == 0:
             raise RuntimeError(
@@ -256,16 +256,15 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
                 return_singular_vectors="vh",
             )
         )
-        unwanted_factors: npt.NDArray = all_unwanted_factors.T[
-            :, 0 : self.num_unwanted_factors
-        ]
+        unwanted_factors: npt.NDArray
+        unwanted_factors = all_unwanted_factors.T[:, 0 : self.num_unwanted_factors]
         return unwanted_factors
 
     def _fit(
         self,
-        images: typing.Sequence[intnormt.Image],
+        images: typing.Sequence[intnormt.ImageLike],
         /,
-        masks: typing.Sequence[intnormt.Image] | None = None,
+        masks: typing.Sequence[intnormt.ImageLike] | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
@@ -296,7 +295,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         assert self._normalized is not None
         if return_normalized_and_masks:
             norm_lst: typing.List[mioi.Image] = []
-            for normed, image in zip(self._normalized, images):  # type: ignore[call-overload] # noqa: E501
+            for normed, image in zip(self._normalized, images):
                 norm_lst.append(mioi.Image(normed.reshape(image.shape), image.affine))
             return norm_lst, masks
         return None

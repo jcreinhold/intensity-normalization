@@ -28,7 +28,7 @@ except ImportError as ants_imp_exn:
     raise RuntimeError(msg) from ants_imp_exn
 
 
-def to_ants(image: intnormt.Image, /) -> ants.ANTsImage:
+def to_ants(image: intnormt.ImageLike, /) -> ants.ANTsImage:
     if isinstance(image, ants.ANTsImage):
         ants_image = image
     elif isinstance(image, nib.Nifti1Image):

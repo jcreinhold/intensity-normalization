@@ -47,9 +47,9 @@ class WhiteStripeNormalize(
 
     def calculate_location(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> builtins.float:
@@ -58,9 +58,9 @@ class WhiteStripeNormalize(
 
     def calculate_scale(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> builtins.float:
@@ -69,9 +69,9 @@ class WhiteStripeNormalize(
 
     def setup(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> None:
@@ -87,7 +87,7 @@ class WhiteStripeNormalize(
         ws_l: builtins.float
         ws_u: builtins.float
         ws_l, ws_u = np.quantile(voi, (lower_bound, upper_bound))  # type: ignore[misc]
-        self.whitestripe = (masked > ws_l) & (masked < ws_u)  # type: ignore[assignment]
+        self.whitestripe = (masked > ws_l) & (masked < ws_u)
 
     def teardown(self) -> None:
         del self.whitestripe
@@ -125,8 +125,8 @@ class WhiteStripeNormalize(
         self,
         args: argparse.Namespace,
         /,
-        normalized: intnormt.Image,
-        mask: intnormt.Image | None = None,
+        normalized: intnormt.ImageLike,
+        mask: intnormt.ImageLike | None = None,
     ) -> None:
         if mask is None:
             mask = self.estimate_foreground(normalized)

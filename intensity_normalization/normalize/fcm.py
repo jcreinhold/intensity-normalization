@@ -14,6 +14,7 @@ import pathlib
 import typing
 
 import numpy as np
+import numpy.typing as npt
 import pymedio.image as mioi
 
 import intensity_normalization as intnorm
@@ -39,14 +40,14 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
         **kwargs: typing.Any,
     ):
         super().__init__(norm_value=norm_value, **kwargs)
-        self.tissue_membership = None
+        self.tissue_membership: npt.NDArray | None = None
         self.tissue_type = tissue_type
 
     def calculate_location(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> builtins.float:
@@ -54,9 +55,9 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
 
     def calculate_scale(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> builtins.float:
@@ -211,6 +212,7 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
         **kwargs: typing.Any,
     ) -> None:
         if self.is_fit and args.tissue_mask is None:
+            assert self.tissue_membership is not None
             tissue_membership = mioi.Image(
                 self.tissue_membership,
                 kwargs["normalized"].affine,

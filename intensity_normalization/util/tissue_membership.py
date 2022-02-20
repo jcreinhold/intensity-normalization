@@ -22,9 +22,9 @@ import intensity_normalization.typing as intnormt
 
 
 def find_tissue_memberships(
-    image: intnormt.Image,
+    image: intnormt.ImageLike,
     /,
-    mask: intnormt.Image | None = None,
+    mask: intnormt.ImageLike | None = None,
     *,
     hard_segmentation: builtins.bool = False,
     n_classes: builtins.int = 3,
@@ -59,7 +59,7 @@ def find_tissue_memberships(
         tissue_mask[..., i][mask] = memberships[i]
     if hard_segmentation:
         tmp_mask = np.zeros(image.shape)
-        masked = tissue_mask[mask]  # type: ignore[call-overload]
+        masked = tissue_mask[mask]
         tmp_mask[mask] = np.argmax(masked, axis=1) + 1
         tissue_mask = tmp_mask
     if hasattr(image, "affine"):
@@ -74,17 +74,17 @@ class TissueMembershipFinder(intnormcli.SingleImageCLI):
 
     def __call__(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         **kwargs: typing.Any,
-    ) -> intnormt.Image:
+    ) -> intnormt.ImageLike:
         tissue_memberships = find_tissue_memberships(
             image,
             mask,
             hard_segmentation=self.hard_segmentation,
         )
-        return tissue_memberships  # type: ignore[return-value]
+        return tissue_memberships
 
     @staticmethod
     def name() -> builtins.str:

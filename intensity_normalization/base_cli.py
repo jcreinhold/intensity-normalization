@@ -134,9 +134,9 @@ class SingleImageCLI(CLIMixin, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def __call__(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None,
+        mask: intnormt.ImageLike | None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
@@ -197,12 +197,12 @@ class SingleImageCLI(CLIMixin, metaclass=abc.ABCMeta):
 
     def call_from_argparse_args(self, args: argparse.Namespace) -> None:
         image = self.load_image(args.image)
-        mask: intnormt.Image | None
+        mask: intnormt.ImageLike | None
         if hasattr(args, "mask") and args.mask is not None:
-            mask = self.load_image(args.mask)  # type: ignore[assignment]
+            mask = self.load_image(args.mask)
         else:
             mask = None
-        out = self(image, mask)  # type: ignore[arg-type]
+        out = self(image, mask)
         if args.output is None:
             args.output = self.append_name_to_file(args.image)
         logger.debug(f"Saving output: {args.output}")

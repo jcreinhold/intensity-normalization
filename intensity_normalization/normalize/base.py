@@ -32,38 +32,38 @@ import intensity_normalization.util.io as intnormio
 logger = logging.getLogger(__name__)
 
 T = typing.TypeVar("T")
-ImageSeq = typing.Sequence[intnormt.Image]
+ImageSeq = typing.Sequence[intnormt.ImageLike]
 MaskSeqOrNone = typing.Union[ImageSeq, None]
 
 
 class NormalizeMixin(metaclass=abc.ABCMeta):
     def __call__(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
-    ) -> intnormt.Image:
+    ) -> intnormt.ImageLike:
         return self.normalize_image(image, mask, modality=modality)
 
     @abc.abstractmethod
     def normalize_image(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
-    ) -> intnormt.Image:
+    ) -> intnormt.ImageLike:
         raise NotImplementedError
 
     def setup(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> None:
@@ -73,48 +73,48 @@ class NormalizeMixin(metaclass=abc.ABCMeta):
         return
 
     @staticmethod
-    def estimate_foreground(image: intnormt.Image, /) -> intnormt.Image:
-        foreground: intnormt.Image = image > image.mean()
+    def estimate_foreground(image: intnormt.ImageLike, /) -> intnormt.ImageLike:
+        foreground: intnormt.ImageLike = image > image.mean()
         return foreground
 
     @staticmethod
     def skull_stripped_foreground(
-        image: intnormt.Image, /, *, background_threshold: builtins.float = 1e-6
-    ) -> intnormt.Image:
+        image: intnormt.ImageLike, /, *, background_threshold: builtins.float = 1e-6
+    ) -> intnormt.ImageLike:
         if image.min() < 0.0:
             msg = "Data contains negative values; "
             msg += "skull-stripped functionality assumes "
             msg += "the foreground is all positive. "
             msg += "Provide the brain mask if otherwise."
             warnings.warn(msg)
-        ss_foreground: intnormt.Image = image > background_threshold
+        ss_foreground: intnormt.ImageLike = image > background_threshold
         return ss_foreground
 
     def _get_mask(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
         background_threshold: builtins.float = 1e-6,
-    ) -> intnormt.Image:
+    ) -> intnormt.ImageLike:
         if mask is None:
             mask = self.skull_stripped_foreground(
                 image, background_threshold=background_threshold
             )
-        out: intnormt.Image = mask > 0.0
+        out: intnormt.ImageLike = mask > 0.0
         return out
 
     def _get_voi(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
-    ) -> intnormt.Image:
-        voi: intnormt.Image = image[self._get_mask(image, mask, modality=modality)]
+    ) -> intnormt.ImageLike:
+        voi: intnormt.ImageLike = image[self._get_mask(image, mask, modality=modality)]
         return voi
 
 
@@ -126,9 +126,9 @@ class LocationScaleMixin(NormalizeMixin, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def calculate_location(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> builtins.float:
@@ -137,9 +137,9 @@ class LocationScaleMixin(NormalizeMixin, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def calculate_scale(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> builtins.float:
@@ -147,17 +147,17 @@ class LocationScaleMixin(NormalizeMixin, metaclass=abc.ABCMeta):
 
     def normalize_image(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
-    ) -> intnormt.Image:
+    ) -> intnormt.ImageLike:
         self.setup(image, mask, modality=modality)
         loc = self.calculate_location(image, mask, modality=modality)
         scale = self.calculate_scale(image, mask, modality=modality)
         self.teardown()
-        normalized: intnormt.Image = ((image - loc) / scale) * self.norm_value
+        normalized: intnormt.ImageLike = ((image - loc) / scale) * self.norm_value
         return normalized
 
 
@@ -170,13 +170,15 @@ class NormalizeCLIMixin(NormalizeMixin, intnormcli.CLIMixin, metaclass=abc.ABCMe
         *,
         out_path: intnormt.PathLike | None = None,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
-    ) -> typing.Tuple[intnormt.Image, intnormt.Image | None]:
+    ) -> typing.Tuple[mioi.Image, mioi.Image | None]:
         image = mioi.Image.from_path(image_path)
         mask = None if mask_path is None else mioi.Image.from_path(mask_path)
         if out_path is None:
             out_path = self.append_name_to_file(image_path)
         logger.info(f"Normalizing image: {image_path}")
-        normalized: mioi.Image = self.normalize_image(image, mask, modality=modality)
+        normalized = typing.cast(
+            mioi.Image, self.normalize_image(image, mask, modality=modality)
+        )
         logger.info(f"Saving normalized image: {out_path}")
         normalized.save(out_path, squeeze=False)
         return normalized, mask
@@ -246,8 +248,8 @@ class SingleImageNormalizeCLI(NormalizeCLIMixin, intnormcli.SingleImageCLI):
         self,
         args: argparse.Namespace,
         /,
-        normalized: intnormt.Image,
-        mask: intnormt.Image | None = None,
+        normalized: intnormt.ImageLike,
+        mask: intnormt.ImageLike | None = None,
     ) -> None:
         import matplotlib.pyplot as plt
 
@@ -298,7 +300,7 @@ class SampleNormalizeCLIMixin(NormalizeCLIMixin, intnormcli.CLIMixin):
         images, masks = intnormio.gather_images_and_masks(image_dir, mask_dir, ext=ext)
         self.fit(images, masks, modality=modality, **kwargs)
         if return_normalized_and_masks:
-            normalized: typing.List[intnormt.Image] = []
+            normalized: typing.List[intnormt.ImageLike] = []
             n_images = len(images)
             zipped = intnormio.zip_with_nones(images, masks)
             for i, (image, mask) in enumerate(zipped, 1):
@@ -353,10 +355,6 @@ class SampleNormalizeCLIMixin(NormalizeCLIMixin, intnormcli.CLIMixin):
         if args.plot_histogram:
             self.plot_histogram_from_args(args, normalized, masks)
 
-    @classmethod
-    def from_argparse_args(cls: typing.Type[T], args: argparse.Namespace, /) -> T:
-        return cls()  # TODO: why is this empty?
-
 
 class DirectoryNormalizeCLI(
     SampleNormalizeCLIMixin, intnormcli.DirectoryCLI, metaclass=abc.ABCMeta
@@ -388,9 +386,9 @@ class DirectoryNormalizeCLI(
 
     def before_fit(
         self,
-        images: typing.Sequence[intnormt.Image],
+        images: typing.Sequence[intnormt.ImageLike],
         /,
-        masks: typing.Sequence[intnormt.Image] | None = None,
+        masks: typing.Sequence[intnormt.ImageLike] | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
