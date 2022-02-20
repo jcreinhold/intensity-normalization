@@ -117,7 +117,7 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
         parser.add_argument(
             "-o",
             "--output",
-            type=intnormt.save_nifti_path(),
+            type=intnormt.save_file_path(),
             default=None,
             help="Path to save normalized image.",
         )
@@ -218,7 +218,7 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
                 kwargs["normalized"].affine,
             )
             base, name, ext = intnormio.split_filename(args.image)
-            new_name = name + f"_{self.tissue_type}_membership" + ext
+            new_name = name + f"_{self.tissue_type.value}_membership" + ext
             if args.output is None:
                 output = base / new_name
             else:

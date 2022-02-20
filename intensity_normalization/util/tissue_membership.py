@@ -13,6 +13,7 @@ import operator
 import typing
 
 import numpy as np
+import numpy.typing as npt
 import pymedio.image as mioi
 from skfuzzy import cmeans
 
@@ -62,8 +63,11 @@ def find_tissue_memberships(
         masked = tissue_mask[mask]
         tmp_mask[mask] = np.argmax(masked, axis=1) + 1
         tissue_mask = tmp_mask
+    affine: npt.NDArray | None
     if hasattr(image, "affine"):
         affine = image.affine  # type: ignore[attr-defined]
+    else:
+        affine = None
     return mioi.Image(tissue_mask, affine=affine)
 
 
@@ -124,7 +128,7 @@ class TissueMembershipFinder(intnormcli.SingleImageCLI):
         parser.add_argument(
             "-o",
             "--output",
-            type=intnormt.save_nifti_path(),
+            type=intnormt.save_file_path(),
             default=None,
             help="Path to save registered image.",
         )

@@ -101,7 +101,13 @@ Zipped = typing.Generator[typing.Tuple[typing.Any, ...], None, None]
 
 
 def zip_with_nones(*args: typing.Sequence[typing.Any] | None) -> Zipped:
-
+    """zip sequence args but if an arg is None, yield None in that argument index
+    Examples:
+        >>> for x, y, z in zip_with_nones((1, 2), None, ("a", "b")):
+        ...    print(x, y, z)
+        1 None a
+        2 None b
+    """
     _args: typing.List[typing.Any] = list(args)
     none_indices: typing.List[builtins.int] = []
     length: builtins.int | None = None

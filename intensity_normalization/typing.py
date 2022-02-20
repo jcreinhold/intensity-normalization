@@ -27,7 +27,6 @@ __all__ = [
     "probability_float",
     "probability_float_or_none",
     "save_file_path",
-    "save_nifti_path",
     "SplitFilename",
     "TissueTypes",
 ]
@@ -323,20 +322,6 @@ class save_file_path(_ParseType):
     def __call__(self, string: builtins.str) -> pathlib.Path:
         if not string.isprintable():
             msg = "String must only contain printable characters."
-            raise argparse.ArgumentTypeError(msg)
-        path = pathlib.Path(string)
-        return path
-
-
-class save_nifti_path(_ParseType):
-    def __call__(self, string: builtins.str) -> pathlib.Path:
-        not_nifti = not string.endswith(".nii.gz") and not string.endswith(".nii")
-        if not_nifti or not string.isprintable():
-            msg = (
-                f"{string} is not a valid path to a NIfTI file. "
-                "Needs to end with .nii or .nii.gz and can "
-                "only contain printable characters."
-            )
             raise argparse.ArgumentTypeError(msg)
         path = pathlib.Path(string)
         return path
