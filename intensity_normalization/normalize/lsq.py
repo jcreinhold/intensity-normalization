@@ -36,9 +36,9 @@ class LeastSquaresNormalize(
 
     def calculate_location(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> float:
@@ -46,13 +46,13 @@ class LeastSquaresNormalize(
 
     def calculate_scale(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> float:
-        tissue_membership: np.ndarray
+        tissue_membership: intnormt.ImageLike
         if modality == intnormt.Modalities.T1:
             tissue_membership = intnormtm.find_tissue_memberships(image, mask)
             self.tissue_memberships.append(tissue_membership)
@@ -68,15 +68,16 @@ class LeastSquaresNormalize(
 
     def _fit(
         self,
-        images: typing.Sequence[intnormt.Image],
+        images: typing.Sequence[intnormt.ImageLike],
         /,
-        masks: typing.Sequence[intnormt.Image] | None = None,
+        masks: typing.Sequence[intnormt.ImageLike] | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
     ) -> None:
         image = images[0]  # only need one image to fit this method
         mask = masks[0] if masks is not None else None
+        tissue_membership: intnormt.ImageLike
         if not isinstance(mask, np.ndarray) and mask is not None:
             raise ValueError("Mask must be either none or subclass of ndarray")
         if modality == intnormt.Modalities.T1:
@@ -89,19 +90,19 @@ class LeastSquaresNormalize(
             msg += "tissue_membership in the mask argument."
             raise ValueError(msg)
         csf_mean = np.average(image, weights=tissue_membership[..., 0])
-        norm_image: intnormt.Image = (image / csf_mean) * self.norm_value
+        norm_image: intnormt.ImageLike = (image / csf_mean) * self.norm_value
         self.standard_tissue_means = self.tissue_means(
             norm_image,
             tissue_membership,
         )
 
     def _fix_tissue_membership(
-        self, image: intnormt.Image, tissue_membership: intnormt.Image
-    ) -> intnormt.Image:
+        self, image: intnormt.ImageLike, tissue_membership: intnormt.ImageLike
+    ) -> intnormt.ImageLike:
         if tissue_membership.shape[: image.ndim] != image.shape:
             # try to swap last axes b/c sitk, if still doesn't match then fail
             tissue_membership = typing.cast(
-                intnormt.Image, np.swapaxes(tissue_membership, -2, -1)
+                intnormt.ImageLike, np.swapaxes(tissue_membership, -2, -1)
             )
         if tissue_membership.shape[: image.ndim] != image.shape:
             msg = "If masks provided, need to have same spatial shape as image"
@@ -110,7 +111,7 @@ class LeastSquaresNormalize(
 
     @staticmethod
     def tissue_means(
-        image: intnormt.Image, /, tissue_membership: intnormt.Image
+        image: intnormt.ImageLike, /, tissue_membership: intnormt.ImageLike
     ) -> npt.NDArray:
         n_tissues = tissue_membership.shape[-1]
         weighted_avgs = [

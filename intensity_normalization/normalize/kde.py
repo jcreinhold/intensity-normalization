@@ -22,9 +22,9 @@ class KDENormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
 
     def calculate_location(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> float:
@@ -32,9 +32,9 @@ class KDENormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
 
     def calculate_scale(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> float:

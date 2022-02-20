@@ -62,18 +62,18 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
 
     def normalize_image(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
-    ) -> intnormt.Image:
+    ) -> intnormt.ImageLike:
         voi = self._get_voi(image, mask, modality=modality)
         landmarks = self.get_landmarks(voi)
         if self.standard_scale is None:
             raise RuntimeError("this class must be fit before being called.")
         f = interp1d(landmarks, self.standard_scale, fill_value="extrapolate")
-        normalized: intnormt.Image = f(image)
+        normalized: intnormt.ImageLike = f(image)
         return normalized
 
     @property
@@ -86,17 +86,18 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
             )
             _percs = ([self.min_percentile], percs, [self.max_percentile])
             self._percentiles = np.concatenate(_percs)
+        assert isinstance(self._percentiles, np.ndarray)
         return self._percentiles
 
-    def get_landmarks(self, image: intnormt.Image, /) -> npt.NDArray:
-        landmarks: npt.NDArray = np.percentile(image, self.percentiles)  # type: ignore[assignment, call-overload] # noqa: E501
-        return landmarks
+    def get_landmarks(self, image: intnormt.ImageLike, /) -> npt.NDArray:
+        landmarks = np.percentile(image, self.percentiles)
+        return landmarks  # type: ignore[return-value]
 
     def _fit(
         self,
-        images: typing.Sequence[intnormt.Image],
+        images: typing.Sequence[intnormt.ImageLike],
         /,
-        masks: typing.Sequence[intnormt.Image] | None = None,
+        masks: typing.Sequence[intnormt.ImageLike] | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
@@ -116,8 +117,8 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
         for i, (image, mask) in enumerate(intnormio.zip_with_nones(images, masks)):
             voi = self._get_voi(image, mask, modality=modality)
             landmarks = self.get_landmarks(voi)
-            min_p = np.percentile(voi, self.min_percentile)  # type: ignore[call-overload] # noqa: E501
-            max_p = np.percentile(voi, self.max_percentile)  # type: ignore[call-overload] # noqa: E501
+            min_p = np.percentile(voi, self.min_percentile)
+            max_p = np.percentile(voi, self.max_percentile)
             f = interp1d([min_p, max_p], [self.output_min_value, self.output_max_value])
             landmarks = np.array(f(landmarks))
             standard_scale += landmarks

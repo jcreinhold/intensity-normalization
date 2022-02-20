@@ -48,9 +48,9 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
 
     def __call__(
         self,
-        images: typing.Sequence[intnormt.Image],
+        images: typing.Sequence[intnormt.ImageLike],
         /,
-        masks: typing.Sequence[intnormt.Image] | None,
+        masks: typing.Sequence[intnormt.ImageLike] | None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
@@ -60,7 +60,7 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
             images = [img.get_fdata() for img in images]  # type: ignore[attr-defined]
         if masks is not None:
             if hasattr(masks[0], "get_fdata"):
-                masks = [msk.get_fdata() for msk in masks]  # type: ignore[attr-defined,union-attr] # noqa: E501
+                masks = [msk.get_fdata() for msk in masks]  # type: ignore[attr-defined]
             if len(images) != len(masks):
                 raise ValueError("number of images and masks must be equal")
         ax = self.plot_all_histograms(images, masks, **kwargs)
@@ -68,9 +68,9 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
 
     def plot_all_histograms(
         self,
-        images: typing.Sequence[intnormt.Image],
+        images: typing.Sequence[intnormt.ImageLike],
         /,
-        masks: typing.Sequence[intnormt.Image] | None,
+        masks: typing.Sequence[intnormt.ImageLike] | None,
         **kwargs: typing.Any,
     ) -> plt.Axes:
         _, ax = plt.subplots(figsize=self.figsize)
@@ -95,7 +95,7 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
         **kwargs: typing.Any,
     ) -> plt.Axes:
         images, masks = intnormio.gather_images_and_masks(image_dir, mask_dir, ext=ext)
-        return self(images, masks, **kwargs)  # type: ignore[arg-type, return-value]
+        return self(images, masks, **kwargs)
 
     @staticmethod
     def name() -> builtins.str:
@@ -188,9 +188,9 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
 
 
 def plot_histogram(
-    image: intnormt.Image,
+    image: intnormt.ImageLike,
     /,
-    mask: intnormt.Image | None = None,
+    mask: intnormt.ImageLike | None = None,
     *,
     ax: plt.Axes | None = None,
     n_bins: builtins.int = 200,

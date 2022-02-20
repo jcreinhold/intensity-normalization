@@ -18,13 +18,13 @@ import intensity_normalization.typing as intnormt
 class ZScoreNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalizeCLI):
     def __init__(self, *, norm_value: builtins.float = 1.0, **kwargs: typing.Any):
         super().__init__(norm_value=norm_value, **kwargs)
-        self.voi: intnormt.Image | None = None
+        self.voi: intnormt.ImageLike | None = None
 
     def calculate_location(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> builtins.float:
@@ -35,9 +35,9 @@ class ZScoreNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormal
 
     def calculate_scale(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> builtins.float:
@@ -48,9 +48,9 @@ class ZScoreNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormal
 
     def setup(
         self,
-        image: intnormt.Image,
+        image: intnormt.ImageLike,
         /,
-        mask: intnormt.Image | None = None,
+        mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> None:
@@ -76,8 +76,8 @@ class ZScoreNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormal
         self,
         args: argparse.Namespace,
         /,
-        normalized: intnormt.Image,
-        mask: intnormt.Image | None = None,
+        normalized: intnormt.ImageLike,
+        mask: intnormt.ImageLike | None = None,
     ) -> None:
         if mask is None:
             mask = self.estimate_foreground(normalized)

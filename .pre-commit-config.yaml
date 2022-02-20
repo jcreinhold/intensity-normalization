@@ -51,7 +51,7 @@ repos:
     additional_dependencies:
     - numpy~=1.22.2
     - pydicom~=2.2.2
-    - pymedio~=0.2.0
+    - pymedio~=0.2.2
     - pytest~=7.0.1
     - scikit-image~=0.19.1
     - scikit-learn~=1.0.2
