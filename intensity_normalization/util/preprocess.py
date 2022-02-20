@@ -192,7 +192,7 @@ class Preprocessor(intnormcli.SingleImageCLI):
         parser.add_argument(
             "-o",
             "--output",
-            type=intnormt.save_nifti_path(),
+            type=intnormt.save_file_path(),
             default=None,
             help="Path to save registered image.",
         )

@@ -57,6 +57,7 @@ def test_preprocess_cli(preprocess_cli_args: typing.List[builtins.str]) -> None:
 
 
 def test_ravel_normalization_cli(base_cli_dir_args: typing.List[builtins.str]) -> None:
+    args = base_cli_dir_args + ["--membership-threshold", "0.1"]
     np.random.seed(1337)
-    retval = ravel_main(base_cli_dir_args)
+    retval = ravel_main(args)
     assert retval == 0

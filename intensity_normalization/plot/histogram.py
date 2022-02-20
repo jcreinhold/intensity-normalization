@@ -76,7 +76,7 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
         _, ax = plt.subplots(figsize=self.figsize)
         n_images = len(images)
         for i, (image, mask) in enumerate(intnormio.zip_with_nones(images, masks), 1):
-            logger.info(f"Creating histogram ({i:d}/{n_images:d})")
+            logger.info(f"Plotting histogram ({i:d}/{n_images:d})")
             _ = plot_histogram(image, mask, ax=ax, alpha=self.alpha, **kwargs)
         ax.set_xlabel("Intensity")
         ax.set_ylabel(r"Log$_{10}$ Count")
