@@ -40,12 +40,12 @@ def preprocess(
     /,
     mask: intnormt.ImageLike | None = None,
     *,
-    resolution: typing.Tuple[builtins.float, ...] | None = None,
+    resolution: builtins.tuple[builtins.float, ...] | None = None,
     orientation: builtins.str = "RAS",
-    n4_convergence_options: typing.Dict[builtins.str, typing.Any] | None = None,
+    n4_convergence_options: builtins.dict[builtins.str, typing.Any] | None = None,
     interp_type: builtins.str = "linear",
     second_n4_with_smoothed_mask: builtins.bool = True,
-) -> typing.Tuple[mioi.Image, mioi.Image]:
+) -> builtins.tuple[mioi.Image, mioi.Image]:
     """Preprocess an MR image
 
     Preprocess an MR image according to a simple scheme:
@@ -121,9 +121,9 @@ class Preprocessor(intnormcli.SingleImageCLI):
     def __init__(
         self,
         *,
-        resolution: typing.Tuple[builtins.float, ...] | None = None,
+        resolution: builtins.tuple[builtins.float, ...] | None = None,
         orientation: builtins.str = "RAI",
-        n4_convergence_options: typing.Dict[builtins.str, typing.Any] | None = None,
+        n4_convergence_options: builtins.dict[builtins.str, typing.Any] | None = None,
         interp_type: builtins.str = "linear",
         second_n4_with_smoothed_mask: builtins.bool = True,
     ):
@@ -170,7 +170,7 @@ class Preprocessor(intnormcli.SingleImageCLI):
     def get_parent_parser(
         cls,
         desc: builtins.str,
-        valid_modalities: typing.FrozenSet[builtins.str] = intnorm.VALID_MODALITIES,
+        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
         **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(

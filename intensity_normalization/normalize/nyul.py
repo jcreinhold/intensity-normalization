@@ -9,6 +9,7 @@ __all__ = ["NyulNormalize"]
 
 import argparse
 import builtins
+import collections.abc
 import typing
 
 import numpy as np
@@ -95,9 +96,9 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
 
     def _fit(
         self,
-        images: typing.Sequence[intnormt.ImageLike],
+        images: collections.abc.Sequence[intnormt.ImageLike],
         /,
-        masks: typing.Sequence[intnormt.ImageLike] | None = None,
+        masks: collections.abc.Sequence[intnormt.ImageLike] | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,

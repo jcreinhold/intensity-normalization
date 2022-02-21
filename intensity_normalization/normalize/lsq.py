@@ -9,6 +9,7 @@ __all__ = ["LeastSquaresNormalize"]
 
 import argparse
 import builtins
+import collections.abc
 import logging
 import pathlib
 import typing
@@ -31,7 +32,7 @@ class LeastSquaresNormalize(
 ):
     def __init__(self, *, norm_value: float = 1.0, **kwargs: typing.Any):
         super().__init__(norm_value=norm_value, **kwargs)
-        self.tissue_memberships: typing.List[mioi.Image] = []
+        self.tissue_memberships: builtins.list[mioi.Image] = []
         self.standard_tissue_means: npt.NDArray | None = None
 
     def calculate_location(
@@ -68,9 +69,9 @@ class LeastSquaresNormalize(
 
     def _fit(
         self,
-        images: typing.Sequence[intnormt.ImageLike],
+        images: collections.abc.Sequence[intnormt.ImageLike],
         /,
-        masks: typing.Sequence[intnormt.ImageLike] | None = None,
+        masks: collections.abc.Sequence[intnormt.ImageLike] | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
@@ -99,12 +100,12 @@ class LeastSquaresNormalize(
     def _fix_tissue_membership(
         self, image: intnormt.ImageLike, tissue_membership: intnormt.ImageLike
     ) -> intnormt.ImageLike:
-        if tissue_membership.shape[: image.ndim] != image.shape:
+        if tissue_membership.shape[: int(image.ndim)] != image.shape:
             # try to swap last axes b/c sitk, if still doesn't match then fail
             tissue_membership = typing.cast(
                 intnormt.ImageLike, np.swapaxes(tissue_membership, -2, -1)
             )
-        if tissue_membership.shape[: image.ndim] != image.shape:
+        if tissue_membership.shape[: int(image.ndim)] != image.shape:
             msg = "If masks provided, need to have same spatial shape as image"
             raise RuntimeError(msg)
         return tissue_membership
@@ -191,7 +192,7 @@ class LeastSquaresNormalize(
     def get_parent_parser(
         cls,
         desc: builtins.str,
-        valid_modalities: typing.FrozenSet[builtins.str] = intnorm.VALID_MODALITIES,
+        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
         **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(

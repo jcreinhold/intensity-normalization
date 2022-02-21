@@ -16,6 +16,7 @@ __all__ = [
 import abc
 import argparse
 import builtins
+import collections.abc
 import logging
 import pathlib
 import typing
@@ -25,14 +26,13 @@ import pymedio.image as mioi
 
 import intensity_normalization as intnorm
 import intensity_normalization.base_cli as intnormcli
-import intensity_normalization.plot.histogram as intnormhist
 import intensity_normalization.typing as intnormt
 import intensity_normalization.util.io as intnormio
 
 logger = logging.getLogger(__name__)
 
 T = typing.TypeVar("T")
-ImageSeq = typing.Sequence[intnormt.ImageLike]
+ImageSeq = collections.abc.Sequence[intnormt.ImageLike]
 MaskSeqOrNone = typing.Union[ImageSeq, None]
 
 
@@ -157,9 +157,7 @@ class LocationScaleMixin(NormalizeMixin, metaclass=abc.ABCMeta):
         loc = self.calculate_location(image, mask, modality=modality)
         scale = self.calculate_scale(image, mask, modality=modality)
         self.teardown()
-        normalized: intnormt.ImageLike = (image - loc) / scale
-        if self.norm_value != 1.0:
-            normalized *= self.norm_value
+        normalized: intnormt.ImageLike = (image - loc) * (self.norm_value / scale)
         return normalized
 
 
@@ -172,7 +170,7 @@ class NormalizeCLIMixin(NormalizeMixin, intnormcli.CLIMixin, metaclass=abc.ABCMe
         *,
         out_path: intnormt.PathLike | None = None,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
-    ) -> typing.Tuple[mioi.Image, mioi.Image | None]:
+    ) -> builtins.tuple[mioi.Image, mioi.Image | None]:
         image = mioi.Image.from_path(image_path)
         mask = None if mask_path is None else mioi.Image.from_path(mask_path)
         if out_path is None:
@@ -189,7 +187,7 @@ class NormalizeCLIMixin(NormalizeMixin, intnormcli.CLIMixin, metaclass=abc.ABCMe
     def get_parent_parser(
         cls,
         desc: builtins.str,
-        valid_modalities: typing.FrozenSet[builtins.str] = intnorm.VALID_MODALITIES,
+        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
         **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = super().get_parent_parser(
@@ -225,7 +223,7 @@ class LocationScaleCLIMixin(LocationScaleMixin, NormalizeCLIMixin):
     def get_parent_parser(
         cls,
         desc: builtins.str,
-        valid_modalities: typing.FrozenSet[builtins.str] = intnorm.VALID_MODALITIES,
+        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
         **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = super().get_parent_parser(
@@ -254,6 +252,8 @@ class SingleImageNormalizeCLI(NormalizeCLIMixin, intnormcli.SingleImageCLI):
         mask: intnormt.ImageLike | None = None,
     ) -> None:
         import matplotlib.pyplot as plt
+
+        import intensity_normalization.plot.histogram as intnormhist
 
         if args.output is None:
             output = pathlib.Path(args.image).parent / "hist.pdf"
@@ -297,12 +297,12 @@ class SampleNormalizeCLIMixin(NormalizeCLIMixin, intnormcli.CLIMixin):
         ext: builtins.str = "nii*",
         return_normalized_and_masks: builtins.bool = False,
         **kwargs: typing.Any,
-    ) -> typing.Tuple[ImageSeq, MaskSeqOrNone] | None:
+    ) -> builtins.tuple[ImageSeq, MaskSeqOrNone] | None:
         logger.debug("Grabbing images")
         images, masks = intnormio.gather_images_and_masks(image_dir, mask_dir, ext=ext)
         self.fit(images, masks, modality=modality, **kwargs)
         if return_normalized_and_masks:
-            normalized: typing.List[intnormt.ImageLike] = []
+            normalized: builtins.list[intnormt.ImageLike] = []
             n_images = len(images)
             zipped = intnormio.zip_with_nones(images, masks)
             for i, (image, mask) in enumerate(zipped, 1):
@@ -319,6 +319,8 @@ class SampleNormalizeCLIMixin(NormalizeCLIMixin, intnormcli.CLIMixin):
         masks: MaskSeqOrNone = None,
     ) -> None:
         import matplotlib.pyplot as plt
+
+        import intensity_normalization.plot.histogram as intnormhist
 
         if args.output_dir is None:
             output = pathlib.Path(args.image_dir) / "hist.pdf"
@@ -388,13 +390,13 @@ class DirectoryNormalizeCLI(
 
     def before_fit(
         self,
-        images: typing.Sequence[intnormt.ImageLike],
+        images: collections.abc.Sequence[intnormt.ImageLike],
         /,
-        masks: typing.Sequence[intnormt.ImageLike] | None = None,
+        masks: collections.abc.Sequence[intnormt.ImageLike] | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
-    ) -> typing.Tuple[ImageSeq, MaskSeqOrNone]:
+    ) -> builtins.tuple[ImageSeq, MaskSeqOrNone]:
         assert len(images) > 0
         logger.info("Loading data")
         if hasattr(images[0], "get_fdata"):
@@ -415,7 +417,7 @@ class DirectoryNormalizeCLI(
         ext: builtins.str = "nii*",
         return_normalized_and_masks: builtins.bool = False,
         **kwargs: typing.Any,
-    ) -> typing.Tuple[ImageSeq, MaskSeqOrNone] | None:
+    ) -> builtins.tuple[ImageSeq, MaskSeqOrNone] | None:
         return self.process_directories(
             image_dir,
             mask_dir,

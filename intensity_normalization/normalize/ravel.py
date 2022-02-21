@@ -9,6 +9,7 @@ __all__ = ["RavelNormalize"]
 
 import argparse
 import builtins
+import collections.abc
 import functools
 import logging
 import operator
@@ -45,7 +46,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         register: builtins.bool = True,
         num_unwanted_factors: builtins.int = 1,
         sparse_svd: builtins.bool = False,
-        whitestripe_kwargs: typing.Dict[builtins.str, typing.Any] | None = None,
+        whitestripe_kwargs: builtins.dict[builtins.str, typing.Any] | None = None,
         quantile_to_label_csf: builtins.float = 1.0,
         masks_are_csf: builtins.bool = False,
     ):
@@ -168,12 +169,12 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
 
     def create_image_matrix_and_control_voxels(
         self,
-        images: typing.Sequence[intnormt.ImageLike],
+        images: collections.abc.Sequence[intnormt.ImageLike],
         /,
-        masks: typing.Sequence[intnormt.ImageLike] | None = None,
+        masks: collections.abc.Sequence[intnormt.ImageLike] | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
-    ) -> typing.Tuple[npt.NDArray, npt.NDArray]:
+    ) -> builtins.tuple[npt.NDArray, npt.NDArray]:
         """creates an matrix of images; rows correspond to voxels, columns are images
 
         Args:
@@ -262,9 +263,9 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
 
     def _fit(
         self,
-        images: typing.Sequence[intnormt.ImageLike],
+        images: collections.abc.Sequence[intnormt.ImageLike],
         /,
-        masks: typing.Sequence[intnormt.ImageLike] | None = None,
+        masks: collections.abc.Sequence[intnormt.ImageLike] | None = None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
@@ -288,13 +289,15 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         ext: builtins.str = "nii*",
         return_normalized_and_masks: builtins.bool = False,
         **kwargs: typing.Any,
-    ) -> typing.Tuple[typing.List[mioi.Image], typing.List[mioi.Image] | None] | None:
+    ) -> builtins.tuple[
+        builtins.list[mioi.Image], builtins.list[mioi.Image] | None
+    ] | None:
         logger.debug("Grabbing images")
         images, masks = intnormio.gather_images_and_masks(image_dir, mask_dir, ext=ext)
         self.fit(images, masks, modality=modality, **kwargs)
         assert self._normalized is not None
         if return_normalized_and_masks:
-            norm_lst: typing.List[mioi.Image] = []
+            norm_lst: builtins.list[mioi.Image] = []
             for normed, image in zip(self._normalized, images):
                 norm_lst.append(mioi.Image(normed.reshape(image.shape), image.affine))
             return norm_lst, masks
