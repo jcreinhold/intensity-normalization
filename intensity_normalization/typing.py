@@ -33,19 +33,23 @@ __all__ = [
 
 import argparse
 import builtins
+import collections.abc
 import dataclasses
 import enum
 import os
 import pathlib
 import typing
 
+import numpy as np
 import numpy.typing as npt
 
 import intensity_normalization as intnorm
 
-ArgType = typing.Union[argparse.Namespace, typing.List[builtins.str], None]
+ArgType = typing.Union[argparse.Namespace, builtins.list[builtins.str], None]
 PathLike = typing.Union[builtins.str, os.PathLike]
-ShapeLike = typing.Union[typing.SupportsIndex, typing.Sequence[typing.SupportsIndex]]
+ShapeLike = typing.Union[
+    typing.SupportsIndex, collections.abc.Sequence[typing.SupportsIndex]
+]
 
 _MODALITIES = [(vm.upper(), vm) for vm in sorted(intnorm.VALID_MODALITIES)]
 
@@ -435,6 +439,10 @@ def new_parse_type(
 S_co = typing.TypeVar("S_co", bound="ImageLike", covariant=True)
 T_co = typing.TypeVar("T_co", bound="ImageLike", covariant=True)
 
+T = typing.TypeVar("T", bound=npt.NBitBase)
+Float = typing.Union[np.floating[T], builtins.float]
+Int = typing.Union[np.integer[T], builtins.int]
+
 
 class ImageLike(typing.Protocol[S_co, T_co]):
     """support anything that implements the methods here"""
@@ -451,22 +459,22 @@ class ImageLike(typing.Protocol[S_co, T_co]):
     def __le__(self: T_co, other: typing.Any) -> S_co:
         ...
 
-    def __and__(self: T_co, other: typing.Any) -> T_co:
+    def __and__(self: T_co, other: typing.Any) -> S_co:
         ...
 
-    def __or__(self: T_co, other: typing.Any) -> T_co:
+    def __or__(self: T_co, other: typing.Any) -> S_co:
         ...
 
-    def __add__(self: T_co, other: typing.Any) -> T_co:
+    def __add__(self: T_co, other: typing.Any) -> S_co:
         ...
 
-    def __sub__(self: T_co, other: typing.Any) -> T_co:
+    def __sub__(self: T_co, other: typing.Any) -> S_co:
         ...
 
-    def __mul__(self: T_co, other: typing.Any) -> T_co:
+    def __mul__(self: T_co, other: typing.Any) -> S_co:
         ...
 
-    def __truediv__(self: T_co, other: typing.Any) -> T_co:
+    def __truediv__(self: T_co, other: typing.Any) -> S_co:
         ...
 
     def __getitem__(self: T_co, item: typing.Any) -> typing.Any:
@@ -478,16 +486,16 @@ class ImageLike(typing.Protocol[S_co, T_co]):
     def __array__(self) -> npt.NDArray:
         ...
 
-    def sum(self) -> builtins.float:
+    def sum(self) -> Float | Int:
         ...
 
     @property
-    def ndim(self) -> builtins.int:
+    def ndim(self) -> Int:
         ...
 
     def any(
         self,
-        axis: builtins.int | typing.Tuple[builtins.int, ...] | None = None,
+        axis: builtins.int | builtins.tuple[builtins.int, ...] | None = None,
     ) -> typing.Any:
         ...
 
@@ -498,7 +506,7 @@ class ImageLike(typing.Protocol[S_co, T_co]):
         ...
 
     @property
-    def shape(self) -> typing.Tuple[builtins.int, ...]:
+    def shape(self) -> builtins.tuple[builtins.int, ...]:
         ...
 
     def mean(self) -> builtins.float:

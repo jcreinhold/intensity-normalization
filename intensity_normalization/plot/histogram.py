@@ -9,6 +9,7 @@ __all__ = ["HistogramPlotter", "plot_histogram"]
 
 import argparse
 import builtins
+import collections.abc
 import logging
 import pathlib
 import typing
@@ -37,7 +38,7 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
     def __init__(
         self,
         *,
-        figsize: typing.Tuple[builtins.int, builtins.int] = (12, 10),
+        figsize: builtins.tuple[builtins.int, builtins.int] = (12, 10),
         alpha: builtins.float = 0.8,
         title: builtins.str | None = None,
     ):
@@ -48,9 +49,9 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
 
     def __call__(
         self,
-        images: typing.Sequence[intnormt.ImageLike],
+        images: collections.abc.Sequence[intnormt.ImageLike],
         /,
-        masks: typing.Sequence[intnormt.ImageLike] | None,
+        masks: collections.abc.Sequence[intnormt.ImageLike] | None,
         *,
         modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
@@ -68,9 +69,9 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
 
     def plot_all_histograms(
         self,
-        images: typing.Sequence[intnormt.ImageLike],
+        images: collections.abc.Sequence[intnormt.ImageLike],
         /,
-        masks: typing.Sequence[intnormt.ImageLike] | None,
+        masks: collections.abc.Sequence[intnormt.ImageLike] | None,
         **kwargs: typing.Any,
     ) -> plt.Axes:
         _, ax = plt.subplots(figsize=self.figsize)
@@ -113,7 +114,7 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
     def get_parent_parser(
         cls,
         desc: builtins.str,
-        valid_modalities: typing.FrozenSet[builtins.str] = intnorm.VALID_MODALITIES,
+        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
         **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(

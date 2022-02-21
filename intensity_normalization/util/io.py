@@ -21,7 +21,7 @@ import pymedio.image as mioi
 
 import intensity_normalization.typing as intnormt
 
-PymedioImageList = typing.List[mioi.Image]
+PymedioImageList = builtins.list[mioi.Image]
 PymedioMaskListOrNone = typing.Union[PymedioImageList, None]
 
 
@@ -48,7 +48,7 @@ def gather_images_and_masks(
     mask_dir: intnormt.PathLike | None = None,
     *,
     ext: builtins.str = "nii*",
-) -> typing.Tuple[PymedioImageList, PymedioMaskListOrNone]:
+) -> builtins.tuple[PymedioImageList, PymedioMaskListOrNone]:
     images = gather_images(image_dir, ext=ext)
     masks: PymedioMaskListOrNone
     if mask_dir is not None:
@@ -60,7 +60,7 @@ def gather_images_and_masks(
 
 def glob_ext(
     dirpath: intnormt.PathLike, *, ext: builtins.str = "nii*"
-) -> typing.List[pathlib.Path]:
+) -> builtins.list[pathlib.Path]:
     """return a sorted list of ext files for a given directory path"""
     if not isinstance(dirpath, pathlib.Path):
         dirpath = pathlib.Path(dirpath)
@@ -97,7 +97,7 @@ def split_filename(
     return intnormt.SplitFilename(pathlib.Path(path), base, ext)
 
 
-Zipped = typing.Generator[typing.Tuple[typing.Any, ...], None, None]
+Zipped = typing.Generator[builtins.tuple[typing.Any, ...], None, None]
 
 
 def zip_with_nones(*args: typing.Sequence[typing.Any] | None) -> Zipped:
@@ -108,8 +108,8 @@ def zip_with_nones(*args: typing.Sequence[typing.Any] | None) -> Zipped:
         1 None a
         2 None b
     """
-    _args: typing.List[typing.Any] = list(args)
-    none_indices: typing.List[builtins.int] = []
+    _args: builtins.list[typing.Any] = list(args)
+    none_indices: builtins.list[builtins.int] = []
     length: builtins.int | None = None
     for i, seq_or_none in enumerate(args):
         try:

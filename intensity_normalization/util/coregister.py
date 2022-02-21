@@ -9,6 +9,7 @@ __all__ = ["register", "Registrator"]
 
 import argparse
 import builtins
+import collections.abc
 import logging
 import typing
 
@@ -132,17 +133,17 @@ class Registrator(intnormcli.SingleImageCLI):
         )
 
     def register_images(
-        self, images: typing.Sequence[nib.Nifti1Image | ants.ANTsImage], /
-    ) -> typing.Sequence[nib.Nifti1Image | ants.ANTsImage]:
+        self, images: collections.abc.Sequence[nib.Nifti1Image | ants.ANTsImage], /
+    ) -> collections.abc.Sequence[nib.Nifti1Image | ants.ANTsImage]:
         return [self(image) for image in images]
 
     def register_images_to_templates(
         self,
-        images: typing.Sequence[nib.Nifti1Image | ants.ANTsImage],
+        images: collections.abc.Sequence[nib.Nifti1Image | ants.ANTsImage],
         /,
         *,
-        templates: typing.Sequence[nib.Nifti1Image | ants.ANTsImage],
-    ) -> typing.Sequence[nib.Nifti1Image | ants.ANTsImage]:
+        templates: collections.abc.Sequence[nib.Nifti1Image | ants.ANTsImage],
+    ) -> collections.abc.Sequence[nib.Nifti1Image | ants.ANTsImage]:
         assert len(images) == len(templates)
         registered = []
         original_template = self.template
@@ -168,7 +169,7 @@ class Registrator(intnormcli.SingleImageCLI):
     def get_parent_parser(
         cls,
         desc: builtins.str,
-        valid_modalities: typing.FrozenSet[builtins.str] = intnorm.VALID_MODALITIES,
+        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
         **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(

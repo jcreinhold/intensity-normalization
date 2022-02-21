@@ -12,7 +12,6 @@ __all__ = [
 ]
 
 import builtins
-import typing
 
 import numpy as np
 import scipy.signal
@@ -25,7 +24,7 @@ import intensity_normalization.typing as intnormt
 
 def smooth_histogram(
     image: intnormt.ImageLike, /
-) -> typing.Tuple[intnormt.ImageLike, intnormt.ImageLike]:
+) -> builtins.tuple[intnormt.ImageLike, intnormt.ImageLike]:
     """Use kernel density estimate to get smooth histogram
 
     Args:
