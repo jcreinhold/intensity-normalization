@@ -182,7 +182,7 @@ class NormalizeCLIMixin(NormalizeMixin, intnormcli.CLIMixin, metaclass=abc.ABCMe
             mioi.Image, self.normalize_image(image, mask, modality=modality)
         )
         logger.info(f"Saving normalized image: {out_path}")
-        normalized.save(out_path, squeeze=False)
+        normalized.to_filename(out_path)
         return normalized, mask
 
     @classmethod
@@ -347,7 +347,7 @@ class SampleNormalizeCLIMixin(NormalizeCLIMixin, intnormcli.CLIMixin):
         assert n_images == len(output_filenames)
         for i, (norm_image, fn) in enumerate(zip(normalized, output_filenames), 1):
             logger.info(f"Saving normalized image: {fn} ({i}/{n_images})")
-            norm_image.view(mioi.Image).save(fn)
+            norm_image.view(mioi.Image).to_filename(fn)
         self.save_additional_info(
             args,
             normalized=normalized,
