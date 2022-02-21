@@ -42,30 +42,31 @@ def find_tissue_memberships(
         tissue_mask: membership values for each of three classes in the image
             (or class determinations w/ hard_seg)
     """
+    _image: np.ndarray = np.array(image, copy=True)  # some op mutates original o/w
     if n_classes <= 0:
         raise ValueError(f"n_classes must be positive. Got '{n_classes}'.")
     if mask is None:
-        mask = image > 0.0
+        mask = _image > 0.0
     else:
         mask = mask > 0.0
     assert mask is not None
     foreground_size = mask.sum()
-    foreground = image[mask].reshape(-1, foreground_size)
+    foreground = _image[mask].reshape(-1, foreground_size)
     centers, memberships_, *_ = cmeans(foreground, n_classes, 2, 0.005, 50)
     # sort the tissue memberships to CSF/GM/WM (assuming T1-w image)
     sorted_memberships = sorted(zip(centers, memberships_), key=operator.itemgetter(0))
     memberships = [m for _, m in sorted_memberships]
-    tissue_mask = np.zeros(image.shape + (n_classes,))
+    tissue_mask = np.zeros(_image.shape + (n_classes,))
     for i in range(n_classes):
         tissue_mask[..., i][mask] = memberships[i]
     if hard_segmentation:
-        tmp_mask = np.zeros(image.shape)
+        tmp_mask = np.zeros(_image.shape)
         masked = tissue_mask[mask]
         tmp_mask[mask] = np.argmax(masked, axis=1) + 1
         tissue_mask = tmp_mask
     affine: npt.NDArray | None
     if hasattr(image, "affine"):
-        affine = image.affine  # type: ignore[attr-defined]
+        affine = image.affine.copy()  # type: ignore[attr-defined]
     else:
         affine = None
     return mioi.Image(tissue_mask, affine=affine)
