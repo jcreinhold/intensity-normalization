@@ -157,7 +157,9 @@ class LocationScaleMixin(NormalizeMixin, metaclass=abc.ABCMeta):
         loc = self.calculate_location(image, mask, modality=modality)
         scale = self.calculate_scale(image, mask, modality=modality)
         self.teardown()
-        normalized: intnormt.ImageLike = ((image - loc) / scale) * self.norm_value
+        normalized: intnormt.ImageLike = (image - loc) / scale
+        if self.norm_value != 1.0:
+            normalized *= self.norm_value
         return normalized
 
 
