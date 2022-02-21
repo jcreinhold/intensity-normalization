@@ -27,7 +27,6 @@ autodoc_mock_imports = [
     "ants",
     "matplotlib",
     "nibabel",
-    "numpy",
     "skfuzzy",
     "sklearn",
     "scipy",
