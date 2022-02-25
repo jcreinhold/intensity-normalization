@@ -27,6 +27,8 @@ import intensity_normalization.util.tissue_membership as intnormtm
 
 logger = logging.getLogger(__name__)
 
+S = typing.TypeVar("S", bound=intnormt.ImageLike)
+
 
 class LeastSquaresNormalize(
     intnormb.LocationScaleCLIMixin, intnormb.DirectoryNormalizeCLI
@@ -99,14 +101,14 @@ class LeastSquaresNormalize(
         )
 
     def _fix_tissue_membership(
-        self, image: intnormt.ImageLike, tissue_membership: intnormt.ImageLike
-    ) -> intnormt.ImageLike:
-        if tissue_membership.shape[: int(image.ndim)] != image.shape:
+        self, image: intnormt.ImageLike, tissue_membership: S
+    ) -> S:
+        image_ndim = int(image.ndim)
+        tm_ndim = int(tissue_membership.ndim)
+        if tissue_membership.shape[:image_ndim] != image.shape and tm_ndim == 4:
             # try to swap last axes b/c sitk, if still doesn't match then fail
-            tissue_membership = typing.cast(
-                intnormt.ImageLike, np.swapaxes(tissue_membership, -2, -1)
-            )
-        if tissue_membership.shape[: int(image.ndim)] != image.shape:
+            tissue_membership = tissue_membership.transpose(3, 0, 1, 2)
+        if tissue_membership.shape[:image_ndim] != image.shape:
             msg = "If masks provided, need to have same spatial shape as image."
             raise intnorme.NormalizationError(msg)
         return tissue_membership
