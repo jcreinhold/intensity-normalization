@@ -59,7 +59,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         self.quantile_to_label_csf = quantile_to_label_csf
         self.masks_are_csf = masks_are_csf
         if register and masks_are_csf:
-            msg = "If masks_are_csf, then images are assumed to be co-registered."
+            msg = "If 'masks_are_csf', then images are assumed to be co-registered."
             raise ValueError(msg)
         self._template: intnormt.ImageLike | None = None
         self._template_mask: intnormt.ImageLike | None = None
@@ -143,9 +143,9 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         Returns:
             normalized: normalized images
         """
-        logger.debug("Performing RAVEL correction")
-        logger.debug(f"Unwanted factors shape: {unwanted_factors.shape}")
-        logger.debug(f"Control voxels shape: {control_voxels.shape}")
+        logger.debug("Performing RAVEL correction.")
+        logger.debug(f"Unwanted factors shape: {unwanted_factors.shape}.")
+        logger.debug(f"Control voxels shape: {control_voxels.shape}.")
         beta = np.linalg.solve(
             unwanted_factors.T @ unwanted_factors,
             unwanted_factors.T @ control_voxels.T,
@@ -199,12 +199,12 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         for i, (image, mask) in enumerate(intnormio.zip_with_nones(images, masks), 1):
             image_ws = whitestripe_norm(image, mask)
             image_matrix[:, i - 1] = image_ws.flatten()
-            logger.info(f"Processing image {i}/{n_images}")
+            logger.info(f"Processing image {i}/{n_images}.")
             if i == 1 and self.template is None:
-                logger.debug("Setting template to first image")
+                logger.debug("Setting template to first image.")
                 self.set_template(image)
                 self.set_template_mask(mask)
-                logger.debug("Finding CSF mask")
+                logger.debug("Finding CSF mask.")
                 # csf found on original b/c assume foreground positive
                 csf_mask = self._find_csf_mask(image, mask, modality=modality)
                 control_masks.append(csf_mask)
@@ -212,12 +212,12 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
                     registered_images.append(image_ws)
             else:
                 if self.register:
-                    logger.debug("Deformably co-registering image to template")
+                    logger.debug("Deformably co-registering image to template.")
                     image = to_ants(image)
                     image = self._register(image)
                     image_ws = whitestripe_norm(image, mask)
                     registered_images.append(image_ws)
-                logger.debug("Finding CSF mask")
+                logger.debug("Finding CSF mask.")
                 csf_mask = self._find_csf_mask(image, mask, modality=modality)
                 control_masks.append(csf_mask)
 
@@ -236,7 +236,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
             for i, registered in enumerate(registered_images):
                 ctrl_vox = registered[intersection]
                 control_voxels[:, i] = ctrl_vox
-                logger.info(
+                logger.debug(
                     f"Image {i+1} control voxels - "
                     f"mean: {ctrl_vox.mean():.3f}; "
                     f"std: {ctrl_vox.std():.3f}"
@@ -247,7 +247,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         return image_matrix, control_voxels
 
     def estimate_unwanted_factors(self, control_voxels: npt.NDArray) -> npt.NDArray:
-        logger.debug("Estimating unwanted factors")
+        logger.debug("Estimating unwanted factors.")
         _, _, all_unwanted_factors = (
             np.linalg.svd(control_voxels, full_matrices=False)
             if not self.sparse_svd
@@ -292,7 +292,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
     ) -> builtins.tuple[
         builtins.list[mioi.Image], builtins.list[mioi.Image] | None
     ] | None:
-        logger.debug("Grabbing images")
+        logger.debug("Gathering images.")
         images, masks = intnormio.gather_images_and_masks(image_dir, mask_dir, ext=ext)
         self.fit(images, masks, modality=modality, **kwargs)
         assert self._normalized is not None
@@ -314,7 +314,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
     @staticmethod
     def description() -> str:
         desc = "Perform WhiteStripe and then correct for technical "
-        desc += "variation with RAVEL on a set of NIfTI MR images."
+        desc += "variation with RAVEL on a set of MR images."
         return desc
 
     @staticmethod
@@ -327,41 +327,42 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
             "--num-unwanted-factors",
             type=int,
             default=1,
-            help="number of unwanted factors to eliminate (see b in RAVEL paper)",
+            help="Number of unwanted factors to eliminate (see 'b' in RAVEL paper).",
         )
         parser.add_argument(
             "-mt",
             "--membership-threshold",
             type=float,
             default=0.99,
-            help="threshold for the membership of the control (CSF) voxels",
+            help="Threshold for the membership of the control (CSF) voxels.",
         )
         parser.add_argument(
             "--no-registration",
             action="store_false",
             dest="register",
             default=True,
-            help="do not do deformable registration to find control mask",
+            help="Do not do deformable registration to find control mask. "
+            "(Assumes images are deformably co-registered).",
         )
         parser.add_argument(
             "--sparse-svd",
             action="store_true",
             default=False,
-            help="use a sparse version of the svd (lower memory requirements)",
+            help="Use a sparse version of the SVD (lower memory requirements).",
         )
         parser.add_argument(
             "--masks-are-csf",
             action="store_true",
             default=False,
-            help="mask directory corresponds to csf masks instead of brain masks, "
-            "assumes images are deformably co-registered",
+            help="Use this flag if mask directory corresponds to CSF masks "
+            "instead of brain masks. (Assumes images are deformably co-registered).",
         )
         parser.add_argument(
             "--quantile-to-label-csf",
             default=1.0,
-            help="control how intersection calculated "
+            help="Control how intersection calculated "
             "(1.0 means normal intersection, 0.5 means only "
-            "half of the images need the voxel labeled as csf)",
+            "half of the images need the voxel labeled as CSF).",
         )
         return parent_parser
 

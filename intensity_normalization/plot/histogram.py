@@ -56,14 +56,15 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
         modality: intnormt.Modalities = intnormt.Modalities.T1,
         **kwargs: typing.Any,
     ) -> plt.Axes:
-        assert len(images) > 0
+        if not images:
+            raise ValueError("'images' must be a non-empty sequence.")
         if hasattr(images[0], "get_fdata"):
             images = [img.get_fdata() for img in images]  # type: ignore[attr-defined]
         if masks is not None:
             if hasattr(masks[0], "get_fdata"):
                 masks = [msk.get_fdata() for msk in masks]  # type: ignore[attr-defined]
             if len(images) != len(masks):
-                raise ValueError("number of images and masks must be equal")
+                raise ValueError("Number of images and masks must be equal.")
         ax = self.plot_all_histograms(images, masks, **kwargs)
         return ax
 
@@ -77,7 +78,7 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
         _, ax = plt.subplots(figsize=self.figsize)
         n_images = len(images)
         for i, (image, mask) in enumerate(intnormio.zip_with_nones(images, masks), 1):
-            logger.info(f"Plotting histogram ({i:d}/{n_images:d})")
+            logger.info(f"Plotting histogram ({i:d}/{n_images:d}).")
             _ = plot_histogram(image, mask, ax=ax, alpha=self.alpha, **kwargs)
         ax.set_xlabel("Intensity")
         ax.set_ylabel(r"Log$_{10}$ Count")
@@ -124,7 +125,7 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
         parser.add_argument(
             "image_dir",
             type=intnormt.dir_path(),
-            help="Path of image directory to plot histograms for.",
+            help="Path of directory containing images for which to plot histograms.",
         )
         parser.add_argument(
             "-m",
@@ -172,7 +173,7 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
         parser.add_argument(
             "--version",
             action="store_true",
-            help="print the version of intensity-normalization",
+            help="Print the version of intensity-normalization.",
         )
         return parser
 

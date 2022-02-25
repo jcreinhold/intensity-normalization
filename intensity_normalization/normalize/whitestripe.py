@@ -1,4 +1,4 @@
-"""WhiteStripe (normal-appearing white matter mean/std) normalization
+"""WhiteStripe (normal-appearing white matter mean & standard deviation) normalization
 Author: Jacob Reinhold <jcreinhold@gmail.com>
 Created on: 01 Jun 2021
 """
@@ -102,7 +102,7 @@ class WhiteStripeNormalize(
 
     @staticmethod
     def description() -> builtins.str:
-        return "Standardize the normal appearing WM of a NIfTI MR image."
+        return "Standardize the normal appearing WM of a MR image."
 
     @staticmethod
     def add_method_specific_arguments(
@@ -113,7 +113,7 @@ class WhiteStripeNormalize(
             "--width",
             default=0.05,
             type=float,
-            help="width of the whitestripe",
+            help="Width of the 'white stripe'. (See original paper.)",
         )
         return parent_parser
 

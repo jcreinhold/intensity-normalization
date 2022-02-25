@@ -53,5 +53,5 @@ class KDENormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
     @staticmethod
     def description() -> str:
         desc = "Use kernel density estimation to find the WM mode from "
-        desc += "a smoothed histogram and normalize an NIfTI MR image."
+        desc += "a smoothed histogram and normalize an MR image."
         return desc
