@@ -224,4 +224,4 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
             else:
                 output = pathlib.Path(args.output).parent / new_name
             logger.info(f"Saving tissue membership: {output}")
-            tissue_membership.save(output, squeeze=False)
+            tissue_membership.to_filename(output)
