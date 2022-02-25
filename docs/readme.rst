@@ -166,9 +166,10 @@ Potential Pitfalls
 Contributing
 ------------
 
-**Help wanted!** See `CONTRIBUTING.rst <CONTRIBUTING.rst>`_ for details and/or reach out to me if you'd like
-to contribute. Credit will be given! If you want to add a method, I'll be happy to add your reference to the
-citation section below.
+**Help wanted!** See `CONTRIBUTING.rst <https://github.com/jcreinhold/intensity-normalization/blob/master/CONTRIBUTING.rst>`_
+for details and/or reach out to me if you'd like to contribute. Credit will be given!
+If you want to add a method, I'll be happy to add your reference to the citation
+section below.
 
 Test Package
 ------------
