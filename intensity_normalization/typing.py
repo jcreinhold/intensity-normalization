@@ -519,3 +519,6 @@ class ImageLike(typing.Protocol[S_co, T_co, U_co]):
         order: typing.Literal["A", "C", "F"] | None = ...,
     ) -> T_co:
         ...
+
+    def transpose(self: T_co, *axes: builtins.int) -> T_co:
+        ...
