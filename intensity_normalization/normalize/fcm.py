@@ -65,10 +65,10 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
         if modality == intnormt.Modalities.T1:
             mask = self._get_mask(image, mask, modality=modality)
             tissue_name = self.tissue_type.to_fullname()
-            logger.debug(f"Finding {tissue_name} membership")
+            logger.debug(f"Finding {tissue_name} membership.")
             tissue_memberships = intnormtm.find_tissue_memberships(image, mask)
             self.tissue_membership = tissue_memberships[..., self.tissue_type.to_int()]
-            logger.debug(f"Calculated {tissue_name} membership")
+            logger.debug(f"Calculated {tissue_name} membership.")
             tissue_mean = float(np.average(image, weights=self.tissue_membership))
         elif modality != intnormt.Modalities.T1 and mask is None and self.is_fit:
             tissue_mean = float(np.average(image, weights=self.tissue_membership))
@@ -95,7 +95,7 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
     @staticmethod
     def description() -> builtins.str:
         desc = "Use fuzzy c-means to find memberships of CSF/GM/WM in the brain. "
-        desc += "Use the specified tissue's mean to normalize a NIfTI MRI."
+        desc += "Use the specified tissue's mean to normalize a MRI."
         return desc
 
     @classmethod
@@ -152,7 +152,7 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
         parser.add_argument(
             "--version",
             action="store_true",
-            help="print the version of intensity-normalization",
+            help="Print the version of intensity-normalization.",
         )
         return parser
 
@@ -178,8 +178,8 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
             "--mask",
             type=intnormt.file_path(),
             help="Path to a foreground mask for the image. "
-            "Provide this if not providing a tissue mask "
-            "(if image is not skull-stripped).",
+            "Provide this if not providing a tissue mask. "
+            "(If image is not skull-stripped, this is required.)",
         )
         group.add_argument(
             "-tm",
@@ -199,7 +199,7 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
         if args.mask is not None:
             if args.modality is not None:
                 if args.modality.lower() != "t1":
-                    msg = "If a brain mask is provided, modality must be `t1`. "
+                    msg = "If a brain mask is provided, 'modality' must be 't1'. "
                     msg += f"Got '{args.modality}'."
                     raise ValueError(msg)
         elif args.tissue_mask is not None:

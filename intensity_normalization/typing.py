@@ -71,7 +71,7 @@ class Modalities(enum.Enum):
             if string == value:
                 modality = getattr(cls, name)
                 return modality
-        msg = f"string must be one of {intnorm.VALID_MODALITIES}. Got '{string}'."
+        msg = f"'string' must be one of {intnorm.VALID_MODALITIES}. Got '{string}'."
         raise ValueError(msg)
 
 
@@ -94,7 +94,7 @@ class TissueTypes(enum.Enum):
         elif string.lower() == "wm":
             return TissueTypes.WM
         else:
-            raise ValueError(f"string must be 'csf', 'gm', or 'wm'. Got '{string}'.")
+            raise ValueError(f"'string' must be 'csf', 'gm', or 'wm'. Got '{string}'.")
 
     def to_int(self) -> builtins.int:
         if self == TissueTypes.CSF:
@@ -139,8 +139,8 @@ interp_type_dict = dict(
     bspline=4,
 )
 
-# copied from: (https://github.com/ANTsX/ANTsPy/blob/
-# 5b4b8273815b681b0542a3dc8846713e2ebb786e/ants/registration/reorient_image.py)
+# copied from:
+# https://github.com/ANTsX/ANTsPy/blob/5b4b8273815b681b0542a3dc8846713e2ebb786e/ants/registration/reorient_image.py
 allowed_orientations = frozenset(
     {
         "RIP",
@@ -194,8 +194,8 @@ allowed_orientations = frozenset(
     }
 )
 
-# copied from (https://github.com/ANTsX/ANTsPy/blob/
-# 4474f894d184da98a099cd9c852795c384fa3b8f/ants/registration/interface.py)
+# copied from:
+# https://github.com/ANTsX/ANTsPy/blob/4474f894d184da98a099cd9c852795c384fa3b8f/ants/registration/interface.py
 allowed_transforms = frozenset(
     {
         "SyNBold",
@@ -268,8 +268,8 @@ allowed_transforms = frozenset(
     }
 )
 
-# copied from: (https://github.com/ANTsX/ANTsPy/blob/
-# 4474f894d184da98a099cd9c852795c384fa3b8f/ants/registration/apply_transforms.py)
+# copied from:
+# https://github.com/ANTsX/ANTsPy/blob/4474f894d184da98a099cd9c852795c384fa3b8f/ants/registration/apply_transforms.py
 allowed_interpolators = frozenset(
     {
         "linear",
@@ -285,8 +285,8 @@ allowed_interpolators = frozenset(
     }
 )
 
-# copied from : (https://github.com/ANTsX/ANTsPy/blob/
-# f2aec7283d26d914d98e2b440e4d2badff78da38/ants/registration/interface.py)
+# copied from:
+# https://github.com/ANTsX/ANTsPy/blob/f2aec7283d26d914d98e2b440e4d2badff78da38/ants/registration/interface.py
 allowed_metrics = frozenset(
     {
         "CC",
@@ -325,7 +325,7 @@ class _ParseType:
 class save_file_path(_ParseType):
     def __call__(self, string: builtins.str) -> pathlib.Path:
         if not string.isprintable():
-            msg = "String must only contain printable characters."
+            msg = f"'{string}' must only contain printable characters."
             raise argparse.ArgumentTypeError(msg)
         path = pathlib.Path(string)
         return path
@@ -335,7 +335,7 @@ class dir_path(_ParseType):
     def __call__(self, string: builtins.str) -> builtins.str:
         path = pathlib.Path(string)
         if not path.is_dir():
-            msg = f"{string} is not a valid directory path."
+            msg = f"'{string}' is not a valid directory path."
             raise argparse.ArgumentTypeError(msg)
         return str(path.resolve())
 
@@ -344,7 +344,7 @@ class file_path(_ParseType):
     def __call__(self, string: builtins.str) -> builtins.str:
         path = pathlib.Path(string)
         if not path.is_file():
-            msg = f"{string} is not a valid file path."
+            msg = f"'{string}' is not a valid file path."
             raise argparse.ArgumentTypeError(msg)
         return str(path)
 
@@ -353,7 +353,7 @@ class positive_float(_ParseType):
     def __call__(self, string: builtins.str) -> builtins.float:
         num = float(string)
         if num <= 0.0:
-            msg = f"{string} needs to be a positive float."
+            msg = f"'{string}' needs to be a positive float."
             raise argparse.ArgumentTypeError(msg)
         return num
 
@@ -362,7 +362,7 @@ class positive_int(_ParseType):
     def __call__(self, string: builtins.str) -> builtins.int:
         num = int(string)
         if num <= 0:
-            msg = f"{string} needs to be a positive integer."
+            msg = f"'{string}' needs to be a positive integer."
             raise argparse.ArgumentTypeError(msg)
         return num
 
@@ -372,7 +372,7 @@ class positive_odd_int_or_none(_ParseType):
     def __call__(self, string: builtins.str) -> builtins.int | None:
         num = int(string)
         if num <= 0 or not (num % 2):
-            msg = f"{string} needs to be a positive odd integer."
+            msg = f"'{string}' needs to be a positive odd integer."
             raise argparse.ArgumentTypeError(msg)
         return num
 
@@ -387,7 +387,7 @@ class nonnegative_int(_ParseType):
     def __call__(self, string: builtins.str) -> builtins.int:
         num = int(string)
         if num < 0:
-            msg = f"{string} needs to be a nonnegative integer."
+            msg = f"'{string}' needs to be a non-negative integer."
             raise argparse.ArgumentTypeError(msg)
         return num
 
@@ -396,7 +396,7 @@ class nonnegative_float(_ParseType):
     def __call__(self, string: builtins.str) -> builtins.float:
         num = float(string)
         if num < 0.0:
-            msg = f"{string} needs to be a nonnegative float."
+            msg = f"'{string}' needs to be a non-negative float."
             raise argparse.ArgumentTypeError(msg)
         return num
 
@@ -405,7 +405,7 @@ class probability_float(_ParseType):
     def __call__(self, string: builtins.str) -> builtins.float:
         num = float(string)
         if num < 0.0 or num > 1.0:
-            msg = f"{string} needs to be between 0 and 1."
+            msg = f"'{string}' needs to be between 0 and 1."
             raise argparse.ArgumentTypeError(msg)
         return num
 

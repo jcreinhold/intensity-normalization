@@ -70,7 +70,7 @@ def preprocess(
 
     if n4_convergence_options is None:
         n4_convergence_options = {"iters": [200, 200, 200, 200], "tol": 1e-7}
-    logger.debug(f"N4 Options are: {n4_convergence_options}")
+    logger.debug(f"N4 Options are: {n4_convergence_options}.")
 
     ants_image = _to_ants(image)
 
@@ -79,13 +79,13 @@ def preprocess(
     else:
         ants_mask = ants_image.get_mask()
 
-    logger.debug("Starting bias field correction")
+    logger.debug("Starting bias field correction.")
     ants_image = ants.n4_bias_field_correction(
         ants_image, convergence=n4_convergence_options
     )
     if second_n4_with_smoothed_mask:
         smoothed_mask = ants.smooth_image(ants_mask, 1.0)
-        logger.debug("Starting 2nd bias field correction")
+        logger.debug("Starting 2nd bias field correction.")
         ants_image = ants.n4_bias_field_correction(
             ants_image,
             convergence=n4_convergence_options,
@@ -93,7 +93,7 @@ def preprocess(
         )
     if resolution is not None:
         if resolution != ants_mask.spacing:
-            logger.debug(f"Resampling mask to {resolution}")
+            logger.debug(f"Resampling mask to {resolution}.")
             ants_mask = ants.resample_image(
                 ants_mask,
                 resolution,
@@ -113,7 +113,7 @@ def preprocess(
     _image = ants_image.to_nibabel()
     pp_image = mioi.Image(_image.get_fdata(), _image.affine)
     _mask = ants_mask.to_nibabel()
-    pp_mask = mioi.Image(_mask.get_fdate(), _mask.affine)
+    pp_mask = mioi.Image(_mask.get_fdata(), _mask.affine)
     return pp_image, pp_mask
 
 
@@ -238,7 +238,7 @@ class Preprocessor(intnormcli.SingleImageCLI):
         parser.add_argument(
             "--version",
             action="store_true",
-            help="print the version of intensity-normalization",
+            help="Print the version of intensity-normalization.",
         )
         return parser
 

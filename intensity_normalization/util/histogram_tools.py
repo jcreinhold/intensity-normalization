@@ -76,7 +76,7 @@ def get_last_tissue_mode(
         last_tissue_mode: mode of the highest-intensity tissue class
     """
     if not (0.0 < tail_percentage < 100.0):
-        msg = f"tail_percentage must be in (0, 100). Got '{tail_percentage}'."
+        msg = f"'tail_percentage' must be in (0, 100). Got '{tail_percentage}'."
         raise ValueError(msg)
     if remove_tail:
         threshold: builtins.float = float(np.percentile(image, tail_percentage))
@@ -107,7 +107,7 @@ def get_first_tissue_mode(
         first_tissue_mode: mode of the lowest-intensity tissue class
     """
     if not (0.0 < tail_percentage < 100.0):
-        msg = f"tail_percentage must be in (0, 100). Got '{tail_percentage}'."
+        msg = f"'tail_percentage' must be in (0, 100). Got '{tail_percentage}'."
         raise ValueError(msg)
     if remove_tail:
         threshold: builtins.float = float(np.percentile(image, tail_percentage))
@@ -132,6 +132,6 @@ def get_tissue_mode(
         mode = get_first_tissue_mode(image)
     else:
         modalities = ", ".join(intnorm.VALID_PEAKS)
-        msg = f"Modality {modality} not valid. Needs to be one of {modalities}."
-        raise intnorme.NormalizationError(msg)
+        msg = f"Modality '{modality}' not valid. Needs to be one of {{{modalities}}}."
+        raise ValueError(msg)
     return mode

@@ -191,7 +191,7 @@ class SingleImageCLI(CLIMixin, metaclass=abc.ABCMeta):
         parser.add_argument(
             "--version",
             action="store_true",
-            help="print the version of intensity-normalization",
+            help="Print the version of intensity-normalization.",
         )
         return parser
 
@@ -229,7 +229,7 @@ class DirectoryCLI(CLIMixin, metaclass=abc.ABCMeta):
         parser.add_argument(
             "image_dir",
             type=intnormt.dir_path(),
-            help="Path of directory of images to normalize.",
+            help="Path of directory containing images to normalize.",
         )
         parser.add_argument(
             "-m",
@@ -270,7 +270,7 @@ class DirectoryCLI(CLIMixin, metaclass=abc.ABCMeta):
         parser.add_argument(
             "--version",
             action="store_true",
-            help="print the version of intensity-normalization",
+            help="Print the version of intensity-normalization.",
         )
         return parser
 

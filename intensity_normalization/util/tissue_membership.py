@@ -131,13 +131,13 @@ class TissueMembershipFinder(intnormcli.SingleImageCLI):
             "--output",
             type=intnormt.save_file_path(),
             default=None,
-            help="Path to save registered image.",
+            help="Path to save preprocessed image.",
         )
         parser.add_argument(
             "-hs",
             "--hard-segmentation",
             action="store_true",
-            help="classify tissue memberships into segmentation",
+            help="Classify tissue memberships into segmentation",
         )
         parser.add_argument(
             "-v",
@@ -149,7 +149,7 @@ class TissueMembershipFinder(intnormcli.SingleImageCLI):
         parser.add_argument(
             "--version",
             action="store_true",
-            help="print the version of intensity-normalization",
+            help="Print the version of intensity-normalization.",
         )
         return parser
 

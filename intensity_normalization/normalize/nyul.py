@@ -114,7 +114,7 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
         standard_scale = np.zeros(n_percs)
         n_images = len(images)
         if masks is not None and n_images != len(masks):
-            raise ValueError("There must be an equal number of images and masks")
+            raise ValueError("There must be an equal number of images and masks.")
         for i, (image, mask) in enumerate(intnormio.zip_with_nones(images, masks)):
             voi = self._get_voi(image, mask, modality=modality)
             landmarks = self.get_landmarks(voi)
@@ -154,7 +154,7 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
     @staticmethod
     def description() -> builtins.str:
         desc = "Perform piecewise-linear histogram matching per "
-        desc += "Nyul and Udupa given a set of NIfTI MR images."
+        desc += "Nyul and Udupa given a set of MR images."
         return desc
 
     @staticmethod
@@ -167,61 +167,61 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
             "--save-standard-histogram",
             default=None,
             type=intnormt.save_file_path(),
-            help="save the standard histogram fit by the method",
+            help="Save the standard histogram fit by the method.",
         )
         parser.add_argument(
             "-lsh",
             "--load-standard-histogram",
             default=None,
             type=intnormt.file_path(),
-            help="load a standard histogram previously fit by the method",
+            help="Load a standard histogram previously fit by the method.",
         )
         parser.add_argument(
             "--output-min-value",
             type=float,
             default=1.0,
-            help="where min-percentile mapped for output normalized image",
+            help="Value 'min-percentile' mapped to for output normalized image.",
         )
         parser.add_argument(
             "--output-max-value",
             type=float,
             default=100.0,
-            help="where max-percentile mapped for output normalized image",
+            help="Value 'max-percentile' mapped to for output normalized image.",
         )
         parser.add_argument(
             "--min-percentile",
             type=float,
             default=1.0,
-            help="min percentile to account for while finding standard histogram",
+            help="Min. percentile to account for while finding standard histogram.",
         )
         parser.add_argument(
             "--max-percentile",
             type=float,
             default=99.0,
-            help="max percentile to account for while finding standard histogram",
+            help="Max. percentile to account for while finding standard histogram.",
         )
         parser.add_argument(
             "--percentile-after-min",
             type=float,
             default=10.0,
-            help="percentile after min for finding standard histogram "
-            "(percentile-step creates intermediate percentiles between "
-            "this and percentile-before-max)",
+            help="Percentile after min. for finding standard histogram "
+            "('percentile-step' creates intermediate percentiles between "
+            "this and 'percentile-before-max').",
         )
         parser.add_argument(
             "--percentile-before-max",
             type=float,
             default=90.0,
-            help="percentile before max for finding standard histogram "
-            "(percentile-step creates intermediate percentiles between "
-            "this and percentile-after-min)",
+            help="Percentile before max. for finding standard histogram "
+            "('percentile-step' creates intermediate percentiles between "
+            "this and 'percentile-after-min').",
         )
         parser.add_argument(
             "--percentile-step",
             type=float,
             default=10.0,
-            help="percentile steps btwn next-percentile-after-min and "
-            "prev-percentile-before-max for finding standard histogram",
+            help="Percentile steps between 'percentile-after-min' and "
+            "'prev-percentile-before-max' for finding standard histogram",
         )
         return parent_parser
 

@@ -1,4 +1,4 @@
-"""Least-squares fit tissue modes of a set of images
+"""Least-squares fit tissue means of a set of images
 Author: Jacob Reinhold <jcreinhold@gmail.com>
 Created on: 01 Jun 2021
 """
@@ -60,8 +60,8 @@ class LeastSquaresNormalize(
         elif mask is not None:
             tissue_membership = self._fix_tissue_membership(image, mask)
         else:
-            msg = "If modality != t1, you must provide the "
-            msg += "tissue_membership in the mask argument."
+            msg = "If 'modality' != 't1', you must provide a "
+            msg += "tissue membership array in the mask argument."
             raise ValueError(msg)
         tissue_means = self.tissue_means(image, tissue_membership)
         sf = self.scaling_factor(tissue_means)
@@ -80,15 +80,15 @@ class LeastSquaresNormalize(
         mask = masks[0] if masks is not None else None
         tissue_membership: intnormt.ImageLike
         if not isinstance(mask, np.ndarray) and mask is not None:
-            raise ValueError("Mask must be either none or subclass of ndarray")
+            raise ValueError("Mask must be either none or be like a numpy array.")
         if modality == intnormt.Modalities.T1:
             tissue_membership = intnormtm.find_tissue_memberships(image, mask)
         elif mask is not None:
-            logger.debug("Assuming --mask-dir contains tissue memberships.")
+            logger.debug("Assuming 'masks' contains tissue memberships.")
             tissue_membership = self._fix_tissue_membership(image, mask)
         else:
-            msg = "If modality != t1, you must provide the "
-            msg += "tissue_membership in the mask argument."
+            msg = "If 'modality' != 't1', you must provide a "
+            msg += "tissue membership array in the mask argument."
             raise ValueError(msg)
         csf_mean = np.average(image, weights=tissue_membership[..., 0])
         norm_image: intnormt.ImageLike = (image / csf_mean) * self.norm_value
@@ -138,7 +138,7 @@ class LeastSquaresNormalize(
     @staticmethod
     def description() -> str:
         desc = "Minimize distance between tissue means (CSF/GM/WM) in a "
-        desc += "least squares-sense within a set of NIfTI MR images."
+        desc += "least squares-sense within a set of MR images."
         return desc
 
     def save_additional_info(
@@ -182,7 +182,7 @@ class LeastSquaresNormalize(
         args.modality = intnormt.Modalities.from_string(args.modality)
         if args.mask_dir is not None:
             if args.modality != intnormt.Modalities.T1:
-                msg = f"If brain masks provided, modality must be `T1`. Got '{args.modality}'."  # noqa: E501
+                msg = f"If brain masks provided, modality must be 't1'. Got '{args.modality}'."  # noqa: E501
                 raise ValueError(msg)
         elif args.tissue_membership_dir is not None:
             args.mask_dir = args.tissue_membership_dir
@@ -202,7 +202,7 @@ class LeastSquaresNormalize(
         parser.add_argument(
             "image_dir",
             type=intnormt.dir_path(),
-            help="Path of directory of images to normalize.",
+            help="Path of directory containing images to normalize.",
         )
         parser.add_argument(
             "-o",
@@ -249,7 +249,7 @@ class LeastSquaresNormalize(
         parser.add_argument(
             "--version",
             action="store_true",
-            help="print the version of intensity-normalization",
+            help="Print the version of intensity-normalization.",
         )
         return parser
 
@@ -263,14 +263,14 @@ class LeastSquaresNormalize(
             "--save-standard-tissue-means",
             default=None,
             type=intnormt.save_file_path(),
-            help="save the standard tissue means fit by the method",
+            help="Save the standard tissue means fit by the method.",
         )
         parser.add_argument(
             "-lstm",
             "--load-standard-tissue-means",
             default=None,
             type=intnormt.file_path(),
-            help="load a standard tissue means previously fit by the method",
+            help="Load a standard tissue means previously fit by the method.",
         )
         exclusive = parent_parser.add_argument_group(
             "mutually exclusive optional arguments"

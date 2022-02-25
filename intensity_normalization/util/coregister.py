@@ -62,7 +62,7 @@ def register(
     is_nibabel = isinstance(image, nib.Nifti1Image)
     image = to_ants(image)
     if initial_rigid:
-        logger.debug("Doing initial rigid registration")
+        logger.debug("Doing initial rigid registration.")
         transforms = ants.registration(
             fixed=template,
             moving=image,
@@ -73,7 +73,7 @@ def register(
         rigid_transform = transforms["fwdtransforms"][0]
     else:
         rigid_transform = None
-    logger.debug(f"Doing {type_of_transform} registration")
+    logger.debug(f"Doing {type_of_transform} registration.")
     transform = ants.registration(
         fixed=template,
         moving=image,
@@ -83,7 +83,7 @@ def register(
         aff_metric=metric,
         syn_metric=metric,
     )["fwdtransforms"]
-    logger.debug("Applying transformations")
+    logger.debug("Applying transformations.")
     registered = ants.apply_transforms(
         template,
         image,
@@ -105,11 +105,11 @@ class Registrator(intnormcli.SingleImageCLI):
     ):
         super().__init__()
         if template is None:
-            logger.info("Using MNI (in RAS orientation) as template")
+            logger.info("Using MNI (in RAS orientation) as template.")
             standard_mni = ants.get_ants_data("mni")
             self.template = ants.image_read(standard_mni).reorient_image2("RAS")
         else:
-            logger.debug("Loading template")
+            logger.debug("Loading template.")
             self.template = ants.from_nibabel(template)
         self.type_of_transform = type_of_transform
         self.interpolator = interpolator
@@ -239,7 +239,7 @@ class Registrator(intnormcli.SingleImageCLI):
         parser.add_argument(
             "--version",
             action="store_true",
-            help="print the version of intensity-normalization",
+            help="Print the version of intensity-normalization.",
         )
         return parser
 

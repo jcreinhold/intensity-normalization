@@ -58,7 +58,7 @@ or to inspect the histograms of a set of images before and after normalization.
 Example usage on a directory for sample-based methods
 =====================================================
 
-The sample-based normalization CLIs (RAVEL, Nyul, and LSQ) operate on a directory of NIfTI images (either 2D or 3D).
+The sample-based normalization CLIs (RAVEL, Nyul, and LSQ) operate on a directory of images (either 2D or 3D).
 That is, suppose you have a directory of images ``img_dir`` that contains NIfTI (.nii.gz or .nii) images, like so::
 
     ├── img_dir
@@ -147,8 +147,10 @@ list of images (and, optionally, corresponding masks), like so:
    normalizer = NormalizerClass(**init_args)
    normalizer(image, mask, modality)
 
-where ``init_args`` is a dictionary of method dependent keyword arguments, ``image`` is either a nibabel NIfTI image or
-a numpy array; ``mask`` is one of ``None`` (or not provided), a nibabel NIfTI image, or a numpy array; ``modality`` is a
+where ``init_args`` is a dictionary of method dependent keyword arguments, ``image`` is something like a
+a numpy array (i.e., the pixel data of an image, see `pymedio <https://github.com/jcreinhold/pymedio>`_ for
+a flexible package to open various types of medical image; it returns them as a subclass of np.ndarray);
+``mask`` is one of ``None`` (or not provided), or something like a numpy array (like ``image``); ``modality`` is a
 string representing the modality.
 
 Validating normalization results
