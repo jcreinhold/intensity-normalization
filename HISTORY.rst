@@ -2,6 +2,11 @@
 History
 =======
 
+2.2.0 (2022-02-25)
+------------------
+
+* Change backend to ``pymedio`` to support more medical image formats
+
 2.1.4 (2022-01-17)
 ------------------
 
