@@ -94,9 +94,12 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
         mask_dir: intnormt.PathLike | None = None,
         *,
         ext: builtins.str = "nii*",
+        exclude: collections.abc.Sequence[builtins.str] = ("membership",),
         **kwargs: typing.Any,
     ) -> plt.Axes:
-        images, masks = intnormio.gather_images_and_masks(image_dir, mask_dir, ext=ext)
+        images, masks = intnormio.gather_images_and_masks(
+            image_dir, mask_dir, ext=ext, exclude=exclude
+        )
         return self(images, masks, **kwargs)
 
     @staticmethod
@@ -164,6 +167,20 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
             help="Title for histogram plot.",
         )
         parser.add_argument(
+            "-e",
+            "--extension",
+            type=str,
+            default="nii*",
+            help="Extension of images.",
+        )
+        parser.add_argument(
+            "-exc",
+            "--exclude",
+            nargs="+",
+            default=["membership"],
+            help="Exclude filenames including these strings.",
+        )
+        parser.add_argument(
             "-v",
             "--verbosity",
             action="count",
@@ -182,10 +199,12 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
         return cls(figsize=args.figsize, alpha=args.alpha, title=args.title)
 
     def call_from_argparse_args(self, args: argparse.Namespace) -> None:
-        _ = self.from_directories(args.image_dir, args.mask_dir)
+        _ = self.from_directories(
+            args.image_dir, args.mask_dir, ext=args.extension, exclude=args.exclude
+        )
         if args.output is None:
-            args.output = pathlib.Path.cwd().resolve() / "hist.pdf"
-        logger.info(f"Saving histogram: {args.output}")
+            args.output = pathlib.Path(args.image_dir).resolve() / "hist.pdf"
+        logger.info(f"Saving histogram: {args.output}.")
         plt.savefig(args.output)
 
 
