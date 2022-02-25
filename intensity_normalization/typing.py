@@ -34,7 +34,6 @@ __all__ = [
 import argparse
 import builtins
 import collections.abc
-import dataclasses
 import enum
 import os
 import pathlib
@@ -117,18 +116,10 @@ class TissueTypes(enum.Enum):
             raise ValueError("Unexpected enum.")
 
 
-@dataclasses.dataclass(frozen=True)
-class SplitFilename:
+class SplitFilename(typing.NamedTuple):
     path: pathlib.Path
     base: builtins.str
     ext: builtins.str
-
-    def __iter__(self) -> typing.Iterator[typing.Any]:
-        return iter(dataclasses.astuple(self))
-
-    def __repr__(self) -> builtins.str:
-        s = f"SplitFilename(path='{self.path!s}', base='{self.base}', ext='{self.ext}')"
-        return s
 
 
 interp_type_dict = dict(
@@ -438,31 +429,32 @@ def new_parse_type(
 
 S_co = typing.TypeVar("S_co", bound="ImageLike", covariant=True)
 T_co = typing.TypeVar("T_co", bound="ImageLike", covariant=True)
+U_co = typing.TypeVar("U_co", bound="ImageLike", covariant=True)
 
-T = typing.TypeVar("T", bound=npt.NBitBase)
-Float = typing.Union[np.floating[T], builtins.float]
-Int = typing.Union[np.integer[T], builtins.int]
+NBit = typing.TypeVar("NBit", bound=npt.NBitBase)
+Float = typing.Union[np.floating[NBit], builtins.float]
+Int = typing.Union[np.integer[NBit], builtins.int]
 
 
-class ImageLike(typing.Protocol[S_co, T_co]):
+class ImageLike(typing.Protocol[S_co, T_co, U_co]):
     """support anything that implements the methods here"""
 
-    def __gt__(self: T_co, other: typing.Any) -> S_co:
+    def __gt__(self: T_co, other: typing.Any) -> U_co:
         ...
 
-    def __ge__(self: T_co, other: typing.Any) -> S_co:
+    def __ge__(self: T_co, other: typing.Any) -> U_co:
         ...
 
-    def __lt__(self: T_co, other: typing.Any) -> S_co:
+    def __lt__(self: T_co, other: typing.Any) -> U_co:
         ...
 
-    def __le__(self: T_co, other: typing.Any) -> S_co:
+    def __le__(self: T_co, other: typing.Any) -> U_co:
         ...
 
-    def __and__(self: T_co, other: typing.Any) -> S_co:
+    def __and__(self: T_co, other: typing.Any) -> U_co:
         ...
 
-    def __or__(self: T_co, other: typing.Any) -> S_co:
+    def __or__(self: T_co, other: typing.Any) -> U_co:
         ...
 
     def __add__(self: T_co, other: typing.Any) -> S_co:
