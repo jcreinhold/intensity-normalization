@@ -147,8 +147,28 @@ class LeastSquaresNormalize(
         args: argparse.Namespace,
         **kwargs: typing.Any,
     ) -> None:
-        for memberships, fn in zip(self.tissue_memberships, kwargs["image_filenames"]):
-            tissue_memberships = mioi.Image(memberships)
+        normed = kwargs["normalized"]
+        image_fns = kwargs["image_filenames"]
+        if not self.tissue_memberships:
+            logger.debug("'tissue_memberships' empty. Skipping saving.")
+            return
+        if len(self.tissue_memberships) != len(image_fns):
+            msg = f"'tissue_memberships' ({len(self.tissue_memberships)}) "
+            msg += f"and 'image_filenames' ({len(image_fns)}) "
+            msg += "must be in correspondence."
+            raise RuntimeError(msg)
+        if len(self.tissue_memberships) != len(normed):
+            msg = f"'tissue_memberships' ({len(self.tissue_memberships)}) "
+            msg += f"and 'normalized' ({len(normed)}) "
+            msg += "must be in correspondence."
+            raise RuntimeError(msg)
+        for memberships, norm, fn in zip(self.tissue_memberships, normed, image_fns):
+            if hasattr(norm, "affine"):
+                tissue_memberships = mioi.Image(memberships, norm.affine)
+            elif hasattr(memberships, "affine"):
+                tissue_memberships = mioi.Image(memberships, memberships.affine)
+            else:
+                tissue_memberships = mioi.Image(memberships, None)
             base, name, ext = intnormio.split_filename(fn)
             new_name = name + "_tissue_memberships" + ext
             if args.output_dir is None:
