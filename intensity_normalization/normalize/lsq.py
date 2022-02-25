@@ -155,7 +155,7 @@ class LeastSquaresNormalize(
                 output = base / new_name
             else:
                 output = pathlib.Path(args.output_dir) / new_name
-            tissue_memberships.save(output, squeeze=False)
+            tissue_memberships.to_filename(output)
         del self.tissue_memberships
         if args.save_standard_tissue_means is not None:
             self.save_standard_tissue_means(args.save_standard_tissue_means)
