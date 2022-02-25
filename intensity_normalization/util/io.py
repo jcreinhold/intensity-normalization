@@ -14,6 +14,7 @@ __all__ = [
 ]
 
 import builtins
+import collections.abc
 import pathlib
 import typing
 
@@ -29,13 +30,14 @@ def gather_images(
     dirpath: intnormt.PathLike,
     *,
     ext: builtins.str = "nii*",
+    exclude: collections.abc.Sequence[builtins.str] = (),
 ) -> PymedioImageList:
     """return all images of extension `ext` from a directory"""
     if not isinstance(dirpath, pathlib.Path):
         dirpath = pathlib.Path(dirpath)
     if not dirpath.is_dir():
-        raise ValueError("dirpath must be a valid directory.")
-    image_filenames = glob_ext(dirpath, ext=ext)
+        raise ValueError("'dirpath' must be a valid directory.")
+    image_filenames = glob_ext(dirpath, ext=ext, exclude=exclude)
     images: PymedioImageList = []
     for fn in image_filenames:
         image = mioi.Image.from_path(fn)
@@ -48,24 +50,32 @@ def gather_images_and_masks(
     mask_dir: intnormt.PathLike | None = None,
     *,
     ext: builtins.str = "nii*",
+    exclude: collections.abc.Sequence[builtins.str] = (),
 ) -> builtins.tuple[PymedioImageList, PymedioMaskListOrNone]:
-    images = gather_images(image_dir, ext=ext)
+    images = gather_images(image_dir, ext=ext, exclude=exclude)
     masks: PymedioMaskListOrNone
     if mask_dir is not None:
-        masks = gather_images(mask_dir, ext=ext)
+        masks = gather_images(mask_dir, ext=ext, exclude=exclude)
     else:
         masks = None
     return images, masks
 
 
 def glob_ext(
-    dirpath: intnormt.PathLike, *, ext: builtins.str = "nii*"
+    dirpath: intnormt.PathLike,
+    *,
+    ext: builtins.str = "nii*",
+    exclude: collections.abc.Sequence[builtins.str] = (),
 ) -> builtins.list[pathlib.Path]:
     """return a sorted list of ext files for a given directory path"""
-    if not isinstance(dirpath, pathlib.Path):
-        dirpath = pathlib.Path(dirpath)
-    assert dirpath.is_dir()
-    filenames = sorted(dirpath.resolve().glob(f"*.{ext}"))
+    dirpath = pathlib.Path(dirpath)
+    if not dirpath.is_dir():
+        raise ValueError("'dirpath' must be a directory.")
+    filenames = sorted(
+        dp
+        for dp in dirpath.resolve().glob(f"*.{ext}")
+        if all(exc not in str(dp) for exc in exclude)
+    )
     return filenames
 
 
@@ -78,7 +88,7 @@ def split_filename(
     """split a filepath into the directory, base, and extension
     Examples:
         >>> split_filename("path/base.ext")
-        SplitFilename(path='path', base='base', ext='.ext')
+        SplitFilename(path=PosixPath('path'), base='base', ext='.ext')
     """
     if not str(filepath):
         raise ValueError("filepath must be a non-empty string.")
