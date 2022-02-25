@@ -1,37 +1,30 @@
-# -*- coding: utf-8 -*-
-"""
-intensity_normalization.util.preprocess
+"""Preprocess MR images for image processing
 
 Preprocess MR images according to a simple scheme:
 1) N4 bias field correction
 2) resample to X mm x Y mm x Z mm
 3) reorient images to specification
 
-Author: Jacob Reinhold (jcreinhold@gmail.com)
-Created on: May 21, 2018
+Author: Jacob Reinhold <jcreinhold@gmail.com>
+Created on: 21 May 2018
 """
 
-__all__ = [
-    "preprocess",
-    "Preprocessor",
-]
+from __future__ import annotations
 
+__all__ = ["preprocess", "Preprocessor"]
+
+import argparse
+import builtins
 import logging
-from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
-from typing import Optional, Tuple, Type, TypeVar
+import typing
 
 import nibabel as nib
+import numpy as np
+import pymedio.image as mioi
 
-from intensity_normalization.base_cli import CLI
-from intensity_normalization.type import (
-    NiftiImage,
-    PathLike,
-    allowed_orientations,
-    file_path,
-    interp_type_dict,
-    positive_float,
-    save_nifti_path,
-)
+import intensity_normalization as intnorm
+import intensity_normalization.base_cli as intnormcli
+import intensity_normalization.typing as intnormt
 
 logger = logging.getLogger(__name__)
 
@@ -43,19 +36,21 @@ except ImportError as ants_imp_exn:
 
 
 def preprocess(
-    image: NiftiImage,
-    mask: Optional[NiftiImage] = None,
-    resolution: Optional[Tuple[float, float, float]] = None,
-    orientation: str = "RAS",
-    n4_convergence_options: Optional[dict] = None,
-    interp_type: str = "linear",
-    second_n4_with_smoothed_mask: bool = True,
-) -> Tuple[NiftiImage, NiftiImage]:
+    image: intnormt.ImageLike,
+    /,
+    mask: intnormt.ImageLike | None = None,
+    *,
+    resolution: builtins.tuple[builtins.float, ...] | None = None,
+    orientation: builtins.str = "RAS",
+    n4_convergence_options: builtins.dict[builtins.str, typing.Any] | None = None,
+    interp_type: builtins.str = "linear",
+    second_n4_with_smoothed_mask: builtins.bool = True,
+) -> builtins.tuple[mioi.Image, mioi.Image]:
     """Preprocess an MR image
 
     Preprocess an MR image according to a simple scheme:
     1) N4 bias field correction
-    2) resample to X mm x Y mm x Z mm
+    2) resample to X mm x Y mm x ...
     3) reorient images to RAI
 
     Args:
@@ -75,80 +70,85 @@ def preprocess(
 
     if n4_convergence_options is None:
         n4_convergence_options = {"iters": [200, 200, 200, 200], "tol": 1e-7}
-    logger.debug(f"N4 Options are: {n4_convergence_options}")
+    logger.debug(f"N4 Options are: {n4_convergence_options}.")
 
-    if isinstance(image, nib.Nifti1Image):
-        image = ants.from_nibabel(image)
+    ants_image = _to_ants(image)
+
     if mask is not None:
-        if isinstance(mask, nib.Nifti1Image):
-            mask = ants.from_nibabel(mask)
+        ants_mask = _to_ants(mask)
     else:
-        mask = image.get_mask()
-    logger.debug("Starting bias field correction")
-    image = ants.n4_bias_field_correction(image, convergence=n4_convergence_options)
+        ants_mask = ants_image.get_mask()
+
+    logger.debug("Starting bias field correction.")
+    ants_image = ants.n4_bias_field_correction(
+        ants_image, convergence=n4_convergence_options
+    )
     if second_n4_with_smoothed_mask:
-        smoothed_mask = ants.smooth_image(mask, 1.0)
-        logger.debug("Starting 2nd bias field correction")
-        image = ants.n4_bias_field_correction(
-            image,
+        smoothed_mask = ants.smooth_image(ants_mask, 1.0)
+        logger.debug("Starting 2nd bias field correction.")
+        ants_image = ants.n4_bias_field_correction(
+            ants_image,
             convergence=n4_convergence_options,
             weight_mask=smoothed_mask,
         )
     if resolution is not None:
-        if resolution != mask.spacing:
-            logger.debug(f"Resampling mask to {resolution}")
-            mask = ants.resample_image(
-                mask,
+        if resolution != ants_mask.spacing:
+            logger.debug(f"Resampling mask to {resolution}.")
+            ants_mask = ants.resample_image(
+                ants_mask,
                 resolution,
                 use_voxels=False,
-                interp_type=interp_type_dict["nearest_neighbor"],
+                interp_type=intnormt.interp_type_dict["nearest_neighbor"],
             )
-        if resolution != image.spacing:
+        if resolution != ants_image.spacing:
             logger.debug(f"Resampling image to {resolution}")
-            image = ants.resample_image(
-                image,
+            ants_image = ants.resample_image(
+                ants_image,
                 resolution,
                 use_voxels=False,
-                interp_type=interp_type_dict[interp_type],
+                interp_type=intnormt.interp_type_dict[interp_type],
             )
-    image = image.reorient_image2(orientation)
-    mask = mask.reorient_image2(orientation)
-    image = image.to_nibabel()
-    mask = mask.to_nibabel()
-    return image, mask
+    ants_image = ants_image.reorient_image2(orientation)
+    ants_mask = ants_mask.reorient_image2(orientation)
+    _image = ants_image.to_nibabel()
+    pp_image = mioi.Image(_image.get_fdata(), _image.affine)
+    _mask = ants_mask.to_nibabel()
+    pp_mask = mioi.Image(_mask.get_fdata(), _mask.affine)
+    return pp_image, pp_mask
 
 
-PP = TypeVar("PP", bound="Preprocessor")
-
-
-class Preprocessor(CLI):
+class Preprocessor(intnormcli.SingleImageCLI):
     def __init__(
         self,
-        resolution: Optional[Tuple[float, float, float]] = None,
-        orientation: str = "RAI",
-        n4_convergence_options: Optional[dict] = None,
-        interp_type: str = "linear",
-        second_n4_with_smoothed_mask: bool = True,
+        *,
+        resolution: builtins.tuple[builtins.float, ...] | None = None,
+        orientation: builtins.str = "RAI",
+        n4_convergence_options: builtins.dict[builtins.str, typing.Any] | None = None,
+        interp_type: builtins.str = "linear",
+        second_n4_with_smoothed_mask: builtins.bool = True,
     ):
+        super().__init__()
         self.resolution = resolution
         self.orientation = orientation
         self.n4_convergence_options = n4_convergence_options
         self.interp_type = interp_type
         self.second_n4_with_smoothed_mask = second_n4_with_smoothed_mask
 
-    def __call__(  # type: ignore[override]
+    def __call__(
         self,
-        image: NiftiImage,
-        mask: Optional[NiftiImage] = None,
-    ) -> NiftiImage:
+        image: intnormt.ImageLike,
+        /,
+        mask: intnormt.ImageLike | None = None,
+        **kwargs: typing.Any,
+    ) -> intnormt.ImageLike:
         preprocessed, _ = preprocess(
             image,
             mask,
-            self.resolution,
-            self.orientation,
-            self.n4_convergence_options,
-            self.interp_type,
-            self.second_n4_with_smoothed_mask,
+            resolution=self.resolution,
+            orientation=self.orientation,
+            n4_convergence_options=self.n4_convergence_options,
+            interp_type=self.interp_type,
+            second_n4_with_smoothed_mask=self.second_n4_with_smoothed_mask,
         )
         return preprocessed
 
@@ -157,34 +157,42 @@ class Preprocessor(CLI):
         return "pp"
 
     @staticmethod
-    def description() -> str:
-        return (
-            "Basic preprocessing of an MR image: "
-            "bias field-correction, resampling, and reorientation."
-        )
+    def fullname() -> str:
+        return "preprocess"
 
     @staticmethod
-    def get_parent_parser(desc: str) -> ArgumentParser:
-        parser = ArgumentParser(
+    def description() -> str:
+        desc = "Basic preprocessing of an MR image: "
+        desc += "bias field-correction, resampling, and reorientation."
+        return desc
+
+    @classmethod
+    def get_parent_parser(
+        cls,
+        desc: builtins.str,
+        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
+        **kwargs: typing.Any,
+    ) -> argparse.ArgumentParser:
+        parser = argparse.ArgumentParser(
             description=desc,
-            formatter_class=ArgumentDefaultsHelpFormatter,
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
             "image",
-            type=file_path(),
+            type=intnormt.file_path(),
             help="Path of image to normalize.",
         )
         parser.add_argument(
             "-m",
             "--mask",
-            type=file_path(),
+            type=intnormt.file_path(),
             default=None,
             help="Path of foreground mask for image.",
         )
         parser.add_argument(
             "-o",
             "--output",
-            type=save_nifti_path(),
+            type=intnormt.save_file_path(),
             default=None,
             help="Path to save registered image.",
         )
@@ -192,7 +200,7 @@ class Preprocessor(CLI):
             "-r",
             "--resolution",
             nargs="+",
-            type=positive_float(),
+            type=intnormt.positive_float(),
             default=None,
             help="Resolution to resample image in mm per dimension",
         )
@@ -200,7 +208,7 @@ class Preprocessor(CLI):
             "-or",
             "--orientation",
             type=str,
-            choices=allowed_orientations,
+            choices=intnormt.allowed_orientations,
             default="RAI",
             help="Reorient image to this specification.",
             metavar="",
@@ -209,7 +217,7 @@ class Preprocessor(CLI):
             "-it",
             "--interp-type",
             type=str,
-            choices=set(interp_type_dict.keys()),
+            choices=set(intnormt.interp_type_dict.keys()),
             default="linear",
             help="Use this interpolator for resampling.",
             metavar="",
@@ -230,20 +238,39 @@ class Preprocessor(CLI):
         parser.add_argument(
             "--version",
             action="store_true",
-            help="print the version of intensity-normalization",
+            help="Print the version of intensity-normalization.",
         )
         return parser
 
     @classmethod
-    def from_argparse_args(cls: Type[PP], args: Namespace) -> PP:
+    def from_argparse_args(cls, args: argparse.Namespace) -> Preprocessor:
         return cls(
-            args.resolution,
-            args.orientation,
-            None,
-            args.interp_type,
-            args.second_n4_with_smoothed_mask,
+            resolution=args.resolution,
+            orientation=args.orientation,
+            n4_convergence_options=None,
+            interp_type=args.interp_type,
+            second_n4_with_smoothed_mask=args.second_n4_with_smoothed_mask,
         )
 
     @staticmethod
-    def load_image(image_path: PathLike) -> ants.ANTsImage:
+    def load_image(image_path: intnormt.PathLike) -> ants.ANTsImage:
         return ants.image_read(image_path)
+
+
+def _to_ants(image: typing.Any) -> ants.ANTsImage:
+    if isinstance(image, nib.Nifti1Image):
+        ants_image = ants.from_nibabel(image)
+    elif isinstance(image, mioi.Image):
+        ants_image = ants.from_numpy(
+            image, origin=image.origin, spacing=image.spacing, direction=image.direction
+        )
+    elif isinstance(image, np.ndarray):
+        ants_image = ants.from_numpy(image)
+    elif isinstance(image, ants.ANTsImage):
+        ants_image = image
+    else:
+        try:
+            ants_image = ants.ANTsImage(image.numpy())
+        except Exception:
+            raise ValueError("Unexpected image type.")
+    return ants_image

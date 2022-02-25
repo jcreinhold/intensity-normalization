@@ -1,32 +1,24 @@
-# -*- coding: utf-8 -*-
-"""
-intensity-normalization.util.coregister
-
-Author: Jacob Reinhold (jcreinhold@gmail.com)
-Created on: Jun 03, 2021
+"""Co-register images with ANTsPy
+Author: Jacob Reinhold <jcreinhold@gmail.com>
+Created on: 03 Jun 2021
 """
 
-__all__ = [
-    "register",
-    "Registrator",
-]
+from __future__ import annotations
 
+__all__ = ["register", "Registrator"]
+
+import argparse
+import builtins
+import collections.abc
 import logging
-from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
-from typing import List, Optional, Type, TypeVar, Union
+import typing
 
-from intensity_normalization.base_cli import CLI
-from intensity_normalization.type import (
-    Array,
-    ArrayOrNifti,
-    NiftiImage,
-    PathLike,
-    allowed_interpolators,
-    allowed_metrics,
-    allowed_transforms,
-    file_path,
-    save_nifti_path,
-)
+import nibabel as nib
+import numpy as np
+
+import intensity_normalization as intnorm
+import intensity_normalization.base_cli as intnormcli
+import intensity_normalization.typing as intnormt
 
 logger = logging.getLogger(__name__)
 
@@ -37,39 +29,40 @@ except ImportError as ants_imp_exn:
     raise RuntimeError(msg) from ants_imp_exn
 
 
-def to_ants(image: Union[ArrayOrNifti, ants.ANTsImage]) -> ants.ANTsImage:
+def to_ants(image: intnormt.ImageLike, /) -> ants.ANTsImage:
     if isinstance(image, ants.ANTsImage):
         ants_image = image
-    elif isinstance(image, NiftiImage):
+    elif isinstance(image, nib.Nifti1Image):
         ants_image = ants.from_nibabel(image)
-    elif isinstance(image, Array):
+    elif isinstance(image, np.ndarray):
         ants_image = ants.from_numpy(image)
     else:
-        raise ValueError(
-            "Provided image must be an ANTsImage, Nifti1Image, or np.ndarray."
-            f" Got {type(image)}."
-        )
+        msg = "Provided image must be an ANTsImage, Nifti1Image,"
+        msg += f" or (a subclass of) np.ndarray. Got '{type(image)}'."
+        raise ValueError(msg)
     return ants_image
 
 
 def register(
-    image: Union[NiftiImage, ants.ANTsImage],
-    template: Optional[Union[NiftiImage, ants.ANTsImage]] = None,
-    type_of_transform: str = "Affine",
-    interpolator: str = "bSpline",
-    metric: str = "mattes",
-    initial_rigid: bool = True,
-    template_mask: Optional[Union[NiftiImage, ants.ANTsImage]] = None,
-) -> Union[NiftiImage, ants.ANTsImage]:
+    image: nib.Nifti1Image | ants.ANTsImage,
+    /,
+    template: nib.Nifti1Image | ants.ANTsImage | None = None,
+    *,
+    type_of_transform: builtins.str = "Affine",
+    interpolator: builtins.str = "bSpline",
+    metric: builtins.str = "mattes",
+    initial_rigid: builtins.bool = True,
+    template_mask: nib.Nifti1Image | ants.ANTsImage | None = None,
+) -> nib.Nifti1Image | ants.ANTsImage:
     if template is None:
         standard_mni = ants.get_ants_data("mni")
         template = ants.image_read(standard_mni)
     else:
         template = to_ants(template)
-    is_nibabel = isinstance(image, NiftiImage)
+    is_nibabel = isinstance(image, nib.Nifti1Image)
     image = to_ants(image)
     if initial_rigid:
-        logger.debug("Doing initial rigid registration")
+        logger.debug("Doing initial rigid registration.")
         transforms = ants.registration(
             fixed=template,
             moving=image,
@@ -80,7 +73,7 @@ def register(
         rigid_transform = transforms["fwdtransforms"][0]
     else:
         rigid_transform = None
-    logger.debug(f"Doing {type_of_transform} registration")
+    logger.debug(f"Doing {type_of_transform} registration.")
     transform = ants.registration(
         fixed=template,
         moving=image,
@@ -90,7 +83,7 @@ def register(
         aff_metric=metric,
         syn_metric=metric,
     )["fwdtransforms"]
-    logger.debug("Applying transformations")
+    logger.debug("Applying transformations.")
     registered = ants.apply_transforms(
         template,
         image,
@@ -100,38 +93,38 @@ def register(
     return registered.to_nibabel() if is_nibabel else registered
 
 
-R = TypeVar("R", bound="Registrator")
-
-
-class Registrator(CLI):
+class Registrator(intnormcli.SingleImageCLI):
     def __init__(
         self,
-        template: Optional[NiftiImage] = None,
-        type_of_transform: str = "Affine",
-        interpolator: str = "bSpline",
-        metric: str = "mattes",
-        initial_rigid: bool = True,
+        template: nib.Nifti1Image | ants.ANTsImage = None,
+        *,
+        type_of_transform: builtins.str = "Affine",
+        interpolator: builtins.str = "bSpline",
+        metric: builtins.str = "mattes",
+        initial_rigid: builtins.bool = True,
     ):
+        super().__init__()
         if template is None:
-            logger.info("Using MNI (in RAS orientation) as template")
+            logger.info("Using MNI (in RAS orientation) as template.")
             standard_mni = ants.get_ants_data("mni")
             self.template = ants.image_read(standard_mni).reorient_image2("RAS")
         else:
-            logger.debug("Loading template")
+            logger.debug("Loading template.")
             self.template = ants.from_nibabel(template)
         self.type_of_transform = type_of_transform
         self.interpolator = interpolator
         self.metric = metric
         self.initial_rigid = initial_rigid
 
-    def __call__(  # type: ignore[no-untyped-def,override]
+    def __call__(
         self,
-        image: NiftiImage,
-        *args,
-        **kwargs,
-    ) -> NiftiImage:
+        image: nib.Nifti1Image | ants.ANTsImage,
+        /,
+        *args: typing.Any,
+        **kwargs: typing.Any,
+    ) -> nib.Nifti1Image | ants.ANTsImage:
         return register(
-            image=image,
+            image,
             template=self.template,
             type_of_transform=self.type_of_transform,
             interpolator=self.interpolator,
@@ -139,14 +132,18 @@ class Registrator(CLI):
             initial_rigid=self.initial_rigid,
         )
 
-    def register_images(self, images: List[NiftiImage]) -> List[NiftiImage]:
+    def register_images(
+        self, images: collections.abc.Sequence[nib.Nifti1Image | ants.ANTsImage], /
+    ) -> collections.abc.Sequence[nib.Nifti1Image | ants.ANTsImage]:
         return [self(image) for image in images]
 
     def register_images_to_templates(
         self,
-        images: List[NiftiImage],
-        templates: List[NiftiImage],
-    ) -> List[NiftiImage]:
+        images: collections.abc.Sequence[nib.Nifti1Image | ants.ANTsImage],
+        /,
+        *,
+        templates: collections.abc.Sequence[nib.Nifti1Image | ants.ANTsImage],
+    ) -> collections.abc.Sequence[nib.Nifti1Image | ants.ANTsImage]:
         assert len(images) == len(templates)
         registered = []
         original_template = self.template
@@ -157,35 +154,44 @@ class Registrator(CLI):
         return registered
 
     @staticmethod
-    def name() -> str:
+    def name() -> builtins.str:
         return "registered"
 
     @staticmethod
-    def description() -> str:
-        return "Co-register an image to MNI or another image."
+    def fullname() -> builtins.str:
+        return Registrator.name()
 
     @staticmethod
-    def get_parent_parser(desc: str) -> ArgumentParser:
-        parser = ArgumentParser(
+    def description() -> builtins.str:
+        return "Co-register an image to MNI or another image."
+
+    @classmethod
+    def get_parent_parser(
+        cls,
+        desc: builtins.str,
+        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
+        **kwargs: typing.Any,
+    ) -> argparse.ArgumentParser:
+        parser = argparse.ArgumentParser(
             description=desc,
-            formatter_class=ArgumentDefaultsHelpFormatter,
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
             "image",
-            type=file_path(),
+            type=intnormt.file_path(),
             help="Path of image to normalize.",
         )
         parser.add_argument(
             "-t",
             "--template",
-            type=file_path(),
+            type=intnormt.file_path(),
             default=None,
             help="Path of target for registration.",
         )
         parser.add_argument(
             "-o",
             "--output",
-            type=save_nifti_path(),
+            type=intnormt.save_file_path(),
             default=None,
             help="Path to save registered image.",
         )
@@ -194,16 +200,16 @@ class Registrator(CLI):
             "--type-of-transform",
             type=str,
             default="Affine",
-            choices=allowed_transforms,
+            choices=intnormt.allowed_transforms,
             help="Type of registration transform to perform.",
-            metavar="",
+            metavar="",  # avoid printing massive list of choices
         )
         parser.add_argument(
             "-i",
             "--interpolator",
             type=str,
             default="bSpline",
-            choices=allowed_interpolators,
+            choices=intnormt.allowed_interpolators,
             help="Type of interpolator to use.",
             metavar="",
         )
@@ -212,7 +218,7 @@ class Registrator(CLI):
             "--metric",
             type=str,
             default="mattes",
-            choices=allowed_metrics,
+            choices=intnormt.allowed_metrics,
             help="Metric to use for registration loss function.",
             metavar="",
         )
@@ -220,10 +226,8 @@ class Registrator(CLI):
             "-ir",
             "--initial-rigid",
             action="store_true",
-            help=(
-                "Do a rigid registration before doing "
-                "the `type_of_transform` registration."
-            ),
+            help="Do a rigid registration before doing "
+            "the `type_of_transform` registration.",
         )
         parser.add_argument(
             "-v",
@@ -235,12 +239,12 @@ class Registrator(CLI):
         parser.add_argument(
             "--version",
             action="store_true",
-            help="print the version of intensity-normalization",
+            help="Print the version of intensity-normalization.",
         )
         return parser
 
     @classmethod
-    def from_argparse_args(cls: Type[R], args: Namespace) -> R:
+    def from_argparse_args(cls, args: argparse.Namespace) -> Registrator:
         if args.template is not None:
             args.template = ants.image_read(args.template)
         return cls(
@@ -252,5 +256,5 @@ class Registrator(CLI):
         )
 
     @staticmethod
-    def load_image(image_path: PathLike) -> ants.ANTsImage:
+    def load_image(image_path: intnormt.PathLike) -> ants.ANTsImage:
         return ants.image_read(image_path)

@@ -1,48 +1,45 @@
-# -*- coding: utf-8 -*-
-"""
-intensity_normalization.normalize.kde
-
-Author: Jacob Reinhold (jcreinhold@gmail.com)
-Created on: Jun 01, 2021
+"""Kernel density estimation-based tissue mode normalization
+Author: Jacob Reinhold <jcreinhold@gmail.com>
+Created on: 01 Jun 2021
 """
 
-__all__ = [
-    "KDENormalize",
-]
+from __future__ import annotations
 
-from argparse import ArgumentParser
-from typing import Optional, Set
+__all__ = ["KDENormalize"]
 
-from intensity_normalization import VALID_PEAKS
-from intensity_normalization.normalize.base import NormalizeBase
-from intensity_normalization.type import Array
-from intensity_normalization.util.histogram_tools import get_tissue_mode
+import intensity_normalization.normalize.base as intnormb
+import intensity_normalization.typing as intnormt
+import intensity_normalization.util.histogram_tools as intnormhisttool
 
 
-class KDENormalize(NormalizeBase):
+class KDENormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalizeCLI):
     """
-    use kernel density estimation to find the peak of the white
-    matter in the histogram of a (skull-stripped) brain MR image.
-    Normalize the WM of the image to norm_value (default = 1.)
+    Use kernel density estimation to fit a smoothed histogram of intensities
+    of a (skull-stripped) brain MR image, then find the peak of the white
+    matter (by default) in the smoothed histogram. Finally, normalize the
+    white matter mode of the image to norm_value (default = 1.)
     """
 
     def calculate_location(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
+        image: intnormt.ImageLike,
+        /,
+        mask: intnormt.ImageLike | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> float:
         return 0.0
 
     def calculate_scale(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
+        image: intnormt.ImageLike,
+        /,
+        mask: intnormt.ImageLike | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> float:
-        modality = self._get_modality(modality)
-        voi = self._get_voi(data, mask, modality)
-        tissue_mode = get_tissue_mode(voi, modality)
+        voi = self._get_voi(image, mask, modality=modality)
+        tissue_mode = intnormhisttool.get_tissue_mode(voi, modality=modality)
         return tissue_mode
 
     @staticmethod
@@ -55,16 +52,6 @@ class KDENormalize(NormalizeBase):
 
     @staticmethod
     def description() -> str:
-        return (
-            "Use kernel density estimation to find the WM mode from "
-            "a smoothed histogram and normalize an NIfTI MR image."
-        )
-
-    @staticmethod
-    def get_parent_parser(
-        desc: str,
-        valid_modalities: Set[str] = VALID_PEAKS,
-    ) -> ArgumentParser:
-        return super(KDENormalize, KDENormalize).get_parent_parser(
-            desc, valid_modalities
-        )
+        desc = "Use kernel density estimation to find the WM mode from "
+        desc += "a smoothed histogram and normalize an MR image."
+        return desc

@@ -1,36 +1,30 @@
-# -*- coding: utf-8 -*-
-"""
-intensity_normalization.normalize.nyul
-
-Author: Jacob Reinhold (jcreinhold@gmail.com)
-Created on: Jun 02, 2021
+"""Nyul & Udupa piecewise linear histogram matching normalization
+Author: Jacob Reinhold <jcreinhold@gmail.com>
+Created on: 02 Jun 2021
 """
 
-__all__ = [
-    "NyulNormalize",
-]
+from __future__ import annotations
 
-from argparse import ArgumentParser, Namespace
-from typing import List, Optional, Type, TypeVar
+__all__ = ["NyulNormalize"]
+
+import argparse
+import builtins
+import collections.abc
+import typing
 
 import numpy as np
+import numpy.typing as npt
 from scipy.interpolate import interp1d
 
-from intensity_normalization.normalize.base import NormalizeFitBase
-from intensity_normalization.type import (
-    Array,
-    ArrayOrNifti,
-    PathLike,
-    Vector,
-    file_path,
-    save_file_path,
-)
-
-NN = TypeVar("NN", bound="NyulNormalize")
+import intensity_normalization.errors as intnorme
+import intensity_normalization.normalize.base as intnormb
+import intensity_normalization.typing as intnormt
+import intensity_normalization.util.io as intnormio
 
 
-class NyulNormalize(NormalizeFitBase):
-    """
+class NyulNormalize(intnormb.DirectoryNormalizeCLI):
+    """Nyul & Udupa piecewise linear histogram matching normalization
+
     Args:
         output_min_value: where min-percentile mapped for output normalized image
         output_max_value: where max-percentile mapped for output normalized image
@@ -42,20 +36,20 @@ class NyulNormalize(NormalizeFitBase):
             standard histogram (percentile-step creates intermediate percentiles)
         prev_percentile_before_max: previous percentile before max for finding
             standard histogram (percentile-step creates intermediate percentiles)
-        percentile_step: percentile steps btwn next-percentile-after-min and
+        percentile_step: percentile steps between next-percentile-after-min and
              prev-percentile-before-max for finding standard histogram
     """
 
     def __init__(
         self,
         *,
-        output_min_value: float = 1.0,
-        output_max_value: float = 100.0,
-        min_percentile: float = 1.0,
-        max_percentile: float = 99.0,
-        percentile_after_min: float = 10.0,
-        percentile_before_max: float = 90.0,
-        percentile_step: float = 10.0,
+        output_min_value: builtins.float = 1.0,
+        output_max_value: builtins.float = 100.0,
+        min_percentile: builtins.float = 1.0,
+        max_percentile: builtins.float = 99.0,
+        percentile_after_min: builtins.float = 10.0,
+        percentile_before_max: builtins.float = 90.0,
+        percentile_step: builtins.float = 10.0,
     ):
         super().__init__()
         self.output_min_value = output_min_value
@@ -65,22 +59,28 @@ class NyulNormalize(NormalizeFitBase):
         self.percentile_after_min = percentile_after_min
         self.percentile_before_max = percentile_before_max
         self.percentile_step = percentile_step
-        self._percentiles: Optional[Vector] = None
+        self._percentiles: npt.ArrayLike | None = None
+        self.standard_scale: npt.ArrayLike | None = None
 
-    def normalize_array(
+    def normalize_image(
         self,
-        data: Array,
-        mask: Optional[Array] = None,
-        modality: Optional[str] = None,
-    ) -> Array:
-        voi = self._get_voi(data, mask, modality)
+        image: intnormt.ImageLike,
+        /,
+        mask: intnormt.ImageLike | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
+    ) -> intnormt.ImageLike:
+        voi = self._get_voi(image, mask, modality=modality)
         landmarks = self.get_landmarks(voi)
+        if self.standard_scale is None:
+            msg = "This class must be fit before being called."
+            raise intnorme.NormalizationError(msg)
         f = interp1d(landmarks, self.standard_scale, fill_value="extrapolate")
-        normalized: Array = f(data)
+        normalized: intnormt.ImageLike = f(image)
         return normalized
 
     @property
-    def percentiles(self) -> Vector:
+    def percentiles(self) -> npt.NDArray:
         if self._percentiles is None:
             percs = np.arange(
                 self.percentile_after_min,
@@ -88,33 +88,37 @@ class NyulNormalize(NormalizeFitBase):
                 self.percentile_step,
             )
             _percs = ([self.min_percentile], percs, [self.max_percentile])
-            self._percentiles = np.concatenate(_percs)  # type: ignore[arg-type]
+            self._percentiles = np.concatenate(_percs)
+        assert isinstance(self._percentiles, np.ndarray)
         return self._percentiles
 
-    def get_landmarks(self, image: Array) -> Vector:
-        landmarks: Vector = np.percentile(image, self.percentiles)
-        return landmarks
+    def get_landmarks(self, image: intnormt.ImageLike, /) -> npt.NDArray:
+        landmarks = np.percentile(image, self.percentiles)
+        return landmarks  # type: ignore[return-value]
 
-    def _fit(  # type: ignore[no-untyped-def]
+    def _fit(
         self,
-        images: List[ArrayOrNifti],
-        masks: Optional[List[ArrayOrNifti]] = None,
-        modality: Optional[str] = None,
-        **kwargs,
+        images: collections.abc.Sequence[intnormt.ImageLike],
+        /,
+        masks: collections.abc.Sequence[intnormt.ImageLike] | None = None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        **kwargs: typing.Any,
     ) -> None:
         """Compute standard scale for piecewise linear histogram matching
 
         Args:
             images: set of NifTI MR image paths which are to be normalized
             masks: set of corresponding masks (if not provided, estimated)
+            modality: modality of all images
         """
         n_percs = len(self.percentiles)
         standard_scale = np.zeros(n_percs)
-        masks = masks or ([None] * len(images))
         n_images = len(images)
-        assert n_images == len(masks)
-        for i, (image, mask) in enumerate(zip(images, masks)):
-            voi = self._get_voi(image, mask, modality)
+        if masks is not None and n_images != len(masks):
+            raise ValueError("There must be an equal number of images and masks.")
+        for i, (image, mask) in enumerate(intnormio.zip_with_nones(images, masks)):
+            voi = self._get_voi(image, mask, modality=modality)
             landmarks = self.get_landmarks(voi)
             min_p = np.percentile(voi, self.min_percentile)
             max_p = np.percentile(voi, self.max_percentile)
@@ -123,112 +127,118 @@ class NyulNormalize(NormalizeFitBase):
             standard_scale += landmarks
         self.standard_scale = standard_scale / n_images
 
-    def save_additional_info(  # type: ignore[no-untyped-def]
+    def save_additional_info(
         self,
-        args: Namespace,
-        **kwargs,
+        args: argparse.Namespace,
+        **kwargs: typing.Any,
     ) -> None:
         if args.save_standard_histogram is not None:
             self.save_standard_histogram(args.save_standard_histogram)
 
-    def save_standard_histogram(self, filename: PathLike) -> None:
+    def save_standard_histogram(self, filename: intnormt.PathLike) -> None:
+        if self.standard_scale is None:
+            msg = "This class must be fit before being called."
+            raise intnorme.NormalizationError(msg)
         np.save(filename, np.vstack((self.standard_scale, self.percentiles)))
 
-    def load_standard_histogram(self, filename: PathLike) -> None:
+    def load_standard_histogram(self, filename: intnormt.PathLike) -> None:
         data = np.load(filename)
         self.standard_scale = data[0, :]
         self._percentiles = data[1, :]
 
     @staticmethod
-    def name() -> str:
+    def name() -> builtins.str:
         return "nyul"
 
     @staticmethod
-    def fullname() -> str:
+    def fullname() -> builtins.str:
         return "Nyul & Udupa"
 
     @staticmethod
-    def description() -> str:
-        return (
-            "Perform piecewise-linear histogram matching per "
-            "Nyul and Udupa given a set of NIfTI MR images."
-        )
+    def description() -> builtins.str:
+        desc = "Perform piecewise-linear histogram matching per "
+        desc += "Nyul and Udupa given a set of MR images."
+        return desc
 
     @staticmethod
-    def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
+    def add_method_specific_arguments(
+        parent_parser: argparse.ArgumentParser,
+    ) -> argparse.ArgumentParser:
         parser = parent_parser.add_argument_group("method-specific arguments")
         parser.add_argument(
             "-ssh",
             "--save-standard-histogram",
             default=None,
-            type=save_file_path(),
-            help="save the standard histogram fit by the method",
+            type=intnormt.save_file_path(),
+            help="Save the standard histogram fit by the method.",
         )
         parser.add_argument(
             "-lsh",
             "--load-standard-histogram",
             default=None,
-            type=file_path(),
-            help="load a standard histogram previously fit by the method",
+            type=intnormt.file_path(),
+            help="Load a standard histogram previously fit by the method.",
         )
         parser.add_argument(
             "--output-min-value",
             type=float,
             default=1.0,
-            help="where min-percentile mapped for output normalized image",
+            help="Value 'min-percentile' mapped to for output normalized image.",
         )
         parser.add_argument(
             "--output-max-value",
             type=float,
             default=100.0,
-            help="where max-percentile mapped for output normalized image",
+            help="Value 'max-percentile' mapped to for output normalized image.",
         )
         parser.add_argument(
             "--min-percentile",
             type=float,
             default=1.0,
-            help="min percentile to account for while finding standard histogram",
+            help="Min. percentile to account for while finding standard histogram.",
         )
         parser.add_argument(
             "--max-percentile",
             type=float,
             default=99.0,
-            help="max percentile to account for while finding standard histogram",
+            help="Max. percentile to account for while finding standard histogram.",
         )
         parser.add_argument(
             "--percentile-after-min",
             type=float,
             default=10.0,
-            help="percentile after min for finding standard histogram "
-            "(percentile-step creates intermediate percentiles between "
-            "this and percentile-before-max)",
+            help="Percentile after min. for finding standard histogram "
+            "('percentile-step' creates intermediate percentiles between "
+            "this and 'percentile-before-max').",
         )
         parser.add_argument(
             "--percentile-before-max",
             type=float,
             default=90.0,
-            help="percentile before max for finding standard histogram "
-            "(percentile-step creates intermediate percentiles between "
-            "this and percentile-after-min)",
+            help="Percentile before max. for finding standard histogram "
+            "('percentile-step' creates intermediate percentiles between "
+            "this and 'percentile-after-min').",
         )
         parser.add_argument(
             "--percentile-step",
             type=float,
             default=10.0,
-            help="percentile steps btwn next-percentile-after-min and "
-            "prev-percentile-before-max for finding standard histogram",
+            help="Percentile steps between 'percentile-after-min' and "
+            "'prev-percentile-before-max' for finding standard histogram",
         )
         return parent_parser
 
-    def call_from_argparse_args(self, args: Namespace) -> None:
+    def call_from_argparse_args(
+        self, args: argparse.Namespace, /, **kwargs: typing.Any
+    ) -> None:
         if args.load_standard_histogram is not None:
             self.load_standard_histogram(args.load_standard_histogram)
             self.fit = lambda *args, **kwargs: None  # type: ignore[assignment]
         super().call_from_argparse_args(args)
 
     @classmethod
-    def from_argparse_args(cls: Type[NN], args: Namespace) -> NN:
-        out: NN = cls(
+    def from_argparse_args(cls, args: argparse.Namespace, /) -> NyulNormalize:
+        return cls(
             output_min_value=args.output_min_value,
             output_max_value=args.output_max_value,
             min_percentile=args.min_percentile,
@@ -237,4 +247,3 @@ class NyulNormalize(NormalizeFitBase):
             percentile_before_max=args.percentile_before_max,
             percentile_step=args.percentile_step,
         )
-        return out

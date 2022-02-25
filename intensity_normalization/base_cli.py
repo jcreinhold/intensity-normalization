@@ -1,36 +1,33 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-intensity-normalization.cli
-
-process command-line arguments for
-normalization or other utility scripts
-
-Author: Jacob Reinhold (jcreinhold@gmail.com)
-Created on: Jun 06, 2021
+"""CLI base class for normalization/preprocessing methods
+Author: Jacob Reinhold <jcreinhold@gmail.com>
+Created on: 06 Jun 2021
 """
 
-__all__ = [
-    "CLI",
-    "setup_log",
-]
+from __future__ import annotations
 
+__all__ = ["CLIMixin", "DirectoryCLI", "setup_log", "SingleImageCLI"]
+
+import abc
+import argparse
+import builtins
 import logging
+import pathlib
 import sys
-from argparse import ArgumentParser, Namespace
-from pathlib import Path
-from typing import Callable, Optional, Type, TypeVar
+import typing
 
-import nibabel as nib
+import pymedio.image as mioi
 
-from intensity_normalization import __version__
-from intensity_normalization.type import ArgType, NiftiImage, PathLike
-from intensity_normalization.util.io import split_filename
+import intensity_normalization as intnorm
+import intensity_normalization.typing as intnormt
+import intensity_normalization.util.io as intnormio
+from intensity_normalization import __version__ as int_norm_version
 
 logger = logging.getLogger(__name__)
 
+T = typing.TypeVar("T")
 
-def setup_log(verbosity: int) -> None:
+
+def setup_log(verbosity: builtins.int) -> None:
     """set logger with verbosity logging level and message"""
     if verbosity == 1:
         level = logging.getLevelName("INFO")
@@ -43,59 +40,67 @@ def setup_log(verbosity: int) -> None:
     logging.captureWarnings(True)
 
 
-C = TypeVar("C", bound="CLI")
-
-
-class CLI:
-    def __call__(self, *args, **kwargs):  # type: ignore[no-untyped-def]
-        raise NotImplementedError
-
-    def __str__(self) -> str:
+class CLIMixin(metaclass=abc.ABCMeta):
+    def __str__(self) -> builtins.str:
         return self.__class__.__name__
 
     @staticmethod
-    def description() -> str:
+    @abc.abstractmethod
+    def description() -> builtins.str:
         raise NotImplementedError
 
     @staticmethod
-    def name() -> str:
+    @abc.abstractmethod
+    def name() -> builtins.str:
         raise NotImplementedError
 
     @staticmethod
-    def fullname() -> str:
+    @abc.abstractmethod
+    def fullname() -> builtins.str:
         raise NotImplementedError
 
     def append_name_to_file(
         self,
-        filepath: PathLike,
-        alternate_path: Optional[PathLike] = None,
-    ) -> Path:
-        path, base, ext = split_filename(filepath)
+        filepath: intnormt.PathLike,
+        alternate_path: intnormt.PathLike | None = None,
+    ) -> pathlib.Path:
+        path, base, ext = intnormio.split_filename(filepath)
         if alternate_path is not None:
-            path = Path(alternate_path).resolve()
+            path = pathlib.Path(alternate_path).resolve()
             assert path.is_dir()
-        return path / (base + f"_{self.name()}" + ext)
+        new_path: pathlib.Path = path / (base + f"_{self.name()}" + ext)
+        return new_path
 
-    @staticmethod
-    def get_parent_parser(desc: str) -> ArgumentParser:
+    @classmethod
+    @abc.abstractmethod
+    def get_parent_parser(
+        cls,
+        desc: builtins.str,
+        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
+        **kwargs: typing.Any,
+    ) -> argparse.ArgumentParser:
         raise NotImplementedError
 
     @staticmethod
-    def add_method_specific_arguments(parent_parser: ArgumentParser) -> ArgumentParser:
+    def add_method_specific_arguments(
+        parent_parser: argparse.ArgumentParser,
+    ) -> argparse.ArgumentParser:
         return parent_parser
 
     @classmethod
-    def parser(cls: Type[C]) -> ArgumentParser:
+    def parser(cls) -> argparse.ArgumentParser:
         parser = cls.get_parent_parser(cls.description())
         parser = cls.add_method_specific_arguments(parser)
         return parser
 
     @classmethod
-    def main(cls: Type[C], parser: ArgumentParser) -> Callable:
-        def _main(args: ArgType = None) -> int:
+    def main(
+        cls, parser: argparse.ArgumentParser
+    ) -> typing.Callable[[intnormt.ArgType], builtins.int]:
+        def _main(args: intnormt.ArgType = None) -> int:
             if args is None:
                 if len(sys.argv) == 2 and sys.argv[1] == "--version":
-                    print(f"intensity-normalization version {__version__}")
+                    print(f"intensity-normalization version {int_norm_version}")
                     return 0
                 args = parser.parse_args()
             elif isinstance(args, list):
@@ -103,7 +108,7 @@ class CLI:
             else:
                 raise ValueError("args must be None or a list of strings to parse")
             if args.version:
-                print(f"intensity-normalization version {__version__}")
+                print(f"intensity-normalization version {int_norm_version}")
             setup_log(args.verbosity)
             cls_instance = cls.from_argparse_args(args)
             cls_instance.call_from_argparse_args(args)
@@ -112,21 +117,169 @@ class CLI:
         return _main
 
     @classmethod
-    def from_argparse_args(cls: Type[C], args: Namespace) -> C:
+    @abc.abstractmethod
+    def from_argparse_args(cls: typing.Type[T], args: argparse.Namespace) -> T:
         raise NotImplementedError
 
-    def call_from_argparse_args(self, args: Namespace) -> None:
+    @abc.abstractmethod
+    def call_from_argparse_args(
+        self, args: argparse.Namespace, /, **kwargs: typing.Any
+    ) -> None:
+        raise NotImplementedError
+
+    @staticmethod
+    def load_image(image_path: intnormt.PathLike) -> mioi.Image:
+        return mioi.Image.from_path(image_path)
+
+
+class SingleImageCLI(CLIMixin, metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def __call__(
+        self,
+        image: intnormt.ImageLike,
+        /,
+        mask: intnormt.ImageLike | None,
+        *,
+        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        **kwargs: typing.Any,
+    ) -> typing.Any:
+        raise NotImplementedError
+
+    @classmethod
+    def get_parent_parser(
+        cls,
+        desc: builtins.str,
+        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
+        **kwargs: typing.Any,
+    ) -> argparse.ArgumentParser:
+        parser = argparse.ArgumentParser(
+            description=desc,
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
+        parser.add_argument(
+            "image",
+            type=intnormt.file_path(),
+            help="Path of image to process.",
+        )
+        parser.add_argument(
+            "-m",
+            "--mask",
+            type=intnormt.file_path(),
+            default=None,
+            help="Path of foreground mask for image.",
+        )
+        parser.add_argument(
+            "-o",
+            "--output",
+            type=intnormt.save_file_path(),
+            default=None,
+            help="Path to save the processed image.",
+        )
+        parser.add_argument(
+            "-mo",
+            "--modality",
+            type=str,
+            default="t1",
+            choices=valid_modalities,
+            help="Modality of the image.",
+        )
+        parser.add_argument(
+            "-v",
+            "--verbosity",
+            action="count",
+            default=0,
+            help="Increase output verbosity (e.g., -vv is more than -v).",
+        )
+        parser.add_argument(
+            "--version",
+            action="store_true",
+            help="Print the version of intensity-normalization.",
+        )
+        return parser
+
+    def call_from_argparse_args(
+        self, args: argparse.Namespace, /, **kwargs: typing.Any
+    ) -> None:
         image = self.load_image(args.image)
-        if hasattr(args, "mask"):
-            mask = args.mask and self.load_image(args.mask)
+        mask: intnormt.ImageLike | None
+        if hasattr(args, "mask") and args.mask is not None:
+            mask = self.load_image(args.mask)
         else:
             mask = None
         out = self(image, mask)
         if args.output is None:
             args.output = self.append_name_to_file(args.image)
         logger.debug(f"Saving output: {args.output}")
-        out.to_filename(args.output)
+        if hasattr(out, "save"):
+            out.save(args.output)
+        elif hasattr(out, "to_filename"):
+            out.to_filename(args.output)
+        else:
+            raise ValueError("Unexpected image type")
 
-    @staticmethod
-    def load_image(image_path: PathLike) -> NiftiImage:
-        return nib.load(image_path)
+
+class DirectoryCLI(CLIMixin, metaclass=abc.ABCMeta):
+    @classmethod
+    def get_parent_parser(
+        cls,
+        desc: builtins.str,
+        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
+        **kwargs: typing.Any,
+    ) -> argparse.ArgumentParser:
+        parser = argparse.ArgumentParser(
+            description=desc,
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
+        parser.add_argument(
+            "image_dir",
+            type=intnormt.dir_path(),
+            help="Path of directory containing images to normalize.",
+        )
+        parser.add_argument(
+            "-m",
+            "--mask-dir",
+            type=intnormt.dir_path(),
+            default=None,
+            help="Path of directory of foreground masks corresponding to images.",
+        )
+        parser.add_argument(
+            "-o",
+            "--output-dir",
+            type=intnormt.dir_path(),
+            default=None,
+            help="Path of directory in which to save normalized images.",
+        )
+        parser.add_argument(
+            "-mo",
+            "--modality",
+            type=str,
+            default="t1",
+            choices=intnorm.VALID_MODALITIES,
+            help="Modality of the images.",
+        )
+        parser.add_argument(
+            "-e",
+            "--extension",
+            type=str,
+            default="nii*",
+            help="Extension of images.",
+        )
+        parser.add_argument(
+            "-v",
+            "--verbosity",
+            action="count",
+            default=0,
+            help="Increase output verbosity (e.g., -vv is more than -v).",
+        )
+        parser.add_argument(
+            "--version",
+            action="store_true",
+            help="Print the version of intensity-normalization.",
+        )
+        return parser
+
+    @abc.abstractmethod
+    def call_from_argparse_args(
+        self, args: argparse.Namespace, /, **kwargs: typing.Any
+    ) -> None:
+        raise NotImplementedError
