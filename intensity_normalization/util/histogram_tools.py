@@ -18,7 +18,6 @@ import scipy.signal
 import statsmodels.api as sm
 
 import intensity_normalization as intnorm
-import intensity_normalization.errors as intnorme
 import intensity_normalization.typing as intnormt
 
 

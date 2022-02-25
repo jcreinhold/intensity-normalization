@@ -11,6 +11,7 @@ import argparse
 import builtins
 import typing
 
+import intensity_normalization.errors as intnorme
 import intensity_normalization.normalize.base as intnormb
 import intensity_normalization.typing as intnormt
 
@@ -29,7 +30,7 @@ class ZScoreNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormal
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> builtins.float:
         if self.voi is None:
-            raise RuntimeError("voi needs to be set")
+            raise intnorme.NormalizationError("'voi' needs to be set.")
         loc: builtins.float = float(self.voi.mean())
         return loc
 
@@ -42,7 +43,7 @@ class ZScoreNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormal
         modality: intnormt.Modalities = intnormt.Modalities.T1,
     ) -> builtins.float:
         if self.voi is None:
-            raise RuntimeError("voi needs to be set")
+            raise intnorme.NormalizationError("'voi' needs to be set.")
         scale: builtins.float = float(self.voi.std())
         return scale
 

@@ -19,6 +19,7 @@ import numpy.typing as npt
 import pymedio.image as mioi
 
 import intensity_normalization as intnorm
+import intensity_normalization.errors as intnorme
 import intensity_normalization.normalize.base as intnormb
 import intensity_normalization.typing as intnormt
 import intensity_normalization.util.io as intnormio
@@ -106,8 +107,8 @@ class LeastSquaresNormalize(
                 intnormt.ImageLike, np.swapaxes(tissue_membership, -2, -1)
             )
         if tissue_membership.shape[: int(image.ndim)] != image.shape:
-            msg = "If masks provided, need to have same spatial shape as image"
-            raise RuntimeError(msg)
+            msg = "If masks provided, need to have same spatial shape as image."
+            raise intnorme.NormalizationError(msg)
         return tissue_membership
 
     @staticmethod
@@ -162,7 +163,7 @@ class LeastSquaresNormalize(
     def save_standard_tissue_means(self, filename: intnormt.PathLike, /) -> None:
         if self.standard_tissue_means is None:
             msg = "Fit required before saving standard tissue means."
-            raise RuntimeError(msg)
+            raise intnorme.NormalizationError(msg)
         np.save(filename, self.standard_tissue_means)
 
     def load_standard_tissue_means(self, filename: intnormt.PathLike, /) -> None:
