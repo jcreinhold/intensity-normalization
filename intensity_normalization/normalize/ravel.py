@@ -103,6 +103,8 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         if template_mask is None:
             self._template_mask = None
         else:
+            if hasattr(template_mask, "astype"):
+                template_mask = template_mask.astype(np.uint32)  # type: ignore[union-attr] # noqa: E501
             self._template_mask = to_ants(template_mask)
 
     def use_mni_as_template(self) -> None:
@@ -128,8 +130,8 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
             raise NotImplementedError(msg)
         tissue_membership = intnormtm.find_tissue_memberships(image, mask)
         csf_mask: npt.NDArray = tissue_membership[..., 0] > self.membership_threshold
-        # convert to integer for intersection; 32,767 should be large enough!
-        csf_mask = csf_mask.astype(np.int16)
+        # convert to integer for intersection
+        csf_mask = csf_mask.astype(np.uint32)
         return csf_mask
 
     @staticmethod
