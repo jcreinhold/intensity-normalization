@@ -228,7 +228,9 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
         )
         return parent_parser
 
-    def call_from_argparse_args(self, args: argparse.Namespace, /) -> None:
+    def call_from_argparse_args(
+        self, args: argparse.Namespace, /, **kwargs: typing.Any
+    ) -> None:
         if args.load_standard_histogram is not None:
             self.load_standard_histogram(args.load_standard_histogram)
             self.fit = lambda *args, **kwargs: None  # type: ignore[assignment]

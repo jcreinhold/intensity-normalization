@@ -195,19 +195,23 @@ class LeastSquaresNormalize(
         out = cls(norm_value=args.norm_value)
         return out
 
-    def call_from_argparse_args(self, args: argparse.Namespace, /) -> None:
+    def call_from_argparse_args(
+        self, args: argparse.Namespace, /, **kwargs: typing.Any
+    ) -> None:
         if args.load_standard_tissue_means is not None:
             self.load_standard_tissue_means(args.load_standard_tissue_means)
             self.fit = lambda *args, **kwargs: None  # type: ignore[assignment]
 
         args.modality = intnormt.Modalities.from_string(args.modality)
+        use_masks = True
         if args.mask_dir is not None:
             if args.modality != intnormt.Modalities.T1:
-                msg = f"If brain masks provided, modality must be 't1'. Got '{args.modality}'."  # noqa: E501
+                msg = f"If brain masks provided, 'modality' must be 't1'. Got '{args.modality}'."  # noqa: E501
                 raise ValueError(msg)
         elif args.tissue_membership_dir is not None:
+            use_masks = False
             args.mask_dir = args.tissue_membership_dir
-        super().call_from_argparse_args(args)
+        super().call_from_argparse_args(args, use_masks_in_plot=use_masks)
 
     @classmethod
     def get_parent_parser(

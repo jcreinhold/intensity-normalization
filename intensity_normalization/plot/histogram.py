@@ -198,7 +198,9 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
     def from_argparse_args(cls, args: argparse.Namespace) -> HistogramPlotter:
         return cls(figsize=args.figsize, alpha=args.alpha, title=args.title)
 
-    def call_from_argparse_args(self, args: argparse.Namespace) -> None:
+    def call_from_argparse_args(
+        self, args: argparse.Namespace, /, **kwargs: typing.Any
+    ) -> None:
         _ = self.from_directories(
             args.image_dir, args.mask_dir, ext=args.extension, exclude=args.exclude
         )

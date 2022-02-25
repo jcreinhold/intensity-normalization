@@ -202,7 +202,9 @@ class NormalizeCLIMixin(NormalizeMixin, intnormcli.CLIMixin, metaclass=abc.ABCMe
         return parser
 
     @abc.abstractmethod
-    def call_from_argparse_args(self, args: argparse.Namespace, /) -> None:
+    def call_from_argparse_args(
+        self, args: argparse.Namespace, /, **kwargs: typing.Any
+    ) -> None:
         raise NotImplementedError
 
     @classmethod
@@ -263,7 +265,9 @@ class SingleImageNormalizeCLI(NormalizeCLIMixin, intnormcli.SingleImageCLI):
         ax.set_title(self.fullname())
         plt.savefig(output)
 
-    def call_from_argparse_args(self, args: argparse.Namespace, /) -> None:
+    def call_from_argparse_args(
+        self, args: argparse.Namespace, /, **kwargs: typing.Any
+    ) -> None:
         normalized, mask = self.normalize_from_filename(
             args.image,
             args.mask,
@@ -330,7 +334,14 @@ class SampleNormalizeCLIMixin(NormalizeCLIMixin, intnormcli.CLIMixin):
         _ = hp(normalized, masks)
         plt.savefig(output)
 
-    def call_from_argparse_args(self, args: argparse.Namespace, /) -> None:
+    def call_from_argparse_args(
+        self,
+        args: argparse.Namespace,
+        /,
+        *,
+        use_masks_in_plot: builtins.bool = True,
+        **kwargs: typing.Any,
+    ) -> None:
         out = self.process_directories(
             args.image_dir,
             args.mask_dir,
@@ -357,7 +368,8 @@ class SampleNormalizeCLIMixin(NormalizeCLIMixin, intnormcli.CLIMixin):
             image_filenames=image_filenames,
         )
         if args.plot_histogram:
-            self.plot_histogram_from_args(args, normalized, masks)
+            _masks = masks if use_masks_in_plot else None
+            self.plot_histogram_from_args(args, normalized, _masks)
 
 
 class DirectoryNormalizeCLI(
