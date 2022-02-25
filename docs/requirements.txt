@@ -1,0 +1,2 @@
+numpy~=1.22.2
+sphinx-argparse>=0.3.1

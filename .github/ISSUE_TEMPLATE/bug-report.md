@@ -1,12 +1,11 @@
 ---
 name: "\U0001F41B Bug Report"
 about: Submit a bug report to help improve intensity-normalization
-
 ---
 
 ## 🐛 Bug
 
-<!-- A clear and concise description of what the bug is. -->
+<!-- A clear, concise description of what the bug is. -->
 
 ## To Reproduce
 
@@ -16,11 +15,11 @@ Steps to reproduce the behavior:
 2.
 3.
 
-<!-- If you have a code sample, error messages, stack traces, please provide it here as well -->
+<!-- Provide code sample, error messages, and stack traces here. -->
 
 ## Expected behavior
 
-<!-- A clear and concise description of what you expected to happen. -->
+<!-- A clear, concise description of what you expected to happen. -->
 
 ## Environment
 
@@ -28,7 +27,7 @@ Steps to reproduce the behavior:
  - numpy version (e.g., 1.0):
  - OS (e.g., Linux):
  - How you installed intensity-normalization (`conda`, `pip`, source):
- - Build command you used (if compiling from source):
+ - Build command you used (if installed from source):
  - Python version:
  - Any other relevant information:
 

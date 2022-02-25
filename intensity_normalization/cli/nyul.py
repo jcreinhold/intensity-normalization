@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-intensity_normalization.cli.nyul
-
-Author: Jacob Reinhold (jcreinhold@gmail.com)
+"""CLI for Nyul & Udupa normalization
+Author: Jacob Reinhold <jcreinhold@gmail.com>
 Created on: 13 Oct 2021
 """
 

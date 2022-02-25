@@ -163,6 +163,12 @@ Potential Pitfalls
    `Read about the methods <https://intensity-normalization.readthedocs.io/en/latest/algorithm.html>`_ and how they work
    to decide which method would work best for your contrast-enhanced images.
 
+Contributing
+------------
+
+**Help wanted!** See `CONTRIBUTING.rst <CONTRIBUTING.rst>`_ for details and/or reach out to me if you'd like
+to contribute. Credit will be given! If you want to add a method, I'll be happy to add your reference to the
+citation section below.
 
 Test Package
 ------------
