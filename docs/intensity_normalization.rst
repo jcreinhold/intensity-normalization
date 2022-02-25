@@ -31,10 +31,10 @@ intensity\_normalization.errors module
    :undoc-members:
    :show-inheritance:
 
-intensity\_normalization.type module
-------------------------------------
+intensity\_normalization.typing module
+--------------------------------------
 
-.. automodule:: intensity_normalization.type
+.. automodule:: intensity_normalization.typing
    :members:
    :undoc-members:
    :show-inheritance:
