@@ -122,7 +122,9 @@ class CLIMixin(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def call_from_argparse_args(self, args: argparse.Namespace) -> None:
+    def call_from_argparse_args(
+        self, args: argparse.Namespace, /, **kwargs: typing.Any
+    ) -> None:
         raise NotImplementedError
 
     @staticmethod
@@ -195,7 +197,9 @@ class SingleImageCLI(CLIMixin, metaclass=abc.ABCMeta):
         )
         return parser
 
-    def call_from_argparse_args(self, args: argparse.Namespace) -> None:
+    def call_from_argparse_args(
+        self, args: argparse.Namespace, /, **kwargs: typing.Any
+    ) -> None:
         image = self.load_image(args.image)
         mask: intnormt.ImageLike | None
         if hasattr(args, "mask") and args.mask is not None:
@@ -275,5 +279,7 @@ class DirectoryCLI(CLIMixin, metaclass=abc.ABCMeta):
         return parser
 
     @abc.abstractmethod
-    def call_from_argparse_args(self, args: argparse.Namespace) -> None:
+    def call_from_argparse_args(
+        self, args: argparse.Namespace, /, **kwargs: typing.Any
+    ) -> None:
         raise NotImplementedError
