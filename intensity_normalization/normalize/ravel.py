@@ -13,6 +13,7 @@ import collections.abc
 import functools
 import logging
 import operator
+import pathlib
 import typing
 
 import numpy as np
@@ -65,6 +66,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         self._template: intnormt.ImageLike | None = None
         self._template_mask: intnormt.ImageLike | None = None
         self._normalized: intnormt.ImageLike | None = None
+        self._control_masks: builtins.list[intnormt.ImageLike] = []
 
     def normalize_image(
         self,
@@ -126,7 +128,8 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
             raise NotImplementedError(msg)
         tissue_membership = intnormtm.find_tissue_memberships(image, mask)
         csf_mask: npt.NDArray = tissue_membership[..., 0] > self.membership_threshold
-        csf_mask = csf_mask.astype(np.uint8)  # convert to integer for intersection
+        # convert to integer for intersection; 32,767 should be large enough!
+        csf_mask = csf_mask.astype(np.int16)
         return csf_mask
 
     @staticmethod
@@ -194,7 +197,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         assert all([shape == image_shape for shape in image_shapes])
         image_matrix = np.zeros((image_size, n_images))
         whitestripe_norm = intnormws.WhiteStripeNormalize(**self.whitestripe_kwargs)
-        control_masks = []
+        self._control_masks = []  # reset control masks to prevent run-to-run issues
         registered_images = []
 
         for i, (image, mask) in enumerate(intnormio.zip_with_nones(images, masks), 1):
@@ -208,7 +211,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
                 logger.debug("Finding CSF mask.")
                 # csf found on original b/c assume foreground positive
                 csf_mask = self._find_csf_mask(image, mask, modality=modality)
-                control_masks.append(csf_mask)
+                self._control_masks.append(csf_mask)
                 if self.register:
                     registered_images.append(image_ws)
             else:
@@ -220,10 +223,10 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
                     registered_images.append(image_ws)
                 logger.debug("Finding CSF mask.")
                 csf_mask = self._find_csf_mask(image, mask, modality=modality)
-                control_masks.append(csf_mask)
+                self._control_masks.append(csf_mask)
 
-        control_mask_sum = functools.reduce(operator.add, control_masks)
-        threshold = np.floor(len(control_masks) * self.quantile_to_label_csf)
+        control_mask_sum = functools.reduce(operator.add, self._control_masks)
+        threshold = np.floor(len(self._control_masks) * self.quantile_to_label_csf)
         intersection: intnormt.ImageLike = control_mask_sum >= threshold
         num_control_voxels = int(intersection.sum())
         if num_control_voxels == 0:
@@ -375,3 +378,37 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
             quantile_to_label_csf=args.quantile_to_label_csf,
             masks_are_csf=args.masks_are_csf,
         )
+
+    def save_additional_info(
+        self,
+        args: argparse.Namespace,
+        **kwargs: typing.Any,
+    ) -> None:
+        normed = kwargs["normalized"]
+        image_fns = kwargs["image_filenames"]
+        if len(self._control_masks) != len(image_fns):
+            msg = f"'control_masks' ({len(self._control_masks)}) "
+            msg += f"and 'image_filenames' ({len(image_fns)}) "
+            msg += "must be in correspondence."
+            raise RuntimeError(msg)
+        if len(self._control_masks) != len(normed):
+            msg = f"'control_masks' ({len(self._control_masks)}) "
+            msg += f"and 'normalized' ({len(normed)}) "
+            msg += "must be in correspondence."
+            raise RuntimeError(msg)
+        for _csf_mask, norm, fn in zip(self._control_masks, normed, image_fns):
+            if hasattr(norm, "affine"):
+                csf_mask = mioi.Image(_csf_mask, norm.affine)
+            elif hasattr(_csf_mask, "affine"):
+                csf_mask = mioi.Image(_csf_mask, _csf_mask.affine)  # type: ignore[attr-defined] # noqa: E501
+            else:
+                csf_mask = mioi.Image(_csf_mask, None)
+            base, name, ext = intnormio.split_filename(fn)
+            new_name = name + "_csf_mask" + ext
+            if args.output_dir is None:
+                output = base / new_name
+            else:
+                output = pathlib.Path(args.output_dir) / new_name
+            csf_mask.to_filename(output)
+        del self._control_masks
+        self._control_masks = []
