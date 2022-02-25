@@ -16,6 +16,7 @@ import numpy as np
 import numpy.typing as npt
 from scipy.interpolate import interp1d
 
+import intensity_normalization.errors as intnorme
 import intensity_normalization.normalize.base as intnormb
 import intensity_normalization.typing as intnormt
 import intensity_normalization.util.io as intnormio
@@ -72,7 +73,8 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
         voi = self._get_voi(image, mask, modality=modality)
         landmarks = self.get_landmarks(voi)
         if self.standard_scale is None:
-            raise RuntimeError("this class must be fit before being called.")
+            msg = "This class must be fit before being called."
+            raise intnorme.NormalizationError(msg)
         f = interp1d(landmarks, self.standard_scale, fill_value="extrapolate")
         normalized: intnormt.ImageLike = f(image)
         return normalized
@@ -135,7 +137,8 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
 
     def save_standard_histogram(self, filename: intnormt.PathLike) -> None:
         if self.standard_scale is None:
-            raise RuntimeError("this class must be fit before being called.")
+            msg = "This class must be fit before being called."
+            raise intnorme.NormalizationError(msg)
         np.save(filename, np.vstack((self.standard_scale, self.percentiles)))
 
     def load_standard_histogram(self, filename: intnormt.PathLike) -> None:

@@ -21,6 +21,7 @@ import pymedio.image as mioi
 import scipy.sparse
 import scipy.sparse.linalg
 
+import intensity_normalization.errors as intnorme
 import intensity_normalization.normalize.base as intnormb
 import intensity_normalization.normalize.whitestripe as intnormws
 import intensity_normalization.typing as intnormt
@@ -118,7 +119,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
     ) -> intnormt.ImageLike:
         if self.masks_are_csf:
             if mask is None:
-                raise ValueError("mask must be defined if masks are CSF masks.")
+                raise ValueError("'mask' must be defined if masks are CSF masks.")
             return mask
         elif modality != intnormt.Modalities.T1:
             msg = "Non-T1-w RAVEL normalization w/o CSF masks not supported."
@@ -226,10 +227,8 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         intersection: intnormt.ImageLike = control_mask_sum >= threshold
         num_control_voxels = int(intersection.sum())
         if num_control_voxels == 0:
-            raise RuntimeError(
-                "No common control voxels were found. "
-                "Lower the membership threshold."
-            )
+            msg = "No common control voxels found. Lower the membership threshold."
+            raise intnorme.NormalizationError(msg)
         if self.register:
             assert n_images == len(registered_images)
             control_voxels = np.zeros((num_control_voxels, n_images))

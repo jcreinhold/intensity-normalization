@@ -4,5 +4,5 @@ Created on: 24 Apr 2018
 """
 
 
-class NormalizationError(Exception):
+class NormalizationError(RuntimeError):
     pass
