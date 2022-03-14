@@ -29,7 +29,9 @@ except ImportError as ants_imp_exn:
     raise RuntimeError(msg) from ants_imp_exn
 
 
-def to_ants(image: intnormt.ImageLike, /) -> ants.ANTsImage:
+def to_ants(
+    image: nib.Nifti1Image | ants.ANTsImage | intnormt.ImageLike, /
+) -> ants.ANTsImage:
     if isinstance(image, ants.ANTsImage):
         ants_image = image
     elif isinstance(image, nib.Nifti1Image):
@@ -44,15 +46,15 @@ def to_ants(image: intnormt.ImageLike, /) -> ants.ANTsImage:
 
 
 def register(
-    image: nib.Nifti1Image | ants.ANTsImage,
+    image: nib.Nifti1Image | ants.ANTsImage | intnormt.ImageLike,
     /,
-    template: nib.Nifti1Image | ants.ANTsImage | None = None,
+    template: nib.Nifti1Image | ants.ANTsImage | intnormt.ImageLike | None = None,
     *,
     type_of_transform: builtins.str = "Affine",
     interpolator: builtins.str = "bSpline",
     metric: builtins.str = "mattes",
     initial_rigid: builtins.bool = True,
-    template_mask: nib.Nifti1Image | ants.ANTsImage | None = None,
+    template_mask: nib.Nifti1Image | ants.ANTsImage | intnormt.ImageLike | None = None,
 ) -> nib.Nifti1Image | ants.ANTsImage:
     if template is None:
         standard_mni = ants.get_ants_data("mni")
