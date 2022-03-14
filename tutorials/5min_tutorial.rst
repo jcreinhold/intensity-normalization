@@ -12,7 +12,7 @@ Once the package is installed, if you just want to do some sort of normalization
 reasonable choice is Fuzzy C-means (FCM)-based normalization. Note that FCM requires access to a
 (*non-gadolinium-enhanced*) T1-w image, if this is not possible then I would recommend doing either z-score or KDE
 normalization for simple normalization tasks. The FCM method also requires a brain mask for the image, although the
-brain mask need not be perfect
+brain mask doesn't need to be perfect
 (`ROBEX <https://sites.google.com/site/jeiglesias/ROBEX>`_ works fine for this purpose).
 
 Note that FCM-based normalization acts on the image by calculating the specified tissue mean, e.g., white matter (WM)
@@ -38,7 +38,7 @@ the WM membership back in to the program to normalize an image of a different co
 You can run ``fcm-normalize -h`` to see more options, but the above covers most of the details necessary to
 run FCM normalization on a single image.
 
-You can process a directory of NIfTI images like this::
+You can process a directory of images like this::
 
     find -L t1w_image_dir -type f -name '*.nii*' -exec fcm-normalize "{}" \;
 
@@ -59,25 +59,25 @@ Example usage on a directory for sample-based methods
 =====================================================
 
 The sample-based normalization CLIs (RAVEL, Nyul, and LSQ) operate on a directory of images (either 2D or 3D).
-That is, suppose you have a directory of images ``img_dir`` that contains NIfTI (.nii.gz or .nii) images, like so::
+That is, suppose you have a directory of images ``img_dir`` that contains images, like so::
 
     ├── img_dir
-    │   ├── img1.nii.gz
-    │   ├── img2.nii.gz
-    │   ├── img3.nii.gz
+    │   ├── img1.ext
+    │   ├── img2.ext
+    │   ├── img3.ext
     │   ├── ...
-    │   ├── imgN.nii.gz
+    │   ├── imgN.ext
 
 In addition to the images, the normalization CLIs also can take brain masks as input; the masks (or absence of masks)
 can affect normalization quality. If you have brain masks for the corresponding images (for example, the images in
 ``img_dir``), they should be setup like so::
 
     ├── mask_dir
-    │   ├── mask1.nii.gz
-    │   ├── mask2.nii.gz
-    │   ├── mask3.nii.gz
+    │   ├── mask1.ext
+    │   ├── mask2.ext
+    │   ├── mask3.ext
     │   ├── ...
-    │   ├── maskN.nii.gz
+    │   ├── maskN.ext
 
 Note that when both ``img_dir`` and ``mask_dir`` are sorted alphabetically, each mask should correspond to the correct
 image. Other than that, the name of the image or mask is not important.
@@ -115,20 +115,17 @@ which you can import into your project or script, e.g.,
    import nibabel as nib
    from intensity_normalization.normalize.fcm import FCMNormalize
 
-   image = nib.load("test_t1w_image.nii")  # assume skull-stripped otherwise load mask too
+   image = nib.load("test_t1w_image.nii").get_fdata()  # assume skull-stripped otherwise load mask too
 
    fcm_norm = FCMNormalize(tissue_type="wm")
-   normalized = fcm_norm(image) # alternatively, you can pass in a numpy array which will return a numpy array
-   normalized.to_filename("normalized_test_t1w_image.nii")  # this works if you passed in a nibabel Nifti image
-   # or if you want to do further processing on the data array
-   norm_data = normalized.get_fdata()  # if you passed in a nibabel Nifti image, otherwise normalized is an array
+   normalized = fcm_norm(image)
 
    # now normalize the co-registered, corresponding T2-w image
-   t2w_image = nib.load("test_t2w_image.nii")
+   t2w_image = nib.load("test_t2w_image.nii").get_fdata()
    t2w_normalized = fcm_norm(t2w_image, modality="t2")
 
    # to use a brain mask instead of a skull-stripped image do this:
-   mask = nib.load("brain_mask.nii")
+   mask = nib.load("brain_mask.nii").get_fdata()
    normalized_t1w = fcm_norm(image, mask)
    # the WM mask is an attribute in the class, so normalize the t2 with:
    normalized_t2w = fcm_norm(t2w_image, modality="t2")
@@ -136,8 +133,10 @@ which you can import into your project or script, e.g.,
    # make a new instance of the normalizer to normalize a new image, i.e.:
    new_image = nib.load("test_t1w_image_2.nii")
    fcm_norm = FCMNormalize(tissue_type="wm")
-   normalized = fcm_norm(new_image)
+   normalized = fcm_norm(new_image.get_fdata())
 
+   # you can save the normalized image with nibabel as follows:
+   nib.Nifti1Image(normalized, new_image.affine).to_filename("normalized.nii")
 
 Generally, the normalization methods have a similar interface, although some methods (RAVEL, Nyul, and LSQ) require a
 list of images (and, optionally, corresponding masks), like so:
@@ -153,6 +152,46 @@ a flexible package to open various types of medical image; it returns them as a 
 ``mask`` is one of ``None`` (or not provided), or something like a numpy array (like ``image``); ``modality`` is a
 string representing the modality.
 
+Opening and normalizing images with ``pymedio``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are many medical image readers available in Python, and so long as you can convert the pixel/voxel data
+to a numpy array, you use them. All that ``intensity-normalization`` requires is an array-like data type.
+
+The above shows an example with ``nibabel`` and for NIfTI images. If you have DICOM images or
+other formats, a flexible image reader that requires minimal storage and dependencies is
+`pymedio <https://github.com/jcreinhold/pymedio>`_. Assuming you install ``pymedio`` like
+``pip install "pymedio[all]"``, an example opening an image and normalizing it is shown below.
+
+Assume ``test_t1w_image`` is a directory of DICOM images:
+
+.. code-block:: python
+
+   import pymedio.image as mioi
+   from intensity_normalization.normalize.fcm import FCMNormalize
+
+   image = mioi.Image.from_path("test_t1w_image/")  # assume skull-stripped otherwise load mask too
+
+   fcm_norm = FCMNormalize(tissue_type="wm")
+   normalized = fcm_norm(image)
+
+   # now normalize the co-registered, corresponding T2-w image
+   t2w_image = mioi.Image.from_path("test_t2w_image.nii")  # or some other extension/directory of DICOM
+   t2w_normalized = fcm_norm(t2w_image, modality="t2")
+
+   # to use a brain mask instead of a skull-stripped image do this:
+   mask = mioi("brain_mask.nii")
+   normalized_t1w = fcm_norm(image, mask)
+   # the WM mask is an attribute in the class, so normalize the t2 with:
+   normalized_t2w = fcm_norm(t2w_image, modality="t2")
+
+   # you can save the normalized image with pymedio as follows:
+   normalized_t2w.to_filename("normalized.nii")
+
+``pymedio`` images can be used everywhere in ``intensity-normalization`` that a numpy array can be used.
+It will hold the affine transformation matrix as an attribute (at ``.affine``) and can be operated on like
+a numpy array without losing the affine transformation matrix.
+
 Validating normalization results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -167,26 +206,23 @@ foreground image intensities before and after normalization, e.g.,
    import nibabel as nib
    from intensity_normalization.normalize.fcm import FCMNormalize
 
-   image = nib.load("test_t1w_image.nii")
-   mask = nib.load("test_t1w_brain_mask.nii")
+   image = nib.load("test_t1w_image.nii").get_fdata()
+   mask = nib.load("test_t1w_brain_mask.nii").get_fdata()
 
    fcm_norm = FCMNormalize(tissue_type="wm")
    normalized = fcm_norm(image, mask, modality="t1")
-   image_data = image.get_fdata()
-   norm_data = normalized.get_fdata()
-   mask_data = mask.get_fdata()
 
-   plot_histogram(image_data, mask_data)
+   plot_histogram(image, mask)
    plt.title("Unnormalized")
    plt.show()
 
-   plot_histogram(norm_data, mask_data)
+   plot_histogram(norm, mask)
    plt.title("FCM Normalized")
    plt.show()
 
    # or if you have a set of images
-   images = [nib.load(fn) for fn in filenames]
-   masks = [nib.load(fn) for fn in mask_filenames]
+   images = [nib.load(fn).get_fdata() for fn in filenames]
+   masks = [nib.load(fn).get_fdata() for fn in mask_filenames]
    normed = [fcm_norm(img, msk) for img, msk in zip(images, masks)]
    hp = HistogramPlotter(title="FCM Normalized")
    _ = hp(images, masks)
@@ -269,7 +305,7 @@ Fitting and using the resultant fit for new images is supported in the Python AP
    # load images
    import nibabel as nib
    image_paths = ["path/to/image1.nii", "path/to/image2.nii", ...]
-   images = [nib.load(image_path) for image_path in image_paths]
+   images = [nib.load(image_path).get_fdata() for image_path in image_paths]
 
    # normalize the images and save the standard histogram
    from intensity_normalization.normalize.nyul import NyulNormalize
@@ -280,7 +316,7 @@ Fitting and using the resultant fit for new images is supported in the Python AP
 
    # load new images and normalize those
    new_image_paths = ["path/to/another/image1.nii", "path/to/another/image2.nii", ...]
-   new_images = [nib.load(image_path) for image_path in new_image_paths]
+   new_images = [nib.load(image_path).get_fdata() for image_path in new_image_paths]
    normalized = [nyul_normalizer(image) for image in images]
 
    # load the standard histogram
