@@ -39,8 +39,6 @@ class WhiteStripeNormalize(
         **kwargs: typing.Any,
     ):
         super().__init__(norm_value=norm_value, **kwargs)
-        if norm_value != 1.0:
-            warnings.warn("norm_value not used in RavelNormalize")
         self.width_l = width_l or width
         self.width_u = width_u or width
         self.whitestripe: npt.NDArray | None = None
