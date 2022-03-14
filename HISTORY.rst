@@ -2,6 +2,13 @@
 History
 =======
 
+2.2.1 (2022-03-14)
+------------------
+
+* Update documentation to support modifications to Python API
+* Update dependencies
+* Remove incorrect warning from WhiteStripe normalization
+
 2.2.0 (2022-02-25)
 ------------------
 
