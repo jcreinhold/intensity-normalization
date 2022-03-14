@@ -195,7 +195,9 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
         tt = intnormt.TissueTypes.from_string(args.tissue_type)
         return cls(norm_value=args.norm_value, tissue_type=tt)
 
-    def call_from_argparse_args(self, args: argparse.Namespace, /) -> None:
+    def call_from_argparse_args(
+        self, args: argparse.Namespace, /, **kwargs: typing.Any
+    ) -> None:
         if args.mask is not None:
             if args.modality is not None:
                 if args.modality.lower() != "t1":

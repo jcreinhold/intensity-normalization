@@ -10,7 +10,6 @@ __all__ = ["WhiteStripeNormalize"]
 import argparse
 import builtins
 import typing
-import warnings
 
 import numpy as np
 import numpy.typing as npt
