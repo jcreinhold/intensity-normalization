@@ -197,8 +197,8 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         image_shapes = [image.shape for image in images]
         image_shape = image_shapes[0]
         image_size = int(np.prod(image_shape))
-        if any([shape != image_shape for shape in image_shapes]) and not self.register:
-            msg = "All images must be the same size if registration not enabled."
+        if any([shape != image_shape for shape in image_shapes]):
+            msg = "All images must be the same size. Resample/co-register the images."
             raise RuntimeError(msg)
         image_matrix = np.zeros((image_size, n_images))
         whitestripe_norm = intnormws.WhiteStripeNormalize(**self.whitestripe_kwargs)
@@ -207,6 +207,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
 
         for i, (image, mask) in enumerate(intnormio.zip_with_nones(images, masks), 1):
             image_ws = whitestripe_norm(image, mask)
+            # the line below is why the images have to be the same size
             image_matrix[:, i - 1] = image_ws.flatten()
             logger.info(f"Processing image {i}/{n_images}.")
             if i == 1 and self.template is None:
@@ -214,7 +215,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
                 self.set_template(image)
                 self.set_template_mask(mask)
                 logger.debug("Finding CSF mask.")
-                # csf found on original b/c assume foreground positive
+                # CSF found on original b/c assume foreground positive
                 csf_mask = self._find_csf_mask(image, mask, modality=modality)
                 self._control_masks.append(csf_mask)
                 if self.register:
