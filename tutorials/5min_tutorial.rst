@@ -113,7 +113,7 @@ which you can import into your project or script, e.g.,
 .. code-block:: python
 
    import nibabel as nib
-   from intensity_normalization import Modality, TissueType
+   from intensity_normalization.typing import Modality, TissueType
    from intensity_normalization.normalize.fcm import FCMNormalize
 
    image = nib.load("test_t1w_image.nii").get_fdata()  # assume skull-stripped otherwise load mask too
