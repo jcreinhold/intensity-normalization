@@ -119,7 +119,7 @@ def get_first_tissue_mode(
 
 
 def get_tissue_mode(
-    image: intnormt.ImageLike, /, *, modality: intnormt.Modalities
+    image: intnormt.ImageLike, /, *, modality: intnormt.Modality
 ) -> builtins.float:
     """Find the appropriate tissue mode given a modality"""
     modality_ = modality.value

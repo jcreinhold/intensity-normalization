@@ -140,7 +140,7 @@ class SingleImageCLI(CLIMixin, metaclass=abc.ABCMeta):
         /,
         mask: intnormt.ImageLike | None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
         **kwargs: typing.Any,
     ) -> typing.Any:
         raise NotImplementedError

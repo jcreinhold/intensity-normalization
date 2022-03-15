@@ -43,7 +43,7 @@ class NormalizeMixin(metaclass=abc.ABCMeta):
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
         **kwargs: typing.Any,
     ) -> intnormt.ImageLike:
         return self.normalize_image(image, mask, modality=modality)
@@ -55,7 +55,7 @@ class NormalizeMixin(metaclass=abc.ABCMeta):
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> intnormt.ImageLike:
         raise NotImplementedError
 
@@ -65,7 +65,7 @@ class NormalizeMixin(metaclass=abc.ABCMeta):
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> None:
         return
 
@@ -96,7 +96,7 @@ class NormalizeMixin(metaclass=abc.ABCMeta):
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
         background_threshold: builtins.float = 1e-6,
     ) -> intnormt.ImageLike:
         if mask is None:
@@ -112,7 +112,7 @@ class NormalizeMixin(metaclass=abc.ABCMeta):
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> intnormt.ImageLike:
         voi: intnormt.ImageLike = image[self._get_mask(image, mask, modality=modality)]
         return voi
@@ -130,7 +130,7 @@ class LocationScaleMixin(NormalizeMixin, metaclass=abc.ABCMeta):
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> builtins.float:
         raise NotImplementedError
 
@@ -141,7 +141,7 @@ class LocationScaleMixin(NormalizeMixin, metaclass=abc.ABCMeta):
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> builtins.float:
         raise NotImplementedError
 
@@ -151,7 +151,7 @@ class LocationScaleMixin(NormalizeMixin, metaclass=abc.ABCMeta):
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> intnormt.ImageLike:
         self.setup(image, mask, modality=modality)
         loc = self.calculate_location(image, mask, modality=modality)
@@ -169,7 +169,7 @@ class NormalizeCLIMixin(NormalizeMixin, intnormcli.CLIMixin, metaclass=abc.ABCMe
         mask_path: intnormt.PathLike | None = None,
         *,
         out_path: intnormt.PathLike | None = None,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> builtins.tuple[mioi.Image, mioi.Image | None]:
         image = mioi.Image.from_path(image_path)
         mask = None if mask_path is None else mioi.Image.from_path(mask_path)
@@ -272,7 +272,7 @@ class SingleImageNormalizeCLI(NormalizeCLIMixin, intnormcli.SingleImageCLI):
             args.image,
             args.mask,
             out_path=args.output,
-            modality=intnormt.Modalities.from_string(args.modality),
+            modality=intnormt.Modality.from_string(args.modality),
         )
         if args.plot_histogram:
             self.plot_histogram_from_args(args, normalized, mask)
@@ -286,7 +286,7 @@ class SampleNormalizeCLIMixin(NormalizeCLIMixin, intnormcli.CLIMixin):
         /,
         masks: MaskSeqOrNone = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
         **kwargs: typing.Any,
     ) -> None:
         return None
@@ -297,7 +297,7 @@ class SampleNormalizeCLIMixin(NormalizeCLIMixin, intnormcli.CLIMixin):
         /,
         mask_dir: intnormt.PathLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
         ext: builtins.str = "nii*",
         return_normalized_and_masks: builtins.bool = False,
         **kwargs: typing.Any,
@@ -345,7 +345,7 @@ class SampleNormalizeCLIMixin(NormalizeCLIMixin, intnormcli.CLIMixin):
         out = self.process_directories(
             args.image_dir,
             args.mask_dir,
-            modality=intnormt.Modalities.from_string(args.modality),
+            modality=intnormt.Modality.from_string(args.modality),
             ext=args.extension,
             return_normalized_and_masks=True,
         )
@@ -381,7 +381,7 @@ class DirectoryNormalizeCLI(
         /,
         masks: MaskSeqOrNone = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
         **kwargs: typing.Any,
     ) -> None:
         images, masks = self.before_fit(images, masks, modality=modality, **kwargs)
@@ -395,7 +395,7 @@ class DirectoryNormalizeCLI(
         /,
         masks: MaskSeqOrNone = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
         **kwargs: typing.Any,
     ) -> None:
         raise NotImplementedError
@@ -406,7 +406,7 @@ class DirectoryNormalizeCLI(
         /,
         masks: collections.abc.Sequence[intnormt.ImageLike] | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
         **kwargs: typing.Any,
     ) -> builtins.tuple[ImageSeq, MaskSeqOrNone]:
         assert len(images) > 0
@@ -425,7 +425,7 @@ class DirectoryNormalizeCLI(
         /,
         mask_dir: intnormt.PathLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
         ext: builtins.str = "nii*",
         return_normalized_and_masks: builtins.bool = False,
         **kwargs: typing.Any,

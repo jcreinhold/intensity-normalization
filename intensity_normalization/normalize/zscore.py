@@ -18,6 +18,7 @@ import intensity_normalization.typing as intnormt
 
 class ZScoreNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalizeCLI):
     def __init__(self, *, norm_value: builtins.float = 1.0, **kwargs: typing.Any):
+        """Voxel-wise subtract the mean and divide by the standard deviation."""
         super().__init__(norm_value=norm_value, **kwargs)
         self.voi: intnormt.ImageLike | None = None
 
@@ -27,7 +28,7 @@ class ZScoreNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormal
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> builtins.float:
         if self.voi is None:
             raise intnorme.NormalizationError("'voi' needs to be set.")
@@ -40,7 +41,7 @@ class ZScoreNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormal
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> builtins.float:
         if self.voi is None:
             raise intnorme.NormalizationError("'voi' needs to be set.")
@@ -53,7 +54,7 @@ class ZScoreNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormal
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> None:
         self.voi = self._get_voi(image, mask, modality=modality)
 

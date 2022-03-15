@@ -53,7 +53,7 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
         /,
         masks: collections.abc.Sequence[intnormt.ImageLike] | None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
         **kwargs: typing.Any,
     ) -> plt.Axes:
         if not images:

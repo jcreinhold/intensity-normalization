@@ -23,23 +23,6 @@ import intensity_normalization.util.io as intnormio
 
 
 class NyulNormalize(intnormb.DirectoryNormalizeCLI):
-    """Nyul & Udupa piecewise linear histogram matching normalization
-
-    Args:
-        output_min_value: where min-percentile mapped for output normalized image
-        output_max_value: where max-percentile mapped for output normalized image
-        min_percentile: min percentile to account for while finding
-            standard histogram
-        max_percentile: max percentile to account for while finding
-            standard histogram
-        next_percentile_after_min: next percentile after min for finding
-            standard histogram (percentile-step creates intermediate percentiles)
-        prev_percentile_before_max: previous percentile before max for finding
-            standard histogram (percentile-step creates intermediate percentiles)
-        percentile_step: percentile steps between next-percentile-after-min and
-             prev-percentile-before-max for finding standard histogram
-    """
-
     def __init__(
         self,
         *,
@@ -51,6 +34,22 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
         percentile_before_max: builtins.float = 90.0,
         percentile_step: builtins.float = 10.0,
     ):
+        """Nyul & Udupa piecewise linear histogram matching normalization
+
+        Args:
+            output_min_value: where min-percentile mapped for output normalized image
+            output_max_value: where max-percentile mapped for output normalized image
+            min_percentile: min percentile to account for while finding
+                standard histogram
+            max_percentile: max percentile to account for while finding
+                standard histogram
+            next_percentile_after_min: next percentile after min for finding
+                standard histogram (percentile-step creates intermediate percentiles)
+            prev_percentile_before_max: previous percentile before max for finding
+                standard histogram (percentile-step creates intermediate percentiles)
+            percentile_step: percentile steps between next-percentile-after-min and
+                 prev-percentile-before-max for finding standard histogram
+        """
         super().__init__()
         self.output_min_value = output_min_value
         self.output_max_value = output_max_value
@@ -68,7 +67,7 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> intnormt.ImageLike:
         voi = self._get_voi(image, mask, modality=modality)
         landmarks = self.get_landmarks(voi)
@@ -102,7 +101,7 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
         /,
         masks: collections.abc.Sequence[intnormt.ImageLike] | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
         **kwargs: typing.Any,
     ) -> None:
         """Compute standard scale for piecewise linear histogram matching

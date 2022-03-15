@@ -34,6 +34,7 @@ class LeastSquaresNormalize(
     intnormb.LocationScaleCLIMixin, intnormb.DirectoryNormalizeCLI
 ):
     def __init__(self, *, norm_value: float = 1.0, **kwargs: typing.Any):
+        """Minimize the distance tissue means in a set of images via least-squares"""
         super().__init__(norm_value=norm_value, **kwargs)
         self.tissue_memberships: builtins.list[mioi.Image] = []
         self.standard_tissue_means: npt.NDArray | None = None
@@ -44,7 +45,7 @@ class LeastSquaresNormalize(
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> float:
         return 0.0
 
@@ -54,10 +55,10 @@ class LeastSquaresNormalize(
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> float:
         tissue_membership: intnormt.ImageLike
-        if modality == intnormt.Modalities.T1:
+        if modality == intnormt.Modality.T1:
             tissue_membership = intnormtm.find_tissue_memberships(image, mask)
             self.tissue_memberships.append(tissue_membership)
         elif mask is not None:
@@ -76,7 +77,7 @@ class LeastSquaresNormalize(
         /,
         masks: collections.abc.Sequence[intnormt.ImageLike] | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
         **kwargs: typing.Any,
     ) -> None:
         image = images[0]  # only need one image to fit this method
@@ -84,7 +85,7 @@ class LeastSquaresNormalize(
         tissue_membership: intnormt.ImageLike
         if not isinstance(mask, np.ndarray) and mask is not None:
             raise ValueError("Mask must be either none or be like a numpy array.")
-        if modality == intnormt.Modalities.T1:
+        if modality == intnormt.Modality.T1:
             tissue_membership = intnormtm.find_tissue_memberships(image, mask)
         elif mask is not None:
             logger.debug("Assuming 'masks' contains tissue memberships.")
@@ -204,10 +205,10 @@ class LeastSquaresNormalize(
             self.load_standard_tissue_means(args.load_standard_tissue_means)
             self.fit = lambda *args, **kwargs: None  # type: ignore[assignment]
 
-        args.modality = intnormt.Modalities.from_string(args.modality)
+        args.modality = intnormt.Modality.from_string(args.modality)
         use_masks = True
         if args.mask_dir is not None:
-            if args.modality != intnormt.Modalities.T1:
+            if args.modality != intnormt.Modality.T1:
                 msg = f"If brain masks provided, 'modality' must be 't1'. Got '{args.modality}'."  # noqa: E501
                 raise ValueError(msg)
         elif args.tissue_membership_dir is not None:

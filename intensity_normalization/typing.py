@@ -15,7 +15,7 @@ __all__ = [
     "file_path",
     "ImageLike",
     "interp_type_dict",
-    "Modalities",
+    "Modality",
     "new_parse_type",
     "nonnegative_float",
     "nonnegative_int",
@@ -28,7 +28,7 @@ __all__ = [
     "probability_float_or_none",
     "save_file_path",
     "SplitFilename",
-    "TissueTypes",
+    "TissueType",
 ]
 
 import argparse
@@ -53,7 +53,7 @@ ShapeLike = typing.Union[
 _MODALITIES = [(vm.upper(), vm) for vm in sorted(intnorm.VALID_MODALITIES)]
 
 
-class Modalities(enum.Enum):
+class Modality(enum.Enum):
     FLAIR: builtins.str = "flair"
     MD: builtins.str = "md"
     OTHER: builtins.str = "other"
@@ -62,9 +62,9 @@ class Modalities(enum.Enum):
     T2: builtins.str = "t2"
 
     @classmethod
-    def from_string(cls: typing.Type, string: builtins.str | Modalities) -> Modalities:
+    def from_string(cls: typing.Type, string: builtins.str | Modality) -> Modality:
         if isinstance(string, cls):
-            modality: Modalities = string
+            modality: Modality = string
             return modality
         for name, value in _MODALITIES:
             if string == value:
@@ -75,42 +75,42 @@ class Modalities(enum.Enum):
 
 
 # not ideal DRY, but avoid functional enum API for better IDE support & flake8
-if set(m.value for m in Modalities) != set(intnorm.VALID_MODALITIES):
+if set(m.value for m in Modality) != set(intnorm.VALID_MODALITIES):
     raise RuntimeError("Modalities enum out of sync with VALID_MODALITIES.")
 
 
-class TissueTypes(enum.Enum):
+class TissueType(enum.Enum):
     CSF: builtins.str = "csf"
     GM: builtins.str = "gm"
     WM: builtins.str = "wm"
 
     @classmethod
-    def from_string(cls, string: builtins.str) -> TissueTypes:
+    def from_string(cls, string: builtins.str) -> TissueType:
         if string.lower() == "csf":
-            return TissueTypes.CSF
+            return TissueType.CSF
         elif string.lower() == "gm":
-            return TissueTypes.GM
+            return TissueType.GM
         elif string.lower() == "wm":
-            return TissueTypes.WM
+            return TissueType.WM
         else:
             raise ValueError(f"'string' must be 'csf', 'gm', or 'wm'. Got '{string}'.")
 
     def to_int(self) -> builtins.int:
-        if self == TissueTypes.CSF:
+        if self == TissueType.CSF:
             return 0
-        elif self == TissueTypes.GM:
+        elif self == TissueType.GM:
             return 1
-        elif self == TissueTypes.WM:
+        elif self == TissueType.WM:
             return 2
         else:
             raise ValueError("Unexpected enum.")
 
     def to_fullname(self) -> builtins.str:
-        if self == TissueTypes.CSF:
+        if self == TissueType.CSF:
             return "Cerebrospinal fluid"
-        elif self == TissueTypes.GM:
+        elif self == TissueType.GM:
             return "Grey matter"
-        elif self == TissueTypes.WM:
+        elif self == TissueType.WM:
             return "White matter"
         else:
             raise ValueError("Unexpected enum.")

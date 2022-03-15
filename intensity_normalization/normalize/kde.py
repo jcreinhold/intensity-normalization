@@ -7,18 +7,23 @@ from __future__ import annotations
 
 __all__ = ["KDENormalize"]
 
+import builtins
+import typing
+
 import intensity_normalization.normalize.base as intnormb
 import intensity_normalization.typing as intnormt
 import intensity_normalization.util.histogram_tools as intnormhisttool
 
 
 class KDENormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalizeCLI):
-    """
-    Use kernel density estimation to fit a smoothed histogram of intensities
-    of a (skull-stripped) brain MR image, then find the peak of the white
-    matter (by default) in the smoothed histogram. Finally, normalize the
-    white matter mode of the image to norm_value (default = 1.)
-    """
+    def __init__(self, norm_value: builtins.float = 1.0, **kwargs: typing.Any):
+        """
+        Use kernel density estimation to fit a smoothed histogram of intensities
+        of a (skull-stripped) brain MR image, then find the peak of the white
+        matter (by default) in the smoothed histogram. Finally, normalize the
+        white matter mode of the image to norm_value (default = 1.)
+        """
+        super().__init__(norm_value=norm_value, **kwargs)
 
     def calculate_location(
         self,
@@ -26,7 +31,7 @@ class KDENormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> float:
         return 0.0
 
@@ -36,7 +41,7 @@ class KDENormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> float:
         voi = self._get_voi(image, mask, modality=modality)
         tissue_mode = intnormhisttool.get_tissue_mode(voi, modality=modality)

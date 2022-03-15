@@ -52,6 +52,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         quantile_to_label_csf: builtins.float = 1.0,
         masks_are_csf: builtins.bool = False,
     ):
+        """Normalize a set of images with WhiteStripe and a CSF correction"""
         super().__init__()
         self.membership_threshold = membership_threshold
         self.register = register
@@ -74,7 +75,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> intnormt.ImageLike:
         return NotImplemented
 
@@ -119,13 +120,13 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> intnormt.ImageLike:
         if self.masks_are_csf:
             if mask is None:
                 raise ValueError("'mask' must be defined if masks are CSF masks.")
             return mask
-        elif modality != intnormt.Modalities.T1:
+        elif modality != intnormt.Modality.T1:
             msg = "Non-T1-w RAVEL normalization w/o CSF masks not supported."
             raise NotImplementedError(msg)
         tissue_membership = intnormtm.find_tissue_memberships(image, mask)
@@ -179,9 +180,9 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         /,
         masks: collections.abc.Sequence[intnormt.ImageLike] | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> builtins.tuple[npt.NDArray, npt.NDArray]:
-        """creates an matrix of images; rows correspond to voxels, columns are images
+        """creates a matrix of images; rows correspond to voxels, columns are images
 
         Args:
             images: list of MR images of interest
@@ -196,7 +197,9 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         image_shapes = [image.shape for image in images]
         image_shape = image_shapes[0]
         image_size = int(np.prod(image_shape))
-        assert all([shape == image_shape for shape in image_shapes])
+        if any([shape != image_shape for shape in image_shapes]) and not self.register:
+            msg = "All images must be the same size if registration not enabled."
+            raise RuntimeError(msg)
         image_matrix = np.zeros((image_size, n_images))
         whitestripe_norm = intnormws.WhiteStripeNormalize(**self.whitestripe_kwargs)
         self._control_masks = []  # reset control masks to prevent run-to-run issues
@@ -271,7 +274,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         /,
         masks: collections.abc.Sequence[intnormt.ImageLike] | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
         **kwargs: typing.Any,
     ) -> None:
         image_matrix, control_voxels = self.create_image_matrix_and_control_voxels(
@@ -289,7 +292,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         /,
         mask_dir: intnormt.PathLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
         ext: builtins.str = "nii*",
         return_normalized_and_masks: builtins.bool = False,
         **kwargs: typing.Any,

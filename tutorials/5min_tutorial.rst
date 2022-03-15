@@ -113,26 +113,27 @@ which you can import into your project or script, e.g.,
 .. code-block:: python
 
    import nibabel as nib
+   from intensity_normalization import Modality, TissueType
    from intensity_normalization.normalize.fcm import FCMNormalize
 
    image = nib.load("test_t1w_image.nii").get_fdata()  # assume skull-stripped otherwise load mask too
 
-   fcm_norm = FCMNormalize(tissue_type="wm")
+   fcm_norm = FCMNormalize(tissue_type=TissueType.WM)
    normalized = fcm_norm(image)
 
    # now normalize the co-registered, corresponding T2-w image
    t2w_image = nib.load("test_t2w_image.nii").get_fdata()
-   t2w_normalized = fcm_norm(t2w_image, modality="t2")
+   t2w_normalized = fcm_norm(t2w_image, modality=Modality.T2)
 
    # to use a brain mask instead of a skull-stripped image do this:
    mask = nib.load("brain_mask.nii").get_fdata()
    normalized_t1w = fcm_norm(image, mask)
    # the WM mask is an attribute in the class, so normalize the t2 with:
-   normalized_t2w = fcm_norm(t2w_image, modality="t2")
+   normalized_t2w = fcm_norm(t2w_image, modality=Modality.T2)
 
    # make a new instance of the normalizer to normalize a new image, i.e.:
    new_image = nib.load("test_t1w_image_2.nii")
-   fcm_norm = FCMNormalize(tissue_type="wm")
+   fcm_norm = FCMNormalize(tissue_type=TissueType.WM)
    normalized = fcm_norm(new_image.get_fdata())
 
    # you can save the normalized image with nibabel as follows:
@@ -168,22 +169,23 @@ Assume ``test_t1w_image`` is a directory of DICOM images:
 .. code-block:: python
 
    import pymedio.image as mioi
+   from intensity_normalization import Modality, TissueType
    from intensity_normalization.normalize.fcm import FCMNormalize
 
    image = mioi.Image.from_path("test_t1w_image/")  # assume skull-stripped otherwise load mask too
 
-   fcm_norm = FCMNormalize(tissue_type="wm")
+   fcm_norm = FCMNormalize(tissue_type=TissueType.WM)
    normalized = fcm_norm(image)
 
    # now normalize the co-registered, corresponding T2-w image
    t2w_image = mioi.Image.from_path("test_t2w_image.nii")  # or some other extension/directory of DICOM
-   t2w_normalized = fcm_norm(t2w_image, modality="t2")
+   t2w_normalized = fcm_norm(t2w_image, modality=Modality.T2)
 
    # to use a brain mask instead of a skull-stripped image do this:
    mask = mioi("brain_mask.nii")
    normalized_t1w = fcm_norm(image, mask)
    # the WM mask is an attribute in the class, so normalize the t2 with:
-   normalized_t2w = fcm_norm(t2w_image, modality="t2")
+   normalized_t2w = fcm_norm(t2w_image, modality=Modality.T2)
 
    # you can save the normalized image with pymedio as follows:
    normalized_t2w.to_filename("normalized.nii")
@@ -209,8 +211,8 @@ foreground image intensities before and after normalization, e.g.,
    image = nib.load("test_t1w_image.nii").get_fdata()
    mask = nib.load("test_t1w_brain_mask.nii").get_fdata()
 
-   fcm_norm = FCMNormalize(tissue_type="wm")
-   normalized = fcm_norm(image, mask, modality="t1")
+   fcm_norm = FCMNormalize(tissue_type=TissueType.WM)
+   normalized = fcm_norm(image, mask, modality=Modality.T1)
 
    plot_histogram(image, mask)
    plt.title("Unnormalized")
@@ -314,7 +316,7 @@ Fitting and using the resultant fit for new images is supported in the Python AP
    normalized = [nyul_normalizer(image) for image in images]
    nyul_normalizer.save_standard_histogram("standard_histogram.npy")
 
-   # load new images and normalize those
+   # load new images (of the same modality) and normalize those
    new_image_paths = ["path/to/another/image1.nii", "path/to/another/image2.nii", ...]
    new_images = [nib.load(image_path).get_fdata() for image_path in new_image_paths]
    normalized = [nyul_normalizer(image) for image in images]

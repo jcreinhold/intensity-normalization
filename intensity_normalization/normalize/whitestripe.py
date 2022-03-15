@@ -22,12 +22,6 @@ import intensity_normalization.util.histogram_tools as intnormhisttool
 class WhiteStripeNormalize(
     intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalizeCLI
 ):
-    """
-    find the normal appearing white matter of the input MR image and
-    use those values to standardize the data (i.e., subtract the mean of
-    the values in the indices and divide by the std of those values)
-    """
-
     def __init__(
         self,
         *,
@@ -37,6 +31,12 @@ class WhiteStripeNormalize(
         width_u: builtins.float | None = None,
         **kwargs: typing.Any,
     ):
+        """
+        Find the normal-appearing white matter of the input MR image and
+        use those values to standardize the data (i.e., subtract the mean of
+        the values in the indices and divide by the std of those values).
+        See the original paper for details on width.
+        """
         super().__init__(norm_value=norm_value, **kwargs)
         self.width_l = width_l or width
         self.width_u = width_u or width
@@ -48,7 +48,7 @@ class WhiteStripeNormalize(
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> builtins.float:
         loc: builtins.float = image[self.whitestripe].mean()
         return loc
@@ -59,7 +59,7 @@ class WhiteStripeNormalize(
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> builtins.float:
         scale: builtins.float = image[self.whitestripe].std()
         return scale
@@ -70,7 +70,7 @@ class WhiteStripeNormalize(
         /,
         mask: intnormt.ImageLike | None = None,
         *,
-        modality: intnormt.Modalities = intnormt.Modalities.T1,
+        modality: intnormt.Modality = intnormt.Modality.T1,
     ) -> None:
         if modality is None:
             modality = "t1"
