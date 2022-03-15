@@ -198,7 +198,8 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         image_shape = image_shapes[0]
         image_size = int(np.prod(image_shape))
         if any([shape != image_shape for shape in image_shapes]):
-            msg = "All images must be the same size. Resample/co-register the images."
+            msg = "All images must be the same size and have (approximate) voxel-wise "
+            msg += "correspondence. At a minimum, rigid/affine co-register the images."
             raise RuntimeError(msg)
         image_matrix = np.zeros((image_size, n_images))
         whitestripe_norm = intnormws.WhiteStripeNormalize(**self.whitestripe_kwargs)
