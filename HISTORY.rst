@@ -2,6 +2,11 @@
 History
 =======
 
+2.2.3 (2022-03-15)
+------------------
+
+* Revert error on different image shapes from ``RavelNormalize``; it is required!
+
 2.2.2 (2022-03-15)
 ------------------
 
