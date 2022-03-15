@@ -52,7 +52,23 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         quantile_to_label_csf: builtins.float = 1.0,
         masks_are_csf: builtins.bool = False,
     ):
-        """Normalize a set of images with WhiteStripe and a CSF correction"""
+        """Normalize a set of co-registered images with WhiteStripe and a CSF correction
+
+        Args:
+            membership_threshold: threshold in FCM for CSF membership
+            register: if the images aren't deformably co-registered,
+                set this to True to do so before calculating the unwanted factors
+                NOTE: The images must be rigidly or affine registered, at a minimum,
+                before using this process. Good results, however, are only
+                reliable for deformably co-registered images!
+            num_unwanted_factors: see 'b' from the original paper
+            sparse_svd: if you're hitting out-of-memory errors, try setting this to true
+            whitestripe_kwargs: keyword args to pass to WhiteStripe
+            quantile_to_label_csf: lower this if you want some wiggle room in the number
+                of images in which CSF must be found. Don't change this in general.
+            masks_are_csf: flag to signify that the masks are actually CSF boolean masks
+                so CSF masks are not created, and the CSF masks are used directly.
+        """
         super().__init__()
         self.membership_threshold = membership_threshold
         self.register = register
