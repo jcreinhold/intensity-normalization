@@ -169,7 +169,7 @@ Assume ``test_t1w_image`` is a directory of DICOM images:
 .. code-block:: python
 
    import pymedio.image as mioi
-   from intensity_normalization import Modality, TissueType
+   from intensity_normalization.typing import Modality, TissueType
    from intensity_normalization.normalize.fcm import FCMNormalize
 
    image = mioi.Image.from_path("test_t1w_image/")  # assume skull-stripped otherwise load mask too
@@ -206,6 +206,7 @@ foreground image intensities before and after normalization, e.g.,
 
    import matplotlib.pyplot as plt
    import nibabel as nib
+   from intensity_normalization.typing import Modality, TissueType
    from intensity_normalization.normalize.fcm import FCMNormalize
 
    image = nib.load("test_t1w_image.nii").get_fdata()
