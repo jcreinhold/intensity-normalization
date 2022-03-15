@@ -2,6 +2,13 @@
 History
 =======
 
+2.2.2 (2022-03-15)
+------------------
+
+* Remove plural from ``Modality`` and ``TissueType`` enumerations.
+* Update tutorials to use the ``Modality`` and ``TissueType`` enumerations.
+* Remove error on different image shapes from ``RavelNormalize`` when registration enabled.
+
 2.2.1 (2022-03-14)
 ------------------
 
