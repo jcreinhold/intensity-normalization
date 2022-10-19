@@ -254,7 +254,7 @@ Once you have ANTsPy installed, you can co-register an image like:
    initial_rigid = True  # do initial rigid transformation before transformation
 
    # verify this is a supported transformation, interpolator
-   from intensity_normalization.type import (
+   from intensity_normalization.typing import (
        allowed_transformations, allowed_interpolators
    )
    assert transformation in allowed_transformations
