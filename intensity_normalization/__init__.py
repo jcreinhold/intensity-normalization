@@ -11,7 +11,7 @@ __author__ = """Jacob Reinhold"""
 __email__ = "jcreinhold@gmail.com"
 __version__ = "2.2.3"
 __license__ = "Apache-2.0"
-__copyright__ = "Copyright 2021 Jacob Reinhold"
+__copyright__ = "Copyright 2023 Jacob Reinhold"
 
 PEAK = {
     "last": ("t1", "other", "last"),

@@ -1,4 +1,3 @@
-import builtins
 import pathlib
 import typing
 
@@ -28,7 +27,7 @@ def image_dir(temp_dir: pathlib.Path) -> pathlib.Path:
 def image(image_dir: pathlib.Path) -> pathlib.Path:
     image_data = np.random.randn(5, 5, 5)
     image_path = image_dir / "test_image.nii"
-    image = nib.Nifti1Image(image_data, np.eye(4))
+    image = nib.nifti1.Nifti1Image(image_data, np.eye(4))
     image.to_filename(image_path)
     return image_path
 
@@ -51,21 +50,17 @@ def out_dir(temp_dir: pathlib.Path) -> pathlib.Path:
 def mask(mask_dir: pathlib.Path) -> pathlib.Path:
     mask_data: np.ndarray = np.random.randint(0, 2, (5, 5, 5)).astype(np.float32)
     mask_path = mask_dir / "test_mask.nii"
-    mask = nib.Nifti1Image(mask_data, np.eye(4))
+    mask = nib.nifti1.Nifti1Image(mask_data, np.eye(4))
     mask.to_filename(mask_path)
     return mask_path
 
 
 @pytest.fixture
-def base_cli_image_args(
-    image: pathlib.Path, mask: pathlib.Path
-) -> typing.List[builtins.str]:
+def base_cli_image_args(image: pathlib.Path, mask: pathlib.Path) -> typing.List[str]:
     return f"{image} -m {mask}".split()
 
 
 @pytest.fixture
-def base_cli_dir_args(
-    image: pathlib.Path, mask: pathlib.Path
-) -> typing.List[builtins.str]:
+def base_cli_dir_args(image: pathlib.Path, mask: pathlib.Path) -> typing.List[str]:
     # use image, mask instead of image_dir, mask_dir so they are created
     return f"{image.parent} -m {mask.parent}".split()

@@ -1,6 +1,5 @@
 """Tests for non-antspy `intensity_normalization` functions."""
 
-import builtins
 import os
 import pathlib
 import typing
@@ -19,7 +18,7 @@ from intensity_normalization.cli.whitestripe import whitestripe_main as ws_main
 from intensity_normalization.cli.zscore import zscore_main as zs_main
 
 
-def test_fcm_normalization_cli(base_cli_image_args: typing.List[builtins.str]) -> None:
+def test_fcm_normalization_cli(base_cli_image_args: typing.List[str]) -> None:
     retval = fcm_main(base_cli_image_args)
     assert retval == 0
 
@@ -30,19 +29,17 @@ def test_fcm_normalization_nont1w_cli(image: pathlib.Path, mask: pathlib.Path) -
     assert retval == 0
 
 
-def test_kde_normalization_cli(base_cli_image_args: typing.List[builtins.str]) -> None:
+def test_kde_normalization_cli(base_cli_image_args: typing.List[str]) -> None:
     retval = kde_main(base_cli_image_args)
     assert retval == 0
 
 
-def test_ws_normalization_cli(base_cli_image_args: typing.List[builtins.str]) -> None:
+def test_ws_normalization_cli(base_cli_image_args: typing.List[str]) -> None:
     retval = ws_main(base_cli_image_args)
     assert retval == 0
 
 
-def test_zscore_normalization_cli(
-    base_cli_image_args: typing.List[builtins.str],
-) -> None:
+def test_zscore_normalization_cli(base_cli_image_args: typing.List[str]) -> None:
     retval = zs_main(base_cli_image_args)
     assert retval == 0
 
@@ -74,7 +71,7 @@ def test_lsq_normalization_save_load_cli(
     assert retval == 0
 
 
-def test_nyul_normalization_cli(base_cli_dir_args: typing.List[builtins.str]) -> None:
+def test_nyul_normalization_cli(base_cli_dir_args: typing.List[str]) -> None:
     retval = nyul_main(base_cli_dir_args)
     assert retval == 0
 
@@ -96,30 +93,28 @@ def test_nyul_normalization_save_load_cli(
 
 @pytest.fixture
 def histogram_cli_args(
-    base_cli_dir_args: typing.List[builtins.str], temp_dir: pathlib.Path
-) -> typing.List[builtins.str]:
+    base_cli_dir_args: typing.List[str], temp_dir: pathlib.Path
+) -> typing.List[str]:
     return base_cli_dir_args + f"-o {temp_dir}/hist.png".split()
 
 
-def test_histogram_cli(histogram_cli_args: typing.List[builtins.str]) -> None:
+def test_histogram_cli(histogram_cli_args: typing.List[str]) -> None:
     retval = hist_main(histogram_cli_args)
     assert retval == 0
 
 
 @pytest.fixture
-def tissue_membership_cli_args(image: pathlib.Path) -> typing.List[builtins.str]:
+def tissue_membership_cli_args(image: pathlib.Path) -> typing.List[str]:
     return f"{image}".split()
 
 
-def test_tissue_membership_cli(
-    tissue_membership_cli_args: typing.List[builtins.str],
-) -> None:
+def test_tissue_membership_cli(tissue_membership_cli_args: typing.List[str]) -> None:
     retval = tm_main(tissue_membership_cli_args)
     assert retval == 0
 
 
 def test_tissue_membership_hard_seg_cli(
-    tissue_membership_cli_args: typing.List[builtins.str],
+    tissue_membership_cli_args: typing.List[str],
 ) -> None:
     tissue_membership_cli_args.append("-hs")
     retval = tm_main(tissue_membership_cli_args)

@@ -14,7 +14,6 @@ from __future__ import annotations
 __all__ = ["preprocess", "Preprocessor"]
 
 import argparse
-import builtins
 import logging
 import typing
 
@@ -40,12 +39,12 @@ def preprocess(
     /,
     mask: intnormt.ImageLike | None = None,
     *,
-    resolution: builtins.tuple[builtins.float, ...] | None = None,
-    orientation: builtins.str = "RAS",
-    n4_convergence_options: builtins.dict[builtins.str, typing.Any] | None = None,
-    interp_type: builtins.str = "linear",
-    second_n4_with_smoothed_mask: builtins.bool = True,
-) -> builtins.tuple[mioi.Image, mioi.Image]:
+    resolution: tuple[float, ...] | None = None,
+    orientation: str = "RAS",
+    n4_convergence_options: dict[str, typing.Any] | None = None,
+    interp_type: str = "linear",
+    second_n4_with_smoothed_mask: bool = True,
+) -> tuple[mioi.Image, mioi.Image]:
     """Preprocess an MR image
 
     Preprocess an MR image according to a simple scheme:
@@ -111,9 +110,9 @@ def preprocess(
     ants_image = ants_image.reorient_image2(orientation)
     ants_mask = ants_mask.reorient_image2(orientation)
     _image = ants_image.to_nibabel()
-    pp_image = mioi.Image(_image.get_fdata(), _image.affine)
+    pp_image: mioi.Image = mioi.Image(_image.get_fdata(), _image.affine)
     _mask = ants_mask.to_nibabel()
-    pp_mask = mioi.Image(_mask.get_fdata(), _mask.affine)
+    pp_mask: mioi.Image = mioi.Image(_mask.get_fdata(), _mask.affine)
     return pp_image, pp_mask
 
 
@@ -121,11 +120,11 @@ class Preprocessor(intnormcli.SingleImageCLI):
     def __init__(
         self,
         *,
-        resolution: builtins.tuple[builtins.float, ...] | None = None,
-        orientation: builtins.str = "RAI",
-        n4_convergence_options: builtins.dict[builtins.str, typing.Any] | None = None,
-        interp_type: builtins.str = "linear",
-        second_n4_with_smoothed_mask: builtins.bool = True,
+        resolution: tuple[float, ...] | None = None,
+        orientation: str = "RAI",
+        n4_convergence_options: dict[str, typing.Any] | None = None,
+        interp_type: str = "linear",
+        second_n4_with_smoothed_mask: bool = True,
     ):
         super().__init__()
         self.resolution = resolution
@@ -169,8 +168,8 @@ class Preprocessor(intnormcli.SingleImageCLI):
     @classmethod
     def get_parent_parser(
         cls,
-        desc: builtins.str,
-        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
+        desc: str,
+        valid_modalities: frozenset[str] = intnorm.VALID_MODALITIES,
         **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
@@ -258,7 +257,7 @@ class Preprocessor(intnormcli.SingleImageCLI):
 
 
 def _to_ants(image: typing.Any) -> ants.ANTsImage:
-    if isinstance(image, nib.Nifti1Image):
+    if isinstance(image, nib.nifti1.Nifti1Image):
         ants_image = ants.from_nibabel(image)
     elif isinstance(image, mioi.Image):
         ants_image = ants.from_numpy(

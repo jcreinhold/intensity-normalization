@@ -8,7 +8,6 @@ from __future__ import annotations
 __all__ = ["register", "Registrator"]
 
 import argparse
-import builtins
 import collections.abc
 import logging
 import typing
@@ -28,13 +27,13 @@ except ImportError as ants_imp_exn:
     msg = "ANTsPy not installed. Install antspyx to use co-registration."
     raise RuntimeError(msg) from ants_imp_exn
 
+ValidImage = typing.Union[nib.nifti1.Nifti1Image, ants.ANTsImage, intnormt.ImageLike]
 
-def to_ants(
-    image: nib.Nifti1Image | ants.ANTsImage | intnormt.ImageLike, /
-) -> ants.ANTsImage:
+
+def to_ants(image: ValidImage, /) -> ants.ANTsImage:
     if isinstance(image, ants.ANTsImage):
         ants_image = image
-    elif isinstance(image, nib.Nifti1Image):
+    elif isinstance(image, nib.nifti1.Nifti1Image):
         ants_image = ants.from_nibabel(image)
     elif isinstance(image, np.ndarray):
         ants_image = ants.from_numpy(image)
@@ -46,22 +45,22 @@ def to_ants(
 
 
 def register(
-    image: nib.Nifti1Image | ants.ANTsImage | intnormt.ImageLike,
+    image: ValidImage,
     /,
-    template: nib.Nifti1Image | ants.ANTsImage | intnormt.ImageLike | None = None,
+    template: typing.Optional[ValidImage] = None,
     *,
-    type_of_transform: builtins.str = "Affine",
-    interpolator: builtins.str = "bSpline",
-    metric: builtins.str = "mattes",
-    initial_rigid: builtins.bool = True,
-    template_mask: nib.Nifti1Image | ants.ANTsImage | intnormt.ImageLike | None = None,
-) -> nib.Nifti1Image | ants.ANTsImage:
+    type_of_transform: str = "Affine",
+    interpolator: str = "bSpline",
+    metric: str = "mattes",
+    initial_rigid: bool = True,
+    template_mask: typing.Optional[ValidImage] = None,
+) -> nib.nifti1.Nifti1Image | ants.ANTsImage:
     if template is None:
         standard_mni = ants.get_ants_data("mni")
         template = ants.image_read(standard_mni)
     else:
         template = to_ants(template)
-    is_nibabel = isinstance(image, nib.Nifti1Image)
+    is_nibabel = isinstance(image, nib.nifti1.Nifti1Image)
     image = to_ants(image)
     if initial_rigid:
         logger.debug("Doing initial rigid registration.")
@@ -98,12 +97,12 @@ def register(
 class Registrator(intnormcli.SingleImageCLI):
     def __init__(
         self,
-        template: nib.Nifti1Image | ants.ANTsImage = None,
+        template: nib.nifti1.Nifti1Image | ants.ANTsImage = None,
         *,
-        type_of_transform: builtins.str = "Affine",
-        interpolator: builtins.str = "bSpline",
-        metric: builtins.str = "mattes",
-        initial_rigid: builtins.bool = True,
+        type_of_transform: str = "Affine",
+        interpolator: str = "bSpline",
+        metric: str = "mattes",
+        initial_rigid: bool = True,
     ):
         super().__init__()
         if template is None:
@@ -120,11 +119,11 @@ class Registrator(intnormcli.SingleImageCLI):
 
     def __call__(
         self,
-        image: nib.Nifti1Image | ants.ANTsImage,
+        image: nib.nifti1.Nifti1Image | ants.ANTsImage,
         /,
         *args: typing.Any,
         **kwargs: typing.Any,
-    ) -> nib.Nifti1Image | ants.ANTsImage:
+    ) -> nib.nifti1.Nifti1Image | ants.ANTsImage:
         return register(
             image,
             template=self.template,
@@ -135,17 +134,19 @@ class Registrator(intnormcli.SingleImageCLI):
         )
 
     def register_images(
-        self, images: collections.abc.Sequence[nib.Nifti1Image | ants.ANTsImage], /
-    ) -> collections.abc.Sequence[nib.Nifti1Image | ants.ANTsImage]:
+        self,
+        images: collections.abc.Sequence[nib.nifti1.Nifti1Image | ants.ANTsImage],
+        /,
+    ) -> collections.abc.Sequence[nib.nifti1.Nifti1Image | ants.ANTsImage]:
         return [self(image) for image in images]
 
     def register_images_to_templates(
         self,
-        images: collections.abc.Sequence[nib.Nifti1Image | ants.ANTsImage],
+        images: collections.abc.Sequence[nib.nifti1.Nifti1Image | ants.ANTsImage],
         /,
         *,
-        templates: collections.abc.Sequence[nib.Nifti1Image | ants.ANTsImage],
-    ) -> collections.abc.Sequence[nib.Nifti1Image | ants.ANTsImage]:
+        templates: collections.abc.Sequence[nib.nifti1.Nifti1Image | ants.ANTsImage],
+    ) -> collections.abc.Sequence[nib.nifti1.Nifti1Image | ants.ANTsImage]:
         assert len(images) == len(templates)
         registered = []
         original_template = self.template
@@ -156,22 +157,22 @@ class Registrator(intnormcli.SingleImageCLI):
         return registered
 
     @staticmethod
-    def name() -> builtins.str:
+    def name() -> str:
         return "registered"
 
     @staticmethod
-    def fullname() -> builtins.str:
+    def fullname() -> str:
         return Registrator.name()
 
     @staticmethod
-    def description() -> builtins.str:
+    def description() -> str:
         return "Co-register an image to MNI or another image."
 
     @classmethod
     def get_parent_parser(
         cls,
-        desc: builtins.str,
-        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
+        desc: str,
+        valid_modalities: frozenset[str] = intnorm.VALID_MODALITIES,
         **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(

@@ -8,7 +8,6 @@ from __future__ import annotations
 __all__ = ["HistogramPlotter", "plot_histogram"]
 
 import argparse
-import builtins
 import collections.abc
 import logging
 import pathlib
@@ -38,9 +37,9 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
     def __init__(
         self,
         *,
-        figsize: builtins.tuple[builtins.int, builtins.int] = (12, 10),
-        alpha: builtins.float = 0.8,
-        title: builtins.str | None = None,
+        figsize: tuple[int, int] = (12, 10),
+        alpha: float = 0.8,
+        title: str | None = None,
     ):
         super().__init__()
         self.figsize = figsize
@@ -93,8 +92,8 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
         /,
         mask_dir: intnormt.PathLike | None = None,
         *,
-        ext: builtins.str = "nii*",
-        exclude: collections.abc.Sequence[builtins.str] = ("membership",),
+        ext: str = "nii*",
+        exclude: collections.abc.Sequence[str] = ("membership",),
         **kwargs: typing.Any,
     ) -> plt.Axes:
         images, masks = intnormio.gather_images_and_masks(
@@ -103,22 +102,22 @@ class HistogramPlotter(intnormcli.DirectoryCLI):
         return self(images, masks, **kwargs)
 
     @staticmethod
-    def name() -> builtins.str:
+    def name() -> str:
         return "hist"
 
     @staticmethod
-    def fullname() -> builtins.str:
+    def fullname() -> str:
         return "Histogram plotter"
 
     @staticmethod
-    def description() -> builtins.str:
+    def description() -> str:
         return "Plot the histogram of an image."
 
     @classmethod
     def get_parent_parser(
         cls,
-        desc: builtins.str,
-        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
+        desc: str,
+        valid_modalities: frozenset[str] = intnorm.VALID_MODALITIES,
         **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
@@ -216,10 +215,10 @@ def plot_histogram(
     mask: intnormt.ImageLike | None = None,
     *,
     ax: plt.Axes | None = None,
-    n_bins: builtins.int = 200,
-    log: builtins.bool = True,
-    alpha: builtins.float = 0.8,
-    linewidth: builtins.float = 3.0,
+    n_bins: int = 200,
+    log: bool = True,
+    alpha: float = 0.8,
+    linewidth: float = 3.0,
     **kwargs: typing.Any,
 ) -> plt.Axes:
     """

@@ -8,7 +8,6 @@ from __future__ import annotations
 __all__ = ["FCMNormalize"]
 
 import argparse
-import builtins
 import logging
 import pathlib
 import typing
@@ -30,7 +29,7 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
     def __init__(
         self,
         *,
-        norm_value: builtins.float = 1.0,
+        norm_value: float = 1.0,
         tissue_type: intnormt.TissueType = intnormt.TissueType.WM,
         **kwargs: typing.Any,
     ):
@@ -49,7 +48,7 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
         mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modality = intnormt.Modality.T1,
-    ) -> builtins.float:
+    ) -> float:
         return 0.0
 
     def calculate_scale(
@@ -59,8 +58,8 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
         mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modality = intnormt.Modality.T1,
-    ) -> builtins.float:
-        tissue_mean: builtins.float
+    ) -> float:
+        tissue_mean: float
         if modality == intnormt.Modality.T1:
             mask = self._get_mask(image, mask, modality=modality)
             tissue_name = self.tissue_type.to_fullname()
@@ -80,19 +79,19 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
         return tissue_mean
 
     @property
-    def is_fit(self) -> builtins.bool:
+    def is_fit(self) -> bool:
         return self.tissue_membership is not None
 
     @staticmethod
-    def name() -> builtins.str:
+    def name() -> str:
         return "fcm"
 
     @staticmethod
-    def fullname() -> builtins.str:
+    def fullname() -> str:
         return "Fuzzy C-Means"
 
     @staticmethod
-    def description() -> builtins.str:
+    def description() -> str:
         desc = "Use fuzzy c-means to find memberships of CSF/GM/WM in the brain. "
         desc += "Use the specified tissue's mean to normalize a MRI."
         return desc
@@ -100,8 +99,8 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
     @classmethod
     def get_parent_parser(
         cls,
-        desc: builtins.str,
-        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
+        desc: str,
+        valid_modalities: frozenset[str] = intnorm.VALID_MODALITIES,
         **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
@@ -214,7 +213,7 @@ class FCMNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalize
     ) -> None:
         if self.is_fit and args.tissue_mask is None:
             assert self.tissue_membership is not None
-            tissue_membership = mioi.Image(
+            tissue_membership: mioi.Image = mioi.Image(
                 self.tissue_membership,
                 kwargs["normalized"].affine,
             )

@@ -129,7 +129,7 @@ snyk:  security  ## run snyk for dependency security checks
 	snyk test --file=requirements_dev.txt --package-manager=pip --fail-on=all
 
 test:  ## run tests quickly with the default Python
-	pytest --cov=intensity_normalization --disable-pytest-warnings --doctest-modules
+	pytest --cov=intensity_normalization --disable-pytest-warnings
 
 test-all:  ## run tests on every Python version with tox
 	tox

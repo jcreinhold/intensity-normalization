@@ -32,7 +32,6 @@ __all__ = [
 ]
 
 import argparse
-import builtins
 import collections.abc
 import enum
 import os
@@ -44,8 +43,8 @@ import numpy.typing as npt
 
 import intensity_normalization as intnorm
 
-ArgType = typing.Union[argparse.Namespace, builtins.list[builtins.str], None]
-PathLike = typing.Union[builtins.str, os.PathLike]
+ArgType = typing.Union[argparse.Namespace, list[str], None]
+PathLike = typing.Union[str, os.PathLike]
 ShapeLike = typing.Union[
     typing.SupportsIndex, collections.abc.Sequence[typing.SupportsIndex]
 ]
@@ -54,15 +53,15 @@ _MODALITIES = [(vm.upper(), vm) for vm in sorted(intnorm.VALID_MODALITIES)]
 
 
 class Modality(enum.Enum):
-    FLAIR: builtins.str = "flair"
-    MD: builtins.str = "md"
-    OTHER: builtins.str = "other"
-    PD: builtins.str = "pd"
-    T1: builtins.str = "t1"
-    T2: builtins.str = "t2"
+    FLAIR: str = "flair"
+    MD: str = "md"
+    OTHER: str = "other"
+    PD: str = "pd"
+    T1: str = "t1"
+    T2: str = "t2"
 
     @classmethod
-    def from_string(cls: typing.Type, string: builtins.str | Modality) -> Modality:
+    def from_string(cls: typing.Type, string: str | Modality) -> Modality:
         if isinstance(string, cls):
             modality: Modality = string
             return modality
@@ -80,12 +79,12 @@ if set(m.value for m in Modality) != set(intnorm.VALID_MODALITIES):
 
 
 class TissueType(enum.Enum):
-    CSF: builtins.str = "csf"
-    GM: builtins.str = "gm"
-    WM: builtins.str = "wm"
+    CSF: str = "csf"
+    GM: str = "gm"
+    WM: str = "wm"
 
     @classmethod
-    def from_string(cls, string: builtins.str) -> TissueType:
+    def from_string(cls, string: str) -> TissueType:
         if string.lower() == "csf":
             return TissueType.CSF
         elif string.lower() == "gm":
@@ -95,7 +94,7 @@ class TissueType(enum.Enum):
         else:
             raise ValueError(f"'string' must be 'csf', 'gm', or 'wm'. Got '{string}'.")
 
-    def to_int(self) -> builtins.int:
+    def to_int(self) -> int:
         if self == TissueType.CSF:
             return 0
         elif self == TissueType.GM:
@@ -105,7 +104,7 @@ class TissueType(enum.Enum):
         else:
             raise ValueError("Unexpected enum.")
 
-    def to_fullname(self) -> builtins.str:
+    def to_fullname(self) -> str:
         if self == TissueType.CSF:
             return "Cerebrospinal fluid"
         elif self == TissueType.GM:
@@ -118,8 +117,8 @@ class TissueType(enum.Enum):
 
 class SplitFilename(typing.NamedTuple):
     path: pathlib.Path
-    base: builtins.str
-    ext: builtins.str
+    base: str
+    ext: str
 
 
 interp_type_dict = dict(
@@ -291,7 +290,7 @@ allowed_metrics = frozenset(
 def return_none(
     func: typing.Callable[[typing.Any, typing.Any], typing.Any]
 ) -> typing.Callable[[typing.Any, typing.Any], typing.Any]:
-    def new_func(self: builtins.object, string: typing.Any) -> typing.Any:
+    def new_func(self: object, string: typing.Any) -> typing.Any:
         if string is None:
             return None
         elif isinstance(string, str):
@@ -304,17 +303,17 @@ def return_none(
 
 class _ParseType:
     @property
-    def __name__(self) -> builtins.str:
+    def __name__(self) -> str:
         name = self.__class__.__name__
         assert isinstance(name, str)
         return name
 
-    def __str__(self) -> builtins.str:
+    def __str__(self) -> str:
         return self.__name__
 
 
 class save_file_path(_ParseType):
-    def __call__(self, string: builtins.str) -> pathlib.Path:
+    def __call__(self, string: str) -> pathlib.Path:
         if not string.isprintable():
             msg = f"'{string}' must only contain printable characters."
             raise argparse.ArgumentTypeError(msg)
@@ -323,7 +322,7 @@ class save_file_path(_ParseType):
 
 
 class dir_path(_ParseType):
-    def __call__(self, string: builtins.str) -> builtins.str:
+    def __call__(self, string: str) -> str:
         path = pathlib.Path(string)
         if not path.is_dir():
             msg = f"'{string}' is not a valid directory path."
@@ -332,7 +331,7 @@ class dir_path(_ParseType):
 
 
 class file_path(_ParseType):
-    def __call__(self, string: builtins.str) -> builtins.str:
+    def __call__(self, string: str) -> str:
         path = pathlib.Path(string)
         if not path.is_file():
             msg = f"'{string}' is not a valid file path."
@@ -341,7 +340,7 @@ class file_path(_ParseType):
 
 
 class positive_float(_ParseType):
-    def __call__(self, string: builtins.str) -> builtins.float:
+    def __call__(self, string: str) -> float:
         num = float(string)
         if num <= 0.0:
             msg = f"'{string}' needs to be a positive float."
@@ -350,7 +349,7 @@ class positive_float(_ParseType):
 
 
 class positive_int(_ParseType):
-    def __call__(self, string: builtins.str) -> builtins.int:
+    def __call__(self, string: str) -> int:
         num = int(string)
         if num <= 0:
             msg = f"'{string}' needs to be a positive integer."
@@ -360,7 +359,7 @@ class positive_int(_ParseType):
 
 class positive_odd_int_or_none(_ParseType):
     @return_none
-    def __call__(self, string: builtins.str) -> builtins.int | None:
+    def __call__(self, string: str) -> int | None:
         num = int(string)
         if num <= 0 or not (num % 2):
             msg = f"'{string}' needs to be a positive odd integer."
@@ -370,12 +369,12 @@ class positive_odd_int_or_none(_ParseType):
 
 class positive_int_or_none(_ParseType):
     @return_none
-    def __call__(self, string: builtins.str) -> builtins.int | None:
+    def __call__(self, string: str) -> int | None:
         return positive_int()(string)
 
 
 class nonnegative_int(_ParseType):
-    def __call__(self, string: builtins.str) -> builtins.int:
+    def __call__(self, string: str) -> int:
         num = int(string)
         if num < 0:
             msg = f"'{string}' needs to be a non-negative integer."
@@ -384,7 +383,7 @@ class nonnegative_int(_ParseType):
 
 
 class nonnegative_float(_ParseType):
-    def __call__(self, string: builtins.str) -> builtins.float:
+    def __call__(self, string: str) -> float:
         num = float(string)
         if num < 0.0:
             msg = f"'{string}' needs to be a non-negative float."
@@ -393,7 +392,7 @@ class nonnegative_float(_ParseType):
 
 
 class probability_float(_ParseType):
-    def __call__(self, string: builtins.str) -> builtins.float:
+    def __call__(self, string: str) -> float:
         num = float(string)
         if num < 0.0 or num > 1.0:
             msg = f"'{string}' needs to be between 0 and 1."
@@ -403,14 +402,12 @@ class probability_float(_ParseType):
 
 class probability_float_or_none(_ParseType):
     @return_none
-    def __call__(self, string: builtins.str) -> builtins.float | None:
+    def __call__(self, string: str) -> float | None:
         return probability_float()(string)
 
 
 class NewParseType:
-    def __init__(
-        self, func: typing.Callable[[typing.Any], typing.Any], name: builtins.str
-    ):
+    def __init__(self, func: typing.Callable[[typing.Any], typing.Any], name: str):
         self.name = name
         self.func = func
 
@@ -422,7 +419,7 @@ class NewParseType:
 
 
 def new_parse_type(
-    func: typing.Callable[[typing.Any], typing.Any], name: builtins.str
+    func: typing.Callable[[typing.Any], typing.Any], name: str
 ) -> NewParseType:
     return NewParseType(func, name)
 
@@ -432,8 +429,8 @@ T_co = typing.TypeVar("T_co", bound="ImageLike", covariant=True)
 U_co = typing.TypeVar("U_co", bound="ImageLike", covariant=True)
 
 NBit = typing.TypeVar("NBit", bound=npt.NBitBase)
-Float = typing.Union[np.floating[NBit], builtins.float]
-Int = typing.Union[np.integer[NBit], builtins.int]
+Float = typing.Union[np.floating[NBit], float]
+Int = typing.Union[np.integer[NBit], int]
 
 
 class ImageLike(typing.Protocol[S_co, T_co, U_co]):
@@ -487,7 +484,7 @@ class ImageLike(typing.Protocol[S_co, T_co, U_co]):
 
     def any(
         self,
-        axis: builtins.int | builtins.tuple[builtins.int, ...] | None = None,
+        axis: int | tuple[int, ...] | None = None,
     ) -> typing.Any:
         ...
 
@@ -498,16 +495,16 @@ class ImageLike(typing.Protocol[S_co, T_co, U_co]):
         ...
 
     @property
-    def shape(self) -> builtins.tuple[builtins.int, ...]:
+    def shape(self) -> tuple[int, ...]:
         ...
 
-    def mean(self) -> builtins.float:
+    def mean(self) -> float:
         ...
 
-    def std(self) -> builtins.float:
+    def std(self) -> float:
         ...
 
-    def min(self) -> builtins.float:
+    def min(self) -> float:
         ...
 
     def flatten(self: T_co) -> T_co:
@@ -520,5 +517,5 @@ class ImageLike(typing.Protocol[S_co, T_co, U_co]):
     ) -> T_co:
         ...
 
-    def transpose(self: T_co, *axes: builtins.int) -> T_co:
+    def transpose(self: T_co, *axes: int) -> T_co:
         ...

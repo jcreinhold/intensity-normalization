@@ -8,7 +8,6 @@ from __future__ import annotations
 __all__ = ["WhiteStripeNormalize"]
 
 import argparse
-import builtins
 import typing
 
 import numpy as np
@@ -25,10 +24,10 @@ class WhiteStripeNormalize(
     def __init__(
         self,
         *,
-        norm_value: builtins.float = 1.0,
-        width: builtins.float = 0.05,
-        width_l: builtins.float | None = None,
-        width_u: builtins.float | None = None,
+        norm_value: float = 1.0,
+        width: float = 0.05,
+        width_l: float | None = None,
+        width_u: float | None = None,
         **kwargs: typing.Any,
     ):
         """
@@ -49,8 +48,8 @@ class WhiteStripeNormalize(
         mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modality = intnormt.Modality.T1,
-    ) -> builtins.float:
-        loc: builtins.float = image[self.whitestripe].mean()
+    ) -> float:
+        loc: float = image[self.whitestripe].mean()
         return loc
 
     def calculate_scale(
@@ -60,8 +59,8 @@ class WhiteStripeNormalize(
         mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modality = intnormt.Modality.T1,
-    ) -> builtins.float:
-        scale: builtins.float = image[self.whitestripe].std()
+    ) -> float:
+        scale: float = image[self.whitestripe].std()
         return scale
 
     def setup(
@@ -78,27 +77,27 @@ class WhiteStripeNormalize(
         masked = image * mask
         voi = image[mask]
         wm_mode = intnormhisttool.get_tissue_mode(voi, modality=modality)
-        wm_mode_quantile: builtins.float = np.mean(voi < wm_mode).item()
+        wm_mode_quantile: float = np.mean(voi < wm_mode).item()
         lower_bound = max(wm_mode_quantile - self.width_l, 0.0)
         upper_bound = min(wm_mode_quantile + self.width_u, 1.0)
-        ws_l: builtins.float
-        ws_u: builtins.float
-        ws_l, ws_u = np.quantile(voi, (lower_bound, upper_bound))  # type: ignore[misc]
+        ws_l: float
+        ws_u: float
+        ws_l, ws_u = np.quantile(voi, (lower_bound, upper_bound))
         self.whitestripe = (masked > ws_l) & (masked < ws_u)
 
     def teardown(self) -> None:
         del self.whitestripe
 
     @staticmethod
-    def name() -> builtins.str:
+    def name() -> str:
         return "ws"
 
     @staticmethod
-    def fullname() -> builtins.str:
+    def fullname() -> str:
         return "WhiteStripe"
 
     @staticmethod
-    def description() -> builtins.str:
+    def description() -> str:
         return "Standardize the normal appearing WM of a MR image."
 
     @staticmethod

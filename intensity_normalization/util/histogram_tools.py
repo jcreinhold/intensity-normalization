@@ -3,6 +3,8 @@ Author: Jacob Reinhold <jcreinhold@gmail.com>
 Created on: 01 Jun 2021
 """
 
+from __future__ import annotations
+
 __all__ = [
     "get_first_tissue_mode",
     "get_largest_tissue_mode",
@@ -10,8 +12,6 @@ __all__ = [
     "get_tissue_mode",
     "smooth_histogram",
 ]
-
-import builtins
 
 import numpy as np
 import scipy.signal
@@ -23,7 +23,7 @@ import intensity_normalization.typing as intnormt
 
 def smooth_histogram(
     image: intnormt.ImageLike, /
-) -> builtins.tuple[intnormt.ImageLike, intnormt.ImageLike]:
+) -> tuple[intnormt.ImageLike, intnormt.ImageLike]:
     """Use kernel density estimate to get smooth histogram
 
     Args:
@@ -42,7 +42,7 @@ def smooth_histogram(
     return grid, pdf
 
 
-def get_largest_tissue_mode(image: intnormt.ImageLike, /) -> builtins.float:
+def get_largest_tissue_mode(image: intnormt.ImageLike, /) -> float:
     """Mode of the largest tissue class
 
     Args:
@@ -52,7 +52,7 @@ def get_largest_tissue_mode(image: intnormt.ImageLike, /) -> builtins.float:
         largest_tissue_mode: value of the largest tissue mode
     """
     grid, pdf = smooth_histogram(image)
-    largest_tissue_mode: builtins.float = float(grid[int(np.argmax(pdf))])
+    largest_tissue_mode: float = float(grid[int(np.argmax(pdf))])
     return largest_tissue_mode
 
 
@@ -60,9 +60,9 @@ def get_last_tissue_mode(
     image: intnormt.ImageLike,
     /,
     *,
-    remove_tail: builtins.bool = True,
-    tail_percentage: builtins.float = 96.0,
-) -> builtins.float:
+    remove_tail: bool = True,
+    tail_percentage: float = 96.0,
+) -> float:
     """Mode of the highest-intensity tissue class
 
     Args:
@@ -78,7 +78,7 @@ def get_last_tissue_mode(
         msg = f"'tail_percentage' must be in (0, 100). Got '{tail_percentage}'."
         raise ValueError(msg)
     if remove_tail:
-        threshold: builtins.float = float(np.percentile(image, tail_percentage))
+        threshold: float = float(np.percentile(image, tail_percentage))
         valid_mask: intnormt.ImageLike = image <= threshold
         image = image[valid_mask]
     grid, pdf = smooth_histogram(image)
@@ -91,9 +91,9 @@ def get_first_tissue_mode(
     image: intnormt.ImageLike,
     /,
     *,
-    remove_tail: builtins.bool = True,
-    tail_percentage: builtins.float = 99.0,
-) -> builtins.float:
+    remove_tail: bool = True,
+    tail_percentage: float = 99.0,
+) -> float:
     """Mode of the lowest-intensity tissue class
 
     Args:
@@ -109,7 +109,7 @@ def get_first_tissue_mode(
         msg = f"'tail_percentage' must be in (0, 100). Got '{tail_percentage}'."
         raise ValueError(msg)
     if remove_tail:
-        threshold: builtins.float = float(np.percentile(image, tail_percentage))
+        threshold: float = float(np.percentile(image, tail_percentage))
         valid_mask: intnormt.ImageLike = image <= threshold
         image = image[valid_mask]
     grid, pdf = smooth_histogram(image)
@@ -120,7 +120,7 @@ def get_first_tissue_mode(
 
 def get_tissue_mode(
     image: intnormt.ImageLike, /, *, modality: intnormt.Modality
-) -> builtins.float:
+) -> float:
     """Find the appropriate tissue mode given a modality"""
     modality_ = modality.value
     if modality_ in intnorm.PEAK["last"]:

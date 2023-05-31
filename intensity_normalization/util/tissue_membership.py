@@ -8,7 +8,6 @@ from __future__ import annotations
 __all__ = ["find_tissue_memberships", "TissueMembershipFinder"]
 
 import argparse
-import builtins
 import operator
 import typing
 
@@ -27,8 +26,8 @@ def find_tissue_memberships(
     /,
     mask: intnormt.ImageLike | None = None,
     *,
-    hard_segmentation: builtins.bool = False,
-    n_classes: builtins.int = 3,
+    hard_segmentation: bool = False,
+    n_classes: int = 3,
 ) -> mioi.Image:
     """Tissue memberships for a T1-w brain image with fuzzy c-means
 
@@ -50,7 +49,7 @@ def find_tissue_memberships(
     else:
         mask = mask > 0.0
     assert mask is not None
-    foreground_size = mask.sum()
+    foreground_size = typing.cast(int, mask.sum())
     foreground = _image[mask].reshape(-1, foreground_size)
     centers, memberships_, *_ = cmeans(foreground, n_classes, 2, 0.005, 50)
     # sort the tissue memberships to CSF/GM/WM (assuming T1-w image)
@@ -66,14 +65,14 @@ def find_tissue_memberships(
         tissue_mask = tmp_mask
     affine: npt.NDArray | None
     if hasattr(image, "affine"):
-        affine = image.affine.copy()  # type: ignore[attr-defined]
+        affine = image.affine.copy()
     else:
         affine = None
     return mioi.Image(tissue_mask, affine=affine)
 
 
 class TissueMembershipFinder(intnormcli.SingleImageCLI):
-    def __init__(self, hard_segmentation: builtins.bool = False):
+    def __init__(self, hard_segmentation: bool = False):
         super().__init__()
         self.hard_segmentation = hard_segmentation
 
@@ -92,22 +91,22 @@ class TissueMembershipFinder(intnormcli.SingleImageCLI):
         return tissue_memberships
 
     @staticmethod
-    def name() -> builtins.str:
+    def name() -> str:
         return "tm"
 
     @staticmethod
-    def fullname() -> builtins.str:
+    def fullname() -> str:
         return "tissue_membership"
 
     @staticmethod
-    def description() -> builtins.str:
+    def description() -> str:
         return "Find tissue memberships of an MR image."
 
     @classmethod
     def get_parent_parser(
         cls,
-        desc: builtins.str,
-        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
+        desc: str,
+        valid_modalities: frozenset[str] = intnorm.VALID_MODALITIES,
         **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(

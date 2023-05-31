@@ -15,7 +15,6 @@ __all__ = [
 
 import abc
 import argparse
-import builtins
 import collections.abc
 import logging
 import pathlib
@@ -79,7 +78,7 @@ class NormalizeMixin(metaclass=abc.ABCMeta):
 
     @staticmethod
     def skull_stripped_foreground(
-        image: intnormt.ImageLike, /, *, background_threshold: builtins.float = 1e-6
+        image: intnormt.ImageLike, /, *, background_threshold: float = 1e-6
     ) -> intnormt.ImageLike:
         if image.min() < 0.0:
             msg = "Data contains negative values; "
@@ -97,7 +96,7 @@ class NormalizeMixin(metaclass=abc.ABCMeta):
         mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modality = intnormt.Modality.T1,
-        background_threshold: builtins.float = 1e-6,
+        background_threshold: float = 1e-6,
     ) -> intnormt.ImageLike:
         if mask is None:
             mask = self.skull_stripped_foreground(
@@ -119,7 +118,7 @@ class NormalizeMixin(metaclass=abc.ABCMeta):
 
 
 class LocationScaleMixin(NormalizeMixin, metaclass=abc.ABCMeta):
-    def __init__(self, *, norm_value: builtins.float = 1.0, **kwargs: typing.Any):
+    def __init__(self, *, norm_value: float = 1.0, **kwargs: typing.Any):
         super().__init__(**kwargs)
         self.norm_value = norm_value
 
@@ -131,7 +130,7 @@ class LocationScaleMixin(NormalizeMixin, metaclass=abc.ABCMeta):
         mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modality = intnormt.Modality.T1,
-    ) -> builtins.float:
+    ) -> float:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -142,7 +141,7 @@ class LocationScaleMixin(NormalizeMixin, metaclass=abc.ABCMeta):
         mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modality = intnormt.Modality.T1,
-    ) -> builtins.float:
+    ) -> float:
         raise NotImplementedError
 
     def normalize_image(
@@ -170,8 +169,9 @@ class NormalizeCLIMixin(NormalizeMixin, intnormcli.CLIMixin, metaclass=abc.ABCMe
         *,
         out_path: intnormt.PathLike | None = None,
         modality: intnormt.Modality = intnormt.Modality.T1,
-    ) -> builtins.tuple[mioi.Image, mioi.Image | None]:
-        image = mioi.Image.from_path(image_path)
+    ) -> tuple[mioi.Image, mioi.Image | None]:
+        image: mioi.Image = mioi.Image.from_path(image_path)
+        mask: typing.Optional[mioi.Image]
         mask = None if mask_path is None else mioi.Image.from_path(mask_path)
         if out_path is None:
             out_path = self.append_name_to_file(image_path)
@@ -186,8 +186,8 @@ class NormalizeCLIMixin(NormalizeMixin, intnormcli.CLIMixin, metaclass=abc.ABCMe
     @classmethod
     def get_parent_parser(
         cls,
-        desc: builtins.str,
-        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
+        desc: str,
+        valid_modalities: frozenset[str] = intnorm.VALID_MODALITIES,
         **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = super().get_parent_parser(
@@ -224,8 +224,8 @@ class LocationScaleCLIMixin(LocationScaleMixin, NormalizeCLIMixin):
     @classmethod
     def get_parent_parser(
         cls,
-        desc: builtins.str,
-        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
+        desc: str,
+        valid_modalities: frozenset[str] = intnorm.VALID_MODALITIES,
         **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = super().get_parent_parser(
@@ -298,15 +298,15 @@ class SampleNormalizeCLIMixin(NormalizeCLIMixin, intnormcli.CLIMixin):
         mask_dir: intnormt.PathLike | None = None,
         *,
         modality: intnormt.Modality = intnormt.Modality.T1,
-        ext: builtins.str = "nii*",
-        return_normalized_and_masks: builtins.bool = False,
+        ext: str = "nii*",
+        return_normalized_and_masks: bool = False,
         **kwargs: typing.Any,
-    ) -> builtins.tuple[ImageSeq, MaskSeqOrNone] | None:
+    ) -> tuple[ImageSeq, MaskSeqOrNone] | None:
         logger.debug("Grabbing images")
         images, masks = intnormio.gather_images_and_masks(image_dir, mask_dir, ext=ext)
         self.fit(images, masks, modality=modality, **kwargs)
         if return_normalized_and_masks:
-            normalized: builtins.list[intnormt.ImageLike] = []
+            normalized: list[intnormt.ImageLike] = []
             n_images = len(images)
             zipped = intnormio.zip_with_nones(images, masks)
             for i, (image, mask) in enumerate(zipped, 1):
@@ -339,7 +339,7 @@ class SampleNormalizeCLIMixin(NormalizeCLIMixin, intnormcli.CLIMixin):
         args: argparse.Namespace,
         /,
         *,
-        use_masks_in_plot: builtins.bool = True,
+        use_masks_in_plot: bool = True,
         **kwargs: typing.Any,
     ) -> None:
         out = self.process_directories(
@@ -408,7 +408,7 @@ class DirectoryNormalizeCLI(
         *,
         modality: intnormt.Modality = intnormt.Modality.T1,
         **kwargs: typing.Any,
-    ) -> builtins.tuple[ImageSeq, MaskSeqOrNone]:
+    ) -> tuple[ImageSeq, MaskSeqOrNone]:
         assert len(images) > 0
         logger.info("Loading data")
         if hasattr(images[0], "get_fdata"):
@@ -426,10 +426,10 @@ class DirectoryNormalizeCLI(
         mask_dir: intnormt.PathLike | None = None,
         *,
         modality: intnormt.Modality = intnormt.Modality.T1,
-        ext: builtins.str = "nii*",
-        return_normalized_and_masks: builtins.bool = False,
+        ext: str = "nii*",
+        return_normalized_and_masks: bool = False,
         **kwargs: typing.Any,
-    ) -> builtins.tuple[ImageSeq, MaskSeqOrNone] | None:
+    ) -> tuple[ImageSeq, MaskSeqOrNone] | None:
         return self.process_directories(
             image_dir,
             mask_dir,

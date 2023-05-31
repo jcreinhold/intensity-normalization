@@ -13,7 +13,6 @@ __all__ = [
     "zip_with_nones",
 ]
 
-import builtins
 import collections.abc
 import pathlib
 import typing
@@ -22,15 +21,15 @@ import pymedio.image as mioi
 
 import intensity_normalization.typing as intnormt
 
-PymedioImageList = builtins.list[mioi.Image]
+PymedioImageList = list[mioi.Image]
 PymedioMaskListOrNone = typing.Union[PymedioImageList, None]
 
 
 def gather_images(
     dirpath: intnormt.PathLike,
     *,
-    ext: builtins.str = "nii*",
-    exclude: collections.abc.Sequence[builtins.str] = (),
+    ext: str = "nii*",
+    exclude: collections.abc.Sequence[str] = (),
 ) -> PymedioImageList:
     """return all images of extension `ext` from a directory"""
     if not isinstance(dirpath, pathlib.Path):
@@ -40,7 +39,7 @@ def gather_images(
     image_filenames = glob_ext(dirpath, ext=ext, exclude=exclude)
     images: PymedioImageList = []
     for fn in image_filenames:
-        image = mioi.Image.from_path(fn)
+        image: mioi.Image = mioi.Image.from_path(fn)
         images.append(image)
     return images
 
@@ -49,9 +48,9 @@ def gather_images_and_masks(
     image_dir: intnormt.PathLike,
     mask_dir: intnormt.PathLike | None = None,
     *,
-    ext: builtins.str = "nii*",
-    exclude: collections.abc.Sequence[builtins.str] = (),
-) -> builtins.tuple[PymedioImageList, PymedioMaskListOrNone]:
+    ext: str = "nii*",
+    exclude: collections.abc.Sequence[str] = (),
+) -> tuple[PymedioImageList, PymedioMaskListOrNone]:
     images = gather_images(image_dir, ext=ext, exclude=exclude)
     masks: PymedioMaskListOrNone
     if mask_dir is not None:
@@ -64,9 +63,9 @@ def gather_images_and_masks(
 def glob_ext(
     dirpath: intnormt.PathLike,
     *,
-    ext: builtins.str = "nii*",
-    exclude: collections.abc.Sequence[builtins.str] = (),
-) -> builtins.list[pathlib.Path]:
+    ext: str = "nii*",
+    exclude: collections.abc.Sequence[str] = (),
+) -> list[pathlib.Path]:
     """return a sorted list of ext files for a given directory path"""
     dirpath = pathlib.Path(dirpath)
     if not dirpath.is_dir():
@@ -83,7 +82,7 @@ def split_filename(
     filepath: intnormt.PathLike,
     /,
     *,
-    resolve: builtins.bool = False,
+    resolve: bool = False,
 ) -> intnormt.SplitFilename:
     """split a filepath into the directory, base, and extension
     Examples:
@@ -107,7 +106,7 @@ def split_filename(
     return intnormt.SplitFilename(pathlib.Path(path), base, ext)
 
 
-Zipped = typing.Generator[builtins.tuple[typing.Any, ...], None, None]
+Zipped = typing.Generator[tuple[typing.Any, ...], None, None]
 
 
 def zip_with_nones(*args: typing.Sequence[typing.Any] | None) -> Zipped:
@@ -118,9 +117,9 @@ def zip_with_nones(*args: typing.Sequence[typing.Any] | None) -> Zipped:
         1 None a
         2 None b
     """
-    _args: builtins.list[typing.Any] = list(args)
-    none_indices: builtins.list[builtins.int] = []
-    length: builtins.int | None = None
+    _args: list[typing.Any] = list(args)
+    none_indices: list[int] = []
+    length: int | None = None
     for i, seq_or_none in enumerate(args):
         try:
             _length = len(seq_or_none)  # type: ignore[arg-type]
@@ -134,7 +133,7 @@ def zip_with_nones(*args: typing.Sequence[typing.Any] | None) -> Zipped:
             elif length is not None and length != _length:
                 raise RuntimeError("All sequences should be the same length.")
 
-    def nones(length: builtins.int) -> typing.Generator[None, None, None]:
+    def nones(length: int) -> typing.Generator[None, None, None]:
         for _ in range(length):
             yield None
 

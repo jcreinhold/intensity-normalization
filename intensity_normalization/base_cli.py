@@ -9,7 +9,6 @@ __all__ = ["CLIMixin", "DirectoryCLI", "setup_log", "SingleImageCLI"]
 
 import abc
 import argparse
-import builtins
 import logging
 import pathlib
 import sys
@@ -27,7 +26,7 @@ logger = logging.getLogger(__name__)
 T = typing.TypeVar("T")
 
 
-def setup_log(verbosity: builtins.int) -> None:
+def setup_log(verbosity: int) -> None:
     """set logger with verbosity logging level and message"""
     if verbosity == 1:
         level = logging.getLevelName("INFO")
@@ -41,22 +40,22 @@ def setup_log(verbosity: builtins.int) -> None:
 
 
 class CLIMixin(metaclass=abc.ABCMeta):
-    def __str__(self) -> builtins.str:
+    def __str__(self) -> str:
         return self.__class__.__name__
 
     @staticmethod
     @abc.abstractmethod
-    def description() -> builtins.str:
+    def description() -> str:
         raise NotImplementedError
 
     @staticmethod
     @abc.abstractmethod
-    def name() -> builtins.str:
+    def name() -> str:
         raise NotImplementedError
 
     @staticmethod
     @abc.abstractmethod
-    def fullname() -> builtins.str:
+    def fullname() -> str:
         raise NotImplementedError
 
     def append_name_to_file(
@@ -75,8 +74,8 @@ class CLIMixin(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def get_parent_parser(
         cls,
-        desc: builtins.str,
-        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
+        desc: str,
+        valid_modalities: frozenset[str] = intnorm.VALID_MODALITIES,
         **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         raise NotImplementedError
@@ -96,7 +95,7 @@ class CLIMixin(metaclass=abc.ABCMeta):
     @classmethod
     def main(
         cls, parser: argparse.ArgumentParser
-    ) -> typing.Callable[[intnormt.ArgType], builtins.int]:
+    ) -> typing.Callable[[intnormt.ArgType], int]:
         def _main(args: intnormt.ArgType = None) -> int:
             if args is None:
                 if len(sys.argv) == 2 and sys.argv[1] == "--version":
@@ -148,8 +147,8 @@ class SingleImageCLI(CLIMixin, metaclass=abc.ABCMeta):
     @classmethod
     def get_parent_parser(
         cls,
-        desc: builtins.str,
-        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
+        desc: str,
+        valid_modalities: frozenset[str] = intnorm.VALID_MODALITIES,
         **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
@@ -222,8 +221,8 @@ class DirectoryCLI(CLIMixin, metaclass=abc.ABCMeta):
     @classmethod
     def get_parent_parser(
         cls,
-        desc: builtins.str,
-        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
+        desc: str,
+        valid_modalities: frozenset[str] = intnorm.VALID_MODALITIES,
         **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(

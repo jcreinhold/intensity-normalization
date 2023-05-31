@@ -7,7 +7,6 @@ from __future__ import annotations
 
 __all__ = ["KDENormalize"]
 
-import builtins
 import typing
 
 import intensity_normalization.normalize.base as intnormb
@@ -16,7 +15,7 @@ import intensity_normalization.util.histogram_tools as intnormhisttool
 
 
 class KDENormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalizeCLI):
-    def __init__(self, norm_value: builtins.float = 1.0, **kwargs: typing.Any):
+    def __init__(self, norm_value: float = 1.0, **kwargs: typing.Any):
         """
         Use kernel density estimation to fit a smoothed histogram of intensities
         of a (skull-stripped) brain MR image, then find the peak of the white

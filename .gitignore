@@ -110,3 +110,6 @@ ENV/
 
 # Mac
 .DS_Store
+
+# conda
+.conda/

@@ -8,7 +8,6 @@ from __future__ import annotations
 __all__ = ["LeastSquaresNormalize"]
 
 import argparse
-import builtins
 import collections.abc
 import logging
 import pathlib
@@ -36,7 +35,7 @@ class LeastSquaresNormalize(
     def __init__(self, *, norm_value: float = 1.0, **kwargs: typing.Any):
         """Minimize the distance tissue means in a set of images via least-squares"""
         super().__init__(norm_value=norm_value, **kwargs)
-        self.tissue_memberships: builtins.list[mioi.Image] = []
+        self.tissue_memberships: list[mioi.Image] = []
         self.standard_tissue_means: npt.NDArray | None = None
 
     def calculate_location(
@@ -125,18 +124,18 @@ class LeastSquaresNormalize(
         ]
         return np.asarray([weighted_avgs]).T
 
-    def scaling_factor(self, tissue_means: npt.NDArray) -> builtins.float:
+    def scaling_factor(self, tissue_means: npt.NDArray) -> float:
         numerator = tissue_means.T @ tissue_means
         denominator = tissue_means.T @ self.standard_tissue_means
-        sf: builtins.float = (numerator / denominator).item()
+        sf: float = (numerator / denominator).item()
         return sf
 
     @staticmethod
-    def name() -> builtins.str:
+    def name() -> str:
         return "lsq"
 
     @staticmethod
-    def fullname() -> builtins.str:
+    def fullname() -> str:
         return "Least Squares"
 
     @staticmethod
@@ -167,7 +166,7 @@ class LeastSquaresNormalize(
             raise RuntimeError(msg)
         for memberships, norm, fn in zip(self.tissue_memberships, normed, image_fns):
             if hasattr(norm, "affine"):
-                tissue_memberships = mioi.Image(memberships, norm.affine)
+                tissue_memberships: mioi.Image = mioi.Image(memberships, norm.affine)
             elif hasattr(memberships, "affine"):
                 tissue_memberships = mioi.Image(memberships, memberships.affine)
             else:
@@ -203,7 +202,7 @@ class LeastSquaresNormalize(
     ) -> None:
         if args.load_standard_tissue_means is not None:
             self.load_standard_tissue_means(args.load_standard_tissue_means)
-            self.fit = lambda *args, **kwargs: None  # type: ignore[assignment]
+            self.fit = lambda *args, **kwargs: None  # type: ignore[method-assign]
 
         args.modality = intnormt.Modality.from_string(args.modality)
         use_masks = True
@@ -219,8 +218,8 @@ class LeastSquaresNormalize(
     @classmethod
     def get_parent_parser(
         cls,
-        desc: builtins.str,
-        valid_modalities: builtins.frozenset[builtins.str] = intnorm.VALID_MODALITIES,
+        desc: str,
+        valid_modalities: frozenset[str] = intnorm.VALID_MODALITIES,
         **kwargs: typing.Any,
     ) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(

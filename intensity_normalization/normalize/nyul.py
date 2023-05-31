@@ -8,7 +8,6 @@ from __future__ import annotations
 __all__ = ["NyulNormalize"]
 
 import argparse
-import builtins
 import collections.abc
 import typing
 
@@ -26,13 +25,13 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
     def __init__(
         self,
         *,
-        output_min_value: builtins.float = 1.0,
-        output_max_value: builtins.float = 100.0,
-        min_percentile: builtins.float = 1.0,
-        max_percentile: builtins.float = 99.0,
-        percentile_after_min: builtins.float = 10.0,
-        percentile_before_max: builtins.float = 90.0,
-        percentile_step: builtins.float = 10.0,
+        output_min_value: float = 1.0,
+        output_max_value: float = 100.0,
+        min_percentile: float = 1.0,
+        max_percentile: float = 99.0,
+        percentile_after_min: float = 10.0,
+        percentile_before_max: float = 90.0,
+        percentile_step: float = 10.0,
     ):
         """Nyul & Udupa piecewise linear histogram matching normalization
 
@@ -87,13 +86,13 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
                 self.percentile_step,
             )
             _percs = ([self.min_percentile], percs, [self.max_percentile])
-            self._percentiles = np.concatenate(_percs)
+            self._percentiles = np.concatenate(_percs)  # type: ignore[arg-type]
         assert isinstance(self._percentiles, np.ndarray)
         return self._percentiles
 
     def get_landmarks(self, image: intnormt.ImageLike, /) -> npt.NDArray:
         landmarks = np.percentile(image, self.percentiles)
-        return landmarks  # type: ignore[return-value]
+        return typing.cast(npt.NDArray, landmarks)
 
     def _fit(
         self,
@@ -146,15 +145,15 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
         self._percentiles = data[1, :]
 
     @staticmethod
-    def name() -> builtins.str:
+    def name() -> str:
         return "nyul"
 
     @staticmethod
-    def fullname() -> builtins.str:
+    def fullname() -> str:
         return "Nyul & Udupa"
 
     @staticmethod
-    def description() -> builtins.str:
+    def description() -> str:
         desc = "Perform piecewise-linear histogram matching per "
         desc += "Nyul and Udupa given a set of MR images."
         return desc
@@ -232,7 +231,7 @@ class NyulNormalize(intnormb.DirectoryNormalizeCLI):
     ) -> None:
         if args.load_standard_histogram is not None:
             self.load_standard_histogram(args.load_standard_histogram)
-            self.fit = lambda *args, **kwargs: None  # type: ignore[assignment]
+            self.fit = lambda *args, **kwargs: None  # type: ignore[method-assign]
         super().call_from_argparse_args(args)
 
     @classmethod

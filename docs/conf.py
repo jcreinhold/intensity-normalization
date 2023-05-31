@@ -16,7 +16,6 @@
 # relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
 
-import builtins
 import os
 import sys
 import typing
@@ -68,7 +67,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "intensity-normalization"
-copyright = "2021, Jacob Reinhold"
+copyright = "2023, Jacob Reinhold"
 author = "Jacob Reinhold"
 
 # The version info for the project you're documenting, acts as replacement
@@ -85,7 +84,7 @@ release = intensity_normalization.__version__
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -126,7 +125,7 @@ htmlhelp_basename = "intensity_normalizationdoc"
 
 # -- Options for LaTeX output ------------------------------------------
 
-latex_elements: builtins.dict[builtins.str, typing.Any] = {
+latex_elements: dict[str, typing.Any] = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',

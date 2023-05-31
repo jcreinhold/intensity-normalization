@@ -8,7 +8,6 @@ from __future__ import annotations
 __all__ = ["ZScoreNormalize"]
 
 import argparse
-import builtins
 import typing
 
 import intensity_normalization.errors as intnorme
@@ -17,7 +16,7 @@ import intensity_normalization.typing as intnormt
 
 
 class ZScoreNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormalizeCLI):
-    def __init__(self, *, norm_value: builtins.float = 1.0, **kwargs: typing.Any):
+    def __init__(self, *, norm_value: float = 1.0, **kwargs: typing.Any):
         """Voxel-wise subtract the mean and divide by the standard deviation."""
         super().__init__(norm_value=norm_value, **kwargs)
         self.voi: intnormt.ImageLike | None = None
@@ -29,10 +28,10 @@ class ZScoreNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormal
         mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modality = intnormt.Modality.T1,
-    ) -> builtins.float:
+    ) -> float:
         if self.voi is None:
             raise intnorme.NormalizationError("'voi' needs to be set.")
-        loc: builtins.float = float(self.voi.mean())
+        loc: float = float(self.voi.mean())
         return loc
 
     def calculate_scale(
@@ -42,10 +41,10 @@ class ZScoreNormalize(intnormb.LocationScaleCLIMixin, intnormb.SingleImageNormal
         mask: intnormt.ImageLike | None = None,
         *,
         modality: intnormt.Modality = intnormt.Modality.T1,
-    ) -> builtins.float:
+    ) -> float:
         if self.voi is None:
             raise intnorme.NormalizationError("'voi' needs to be set.")
-        scale: builtins.float = float(self.voi.std())
+        scale: float = float(self.voi.std())
         return scale
 
     def setup(

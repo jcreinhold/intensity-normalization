@@ -8,7 +8,6 @@ from __future__ import annotations
 __all__ = ["RavelNormalize"]
 
 import argparse
-import builtins
 import collections.abc
 import functools
 import logging
@@ -44,13 +43,13 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
     def __init__(
         self,
         *,
-        membership_threshold: builtins.float = 0.99,
-        register: builtins.bool = True,
-        num_unwanted_factors: builtins.int = 1,
-        sparse_svd: builtins.bool = False,
-        whitestripe_kwargs: builtins.dict[builtins.str, typing.Any] | None = None,
-        quantile_to_label_csf: builtins.float = 1.0,
-        masks_are_csf: builtins.bool = False,
+        membership_threshold: float = 0.99,
+        register: bool = True,
+        num_unwanted_factors: int = 1,
+        sparse_svd: bool = False,
+        whitestripe_kwargs: dict[str, typing.Any] | None = None,
+        quantile_to_label_csf: float = 1.0,
+        masks_are_csf: bool = False,
     ):
         """Normalize a set of co-registered images with WhiteStripe and a CSF correction
 
@@ -83,7 +82,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         self._template: intnormt.ImageLike | None = None
         self._template_mask: intnormt.ImageLike | None = None
         self._normalized: intnormt.ImageLike | None = None
-        self._control_masks: builtins.list[intnormt.ImageLike] = []
+        self._control_masks: list[intnormt.ImageLike] = []
 
     def normalize_image(
         self,
@@ -121,7 +120,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
             self._template_mask = None
         else:
             if hasattr(template_mask, "astype"):
-                template_mask = template_mask.astype(np.uint32)  # type: ignore[union-attr] # noqa: E501
+                template_mask = template_mask.astype(np.uint32)
             self._template_mask = to_ants(template_mask)
 
     def use_mni_as_template(self) -> None:
@@ -180,7 +179,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         return normalized
 
     def _register(self, image: ants.ANTsImage) -> npt.NDArray:
-        registered = register(
+        registered: ants.ANTsImage = register(
             image,
             template=self.template,
             type_of_transform="SyN",
@@ -197,7 +196,7 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         masks: collections.abc.Sequence[intnormt.ImageLike] | None = None,
         *,
         modality: intnormt.Modality = intnormt.Modality.T1,
-    ) -> builtins.tuple[npt.NDArray, npt.NDArray]:
+    ) -> tuple[npt.NDArray, npt.NDArray]:
         """creates a matrix of images; rows correspond to voxels, columns are images
 
         Args:
@@ -311,18 +310,16 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
         mask_dir: intnormt.PathLike | None = None,
         *,
         modality: intnormt.Modality = intnormt.Modality.T1,
-        ext: builtins.str = "nii*",
-        return_normalized_and_masks: builtins.bool = False,
+        ext: str = "nii*",
+        return_normalized_and_masks: bool = False,
         **kwargs: typing.Any,
-    ) -> builtins.tuple[
-        builtins.list[mioi.Image], builtins.list[mioi.Image] | None
-    ] | None:
+    ) -> tuple[list[mioi.Image], list[mioi.Image] | None] | None:
         logger.debug("Gathering images.")
         images, masks = intnormio.gather_images_and_masks(image_dir, mask_dir, ext=ext)
         self.fit(images, masks, modality=modality, **kwargs)
         assert self._normalized is not None
         if return_normalized_and_masks:
-            norm_lst: builtins.list[mioi.Image] = []
+            norm_lst: list[mioi.Image] = []
             for normed, image in zip(self._normalized, images):
                 norm_lst.append(mioi.Image(normed.reshape(image.shape), image.affine))
             return norm_lst, masks
@@ -420,10 +417,11 @@ class RavelNormalize(intnormb.DirectoryNormalizeCLI):
             msg += "must be in correspondence."
             raise RuntimeError(msg)
         for _csf_mask, norm, fn in zip(self._control_masks, normed, image_fns):
+            csf_mask: mioi.Image
             if hasattr(norm, "affine"):
                 csf_mask = mioi.Image(_csf_mask, norm.affine)
             elif hasattr(_csf_mask, "affine"):
-                csf_mask = mioi.Image(_csf_mask, _csf_mask.affine)  # type: ignore[attr-defined] # noqa: E501
+                csf_mask = mioi.Image(_csf_mask, _csf_mask.affine)
             else:
                 csf_mask = mioi.Image(_csf_mask, None)
             base, name, ext = intnormio.split_filename(fn)
