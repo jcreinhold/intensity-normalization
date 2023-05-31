@@ -9,7 +9,7 @@ __description__ = "normalize the intensities of various MR image modalities"
 __url__ = "https://github.com/jcreinhold/intensity-normalization"
 __author__ = """Jacob Reinhold"""
 __email__ = "jcreinhold@gmail.com"
-__version__ = "2.2.3"
+__version__ = "2.2.4"
 __license__ = "Apache-2.0"
 __copyright__ = "Copyright 2023 Jacob Reinhold"
 
