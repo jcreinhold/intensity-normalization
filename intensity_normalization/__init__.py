@@ -10,7 +10,7 @@ __url__ = "https://github.com/jcreinhold/intensity-normalization"
 __author__ = """Jacob Reinhold"""
 __version__ = "2.2.4"
 __license__ = "Apache-2.0"
-__copyright__ = "Copyright 2023 Jacob Reinhold"
+__copyright__ = "Copyright 2025 Jacob Reinhold"
 
 PEAK = {
     "last": ("t1", "other", "last"),

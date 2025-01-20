@@ -67,7 +67,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "intensity-normalization"
-copyright = "2023, Jacob Reinhold"
+copyright = "2025, Jacob Reinhold"
 author = "Jacob Reinhold"
 
 # The version info for the project you're documenting, acts as replacement
