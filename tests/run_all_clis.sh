@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # Run all intensity-normalization CLIs on a directory of images
-# Author: Jacob Reinhold <jcreinhold@gmail.com>
 
 dry_run=false
 ext="nii.gz"

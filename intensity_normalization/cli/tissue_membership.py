@@ -1,7 +1,4 @@
-"""CLI for calculating tissue membership image
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 13 Oct 2021
-"""
+"""CLI for calculating tissue membership image."""
 
 __all__ = ["tissue_membership_main", "tissue_membership_parser"]
 

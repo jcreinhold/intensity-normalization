@@ -1,7 +1,4 @@
-"""RAVEL normalization (WhiteStripe then CSF correction)
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: Jun 02, 2021
-"""
+"""RAVEL normalization (WhiteStripe then CSF correction)."""
 
 from __future__ import annotations
 

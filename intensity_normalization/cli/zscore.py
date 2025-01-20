@@ -1,6 +1,6 @@
 """CLI for Z-Score normalization
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 13 Oct 2021
+
+
 """
 
 __all__ = ["zscore_main", "zscore_parser"]

@@ -1,7 +1,4 @@
-"""CLI for Nyul & Udupa normalization
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 13 Oct 2021
-"""
+"""CLI for Nyul & Udupa normalization."""
 
 __all__ = ["nyul_main", "nyul_parser"]
 

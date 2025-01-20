@@ -1,7 +1,4 @@
-"""CLI for plotting histograms of a set of images
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 13 Oct 2021
-"""
+"""CLI for plotting histograms of a set of images."""
 
 __all__ = ["histogram_main", "histogram_parser"]
 

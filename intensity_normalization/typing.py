@@ -1,7 +1,4 @@
-"""Project-specific types
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 01 Jun 2021
-"""
+"""Project-specific types."""
 
 from __future__ import annotations
 

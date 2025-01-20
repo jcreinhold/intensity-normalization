@@ -1,7 +1,4 @@
-"""Find the tissue-membership of a T1-w brain image
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 01 Jun 2021
-"""
+"""Find the tissue-membership of a T1-w brain image."""
 
 from __future__ import annotations
 

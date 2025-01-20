@@ -1,7 +1,4 @@
-"""CLI for MR image preprocessor
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 13 Oct 2021
-"""
+"""CLI for MR image preprocessor."""
 
 __all__ = ["preprocess_main", "preprocess_parser"]
 

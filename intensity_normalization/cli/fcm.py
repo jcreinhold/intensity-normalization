@@ -1,7 +1,4 @@
-"""CLI for fuzzy c-means tissue mean normalization
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 13 Oct 2021
-"""
+"""CLI for fuzzy c-means tissue mean normalization."""
 
 __all__ = ["fcm_main", "fcm_parser"]
 

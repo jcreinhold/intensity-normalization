@@ -1,7 +1,4 @@
-"""CLI for WhiteStripe normalization method
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 13 Oct 2021
-"""
+"""CLI for WhiteStripe normalization method."""
 
 __all__ = ["whitestripe_main", "whitestripe_parser"]
 

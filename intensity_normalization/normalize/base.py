@@ -1,7 +1,4 @@
-"""Base class for normalization methods
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 01 Jun 2021
-"""
+"""Base class for normalization methods."""
 # For MRO information use help(...) on a class and refer to the following
 # https://rhettinger.wordpress.com/2011/05/26/super-considered-super/
 

@@ -1,7 +1,4 @@
-"""WhiteStripe (normal-appearing white matter mean & standard deviation) normalization
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 01 Jun 2021
-"""
+"""WhiteStripe (normal-appearing white matter mean & standard deviation) normalization."""
 
 from __future__ import annotations
 

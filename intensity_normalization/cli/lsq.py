@@ -1,7 +1,4 @@
-"""Least-squares fit tissue mean normalization
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 13 Oct 2021
-"""
+"""Least-squares fit tissue mean normalization."""
 
 __all__ = ["lsq_main", "lsq_parser"]
 

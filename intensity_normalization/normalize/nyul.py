@@ -1,7 +1,4 @@
-"""Nyul & Udupa piecewise linear histogram matching normalization
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 02 Jun 2021
-"""
+"""Nyul & Udupa piecewise linear histogram matching normalization."""
 
 from __future__ import annotations
 

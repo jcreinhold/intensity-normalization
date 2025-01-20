@@ -1,7 +1,4 @@
-"""Plot histogram of the intensities of a set of images
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 02 Jun 2021
-"""
+"""Plot histogram of the intensities of a set of images."""
 
 from __future__ import annotations
 

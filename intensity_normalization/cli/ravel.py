@@ -1,7 +1,4 @@
-"""CLI for RAVEL normalization
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 13 Oct 2021
-"""
+"""CLI for RAVEL normalization."""
 
 __all__ = ["ravel_main", "ravel_parser"]
 

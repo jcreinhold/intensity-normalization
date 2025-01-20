@@ -1,7 +1,4 @@
-"""Fuzzy C-Means-based tissue mean normalization
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 01 Jun 2021
-"""
+"""Fuzzy C-Means-based tissue mean normalization."""
 
 from __future__ import annotations
 

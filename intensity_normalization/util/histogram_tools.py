@@ -1,6 +1,6 @@
 """Process the histograms of MR (brain) images
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 01 Jun 2021
+
+
 """
 
 from __future__ import annotations

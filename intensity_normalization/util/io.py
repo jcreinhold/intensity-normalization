@@ -1,6 +1,6 @@
 """Input/output utilities for the project
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 01 Jun 2021
+
+
 """
 
 from __future__ import annotations

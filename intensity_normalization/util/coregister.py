@@ -1,7 +1,4 @@
-"""Co-register images with ANTsPy
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 03 Jun 2021
-"""
+"""Co-register images with ANTsPy."""
 
 from __future__ import annotations
 

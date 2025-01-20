@@ -5,7 +5,7 @@ Credits
 Development Lead
 ----------------
 
-* Jacob Reinhold <jcreinhold@gmail.com>
+* Jacob Reinhold
 
 Contributors
 ------------

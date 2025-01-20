@@ -1,7 +1,4 @@
-"""Kernel density estimation-based tissue mode normalization
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 01 Jun 2021
-"""
+"""Kernel density estimation-based tissue mode normalization."""
 
 from __future__ import annotations
 

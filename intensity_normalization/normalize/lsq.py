@@ -1,7 +1,4 @@
-"""Least-squares fit tissue means of a set of images
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 01 Jun 2021
-"""
+"""Least-squares fit tissue means of a set of images."""
 
 from __future__ import annotations
 

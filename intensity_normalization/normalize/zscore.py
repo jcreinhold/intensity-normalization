@@ -1,7 +1,4 @@
-"""Z-score normalize image (voxel-wise subtract mean, divide by standard deviation)
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 01 Jun 2021
-"""
+"""Z-score normalize image (voxel-wise subtract mean, divide by standard deviation)."""
 
 from __future__ import annotations
 

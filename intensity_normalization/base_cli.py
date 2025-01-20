@@ -1,7 +1,4 @@
-"""CLI base class for normalization/preprocessing methods
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 06 Jun 2021
-"""
+"""CLI base class for normalization/preprocessing methods."""
 
 from __future__ import annotations
 

@@ -1,7 +1,4 @@
-"""Kernel density estimate tissue mode normalization CLI
-Author: Jacob Reinhold (jcreinhold@gmail.com)
-Created on: 13 Oct 2021
-"""
+"""Kernel density estimate tissue mode normalization CLI."""
 
 __all__ = ["kde_main", "kde_parser"]
 

@@ -1,12 +1,9 @@
-"""Preprocess MR images for image processing
+"""Preprocess MR images for image processing.
 
 Preprocess MR images according to a simple scheme:
 1) N4 bias field correction
 2) resample to X mm x Y mm x Z mm
 3) reorient images to specification
-
-Author: Jacob Reinhold <jcreinhold@gmail.com>
-Created on: 21 May 2018
 """
 
 from __future__ import annotations
