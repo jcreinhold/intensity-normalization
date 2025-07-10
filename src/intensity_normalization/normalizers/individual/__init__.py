@@ -1,0 +1,1 @@
+"""Individual image normalization methods."""
