@@ -1,5 +1,9 @@
 """High-level normalization service for orchestrating normalization operations."""
 
+import inspect
+from collections.abc import Sequence
+from typing import Any
+
 from intensity_normalization.domain.exceptions import ConfigurationError, NormalizationError
 from intensity_normalization.domain.models import NormalizationConfig
 from intensity_normalization.domain.protocols import BaseNormalizer, ImageProtocol, PopulationNormalizer
@@ -39,9 +43,9 @@ class NormalizationService:
 
     @staticmethod
     def normalize_images(
-        images: list[ImageProtocol],
+        images: Sequence[ImageProtocol],
         config: NormalizationConfig,
-        masks: list[ImageProtocol | None] | None = None,
+        masks: Sequence[ImageProtocol | None] | None = None,
     ) -> list[ImageProtocol]:
         """Normalize multiple images with method-appropriate fitting."""
         if len(images) == 0:
@@ -61,8 +65,8 @@ class NormalizationService:
     @staticmethod
     def _normalize_with_population_method(
         normalizer: BaseNormalizer,
-        images: list[ImageProtocol],
-        masks: list[ImageProtocol | None] | None,
+        images: Sequence[ImageProtocol],
+        masks: Sequence[ImageProtocol | None] | None,
     ) -> list[ImageProtocol]:
         """Normalize using population-based methods (fit once, transform all)."""
         if not isinstance(normalizer, PopulationNormalizer):
@@ -83,8 +87,8 @@ class NormalizationService:
     @staticmethod
     def _normalize_with_individual_method(
         normalizer: BaseNormalizer,
-        images: list[ImageProtocol],
-        masks: list[ImageProtocol | None] | None,
+        images: Sequence[ImageProtocol],
+        masks: Sequence[ImageProtocol | None] | None,
     ) -> list[ImageProtocol]:
         """Normalize using individual methods (fit each separately)."""
         normalized_images = []
@@ -123,11 +127,11 @@ class NormalizationService:
         normalizer_cls = NORMALIZER_REGISTRY[config.method]
 
         # Pass configuration parameters to normalizer
-        kwargs = {}
+        kwargs: dict[str, Any] = {}
 
         # Add tissue_type for methods that support it
         if hasattr(normalizer_cls, "__init__"):
-            init_params = getattr(normalizer_cls.__init__, "__annotations__", {})
+            init_params = inspect.signature(normalizer_cls).parameters
             if "tissue_type" in init_params:
                 kwargs["tissue_type"] = config.tissue_type
             if "modality" in init_params:
@@ -144,7 +148,7 @@ class NormalizationService:
         normalizer_cls = type(normalizer)
 
         # Try to preserve key parameters
-        kwargs = {}
+        kwargs: dict[str, Any] = {}
         if hasattr(normalizer, "tissue_type"):
             kwargs["tissue_type"] = normalizer.tissue_type
         if hasattr(normalizer, "modality"):

@@ -33,7 +33,6 @@ def normalize_image(
     mask=None,
     modality: str = "t1",
     tissue_type: str = "wm",
-    **kwargs,
 ) -> ImageProtocol:
     """High-level function to normalize a single image.
 
@@ -43,7 +42,6 @@ def normalize_image(
         mask: Optional brain mask (same formats as image)
         modality: MR modality ("t1", "t2", "flair", "pd")
         tissue_type: Target tissue type ("wm", "gm", "csf")
-        **kwargs: Additional method-specific parameters
 
     Returns:
         Normalized image (same type as input)

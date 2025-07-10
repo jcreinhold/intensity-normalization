@@ -4,6 +4,7 @@ import os
 from typing import Any, cast
 
 import nibabel as nib
+import nibabel.spatialimages
 import numpy as np
 import numpy.typing as npt
 
@@ -36,7 +37,7 @@ class NumpyImageAdapter:
 class NibabelImageAdapter:
     """Adapter for nibabel medical images."""
 
-    def __init__(self, nib_image: nib.spatialimages.SpatialImage) -> None:
+    def __init__(self, nib_image: nibabel.spatialimages.SpatialImage) -> None:
         self._nib_image = nib_image
 
     def get_data(self) -> npt.NDArray[np.floating]:
@@ -44,7 +45,7 @@ class NibabelImageAdapter:
 
     def with_data(self, data: npt.NDArray[np.floating]) -> "NibabelImageAdapter":
         # Create new nibabel image with same affine and header
-        new_img = nib.Nifti1Image(data, self._nib_image.affine, self._nib_image.header)
+        new_img = nib.nifti1.Nifti1Image(data, self._nib_image.affine, self._nib_image.header)
         return NibabelImageAdapter(new_img)
 
     @property
@@ -53,10 +54,10 @@ class NibabelImageAdapter:
 
     def save(self, path: str | os.PathLike) -> None:
         """Save in original nibabel format."""
-        nib.save(self._nib_image, path)
+        nib.loadsave.save(self._nib_image, path)
 
     @property
-    def affine(self) -> npt.NDArray[np.floating]:
+    def affine(self) -> npt.NDArray[np.floating] | None:
         return self._nib_image.affine
 
     @property
@@ -65,13 +66,13 @@ class NibabelImageAdapter:
 
 
 def create_image(
-    source: str | os.PathLike | npt.NDArray | nib.spatialimages.SpatialImage,
+    source: str | os.PathLike | npt.NDArray | nibabel.spatialimages.SpatialImage,
 ) -> ImageProtocol:
     """Factory function to create appropriate image adapter."""
     if isinstance(source, str | os.PathLike):
         # Load from file - nibabel handles format detection
         try:
-            nib_img = nib.load(source)
+            nib_img = cast("nibabel.spatialimages.SpatialImage", nib.loadsave.load(source))
             return NibabelImageAdapter(nib_img)
         except Exception as e:
             raise ImageLoadError(f"Failed to load image from {source}: {e}") from e

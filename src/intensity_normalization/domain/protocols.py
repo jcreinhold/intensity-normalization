@@ -2,6 +2,7 @@
 
 import os
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from typing import Protocol, runtime_checkable
 
 import numpy as np
@@ -61,8 +62,8 @@ class PopulationNormalizer(BaseNormalizer):
     @abstractmethod
     def fit_population(
         self,
-        images: list[ImageProtocol],
-        masks: list[ImageProtocol | None] | None = None,
+        images: Sequence[ImageProtocol],
+        masks: Sequence[ImageProtocol | None] | None = None,
     ) -> "PopulationNormalizer":
         """Fit on multiple images."""
 

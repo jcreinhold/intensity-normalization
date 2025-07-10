@@ -2,10 +2,12 @@
 
 import inspect
 import os
+from collections.abc import Sequence
 from pathlib import Path
 
 from intensity_normalization.domain.exceptions import ValidationError
 from intensity_normalization.domain.models import Modality, NormalizationConfig, TissueType
+from intensity_normalization.domain.protocols import ImageProtocol
 from intensity_normalization.services.normalization import NORMALIZER_REGISTRY
 
 
@@ -29,13 +31,13 @@ class ValidationService:
             raise ValidationError(f"Invalid tissue type: {type(config.tissue_type)}")
 
     @staticmethod
-    def validate_image_list(images: list, name: str = "images") -> None:
+    def validate_image_list(images: Sequence[ImageProtocol], name: str = "images") -> None:
         """Validate list of images."""
         if len(images) == 0:
             raise ValidationError(f"{name} list cannot be empty")
 
     @staticmethod
-    def validate_mask_list(masks: list | None, num_images: int, name: str = "masks") -> None:
+    def validate_mask_list(masks: Sequence[ImageProtocol] | None, num_images: int, name: str = "masks") -> None:
         """Validate list of masks."""
         if masks is None:
             return
@@ -79,7 +81,7 @@ class ValidationService:
 
         # Get valid parameters from __init__ signature
         try:
-            sig = inspect.signature(normalizer_cls.__init__)
+            sig = inspect.signature(normalizer_cls)
             valid_params = set(sig.parameters.keys()) - {"self"}
 
             # Check for invalid parameters

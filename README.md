@@ -1,37 +1,17 @@
 # Intensity Normalization
 
-A modern Python package for normalizing MR image intensities with clean architecture and universal format support.
-
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+A modern Python package for normalizing MR image intensities.
 
 ## Features
 
 - **🔧 Universal Image Support**: Seamlessly works with numpy arrays and nibabel images (.nii, .nii.gz, .mgz, .mnc, etc.)
-- **🏗️ Clean Architecture**: Domain-driven design with clear separation of concerns
-- **🚀 Modern Python**: Type hints, Python 3.11+, ruff formatting, comprehensive testing
 - **📊 6 Normalization Methods**: FCM, KDE, WhiteStripe, Z-score, Nyúl, LSQ
-- **⚡ High Performance**: Optimized implementations with scikit-learn and scipy
-- **🧠 Medical Focus**: Designed specifically for brain MRI normalization
+- **⚡ High Performance**: Optimized implementations
 
 ## Installation
 
 ```bash
 pip install intensity-normalization
-```
-
-### Development Installation
-
-```bash
-# Clone repository
-git clone https://github.com/jcreinhold/intensity-normalization.git
-cd intensity-normalization
-
-# Install with uv (recommended)
-uv sync --dev
-
-# Or with pip
-pip install -e .[dev]
 ```
 
 ## Quick Start
@@ -69,7 +49,7 @@ brain_data[20:40, 20:40, 10:20] = np.random.normal(600, 100, (20, 20, 10))  # GM
 fcm = FCMNormalizer(tissue_type="wm")  # white matter reference
 normalized = fcm.fit_transform(brain_data)
 
-# Z-score normalization  
+# Z-score normalization
 zscore = ZScoreNormalizer()
 standardized = zscore.fit_transform(brain_data)
 
@@ -95,7 +75,7 @@ nyul.fit_population(images)
 # Normalize all images to the same scale
 normalized_images = [nyul.transform(img) for img in images]
 
-# LSQ tissue mean harmonization  
+# LSQ tissue mean harmonization
 lsq = LSQNormalizer()
 lsq.fit_population(images)
 harmonized_images = [lsq.transform(img) for img in images]
@@ -177,19 +157,19 @@ normalize_image(t2_image, method="kde", modality="t2")
 normalize_image(image, method="zscore")
 
 # Multi-site harmonization (requires multiple subjects)
-from intensity_normalization.services import NormalizationService
+from intensity_normalization.services.normalization import NormalizationService
 config = NormalizationConfig(method="nyul")
 harmonized = NormalizationService.normalize_images(all_images, config)
 ```
 
 ## Architecture Overview
 
-The package follows clean architecture principles:
+The package is structured as follows:
 
 ```
 intensity_normalization/
-├── domain/          # Core business logic
-│   ├── protocols.py # Image and normalizer interfaces  
+├── domain/          # Core logic
+│   ├── protocols.py # Image and normalizer interfaces
 │   ├── models.py    # Configuration and value objects
 │   └── exceptions.py# Domain-specific exceptions
 ├── adapters/        # External interfaces
@@ -204,13 +184,6 @@ intensity_normalization/
 └── cli.py          # Command-line interface
 ```
 
-### Key Design Patterns
-
-- **Protocol-Oriented**: Universal image interface supporting numpy and nibabel
-- **Factory Pattern**: Automatic normalizer selection and configuration
-- **Strategy Pattern**: Pluggable normalization algorithms
-- **Adapter Pattern**: Format-agnostic image handling
-
 ## Advanced Usage
 
 ### Custom Normalizers
@@ -224,7 +197,7 @@ class CustomNormalizer(BaseNormalizer):
         # Implement fitting logic
         self.is_fitted = True
         return self
-        
+
     def transform(self, image: ImageProtocol, mask=None) -> ImageProtocol:
         # Implement normalization logic
         data = image.get_data()
@@ -236,7 +209,7 @@ class CustomNormalizer(BaseNormalizer):
 
 ```python
 from intensity_normalization.domain.models import NormalizationConfig, Modality, TissueType
-from intensity_normalization.services import NormalizationService
+from intensity_normalization.services.normalization import NormalizationService
 
 # Create configuration
 config = NormalizationConfig(
@@ -257,23 +230,23 @@ result = NormalizationService.normalize_image(image, config, mask)
 
 ```python
 from pathlib import Path
-from intensity_normalization.adapters import create_image, save_image
-from intensity_normalization.services import NormalizationService
+from intensity_normalization.adapters.images import create_image, save_image
+from intensity_normalization.services.normalization import NormalizationService
 
 def process_directory(input_dir: Path, output_dir: Path, method: str = "fcm"):
     """Process all NIfTI files in a directory."""
     output_dir.mkdir(exist_ok=True)
-    
+
     for img_file in input_dir.glob("*.nii.gz"):
         # Load image
         image = create_image(img_file)
-        
+
         # Create configuration
         config = NormalizationConfig(method=method)
-        
+
         # Normalize
         normalized = NormalizationService.normalize_image(image, config)
-        
+
         # Save result
         output_file = output_dir / f"{img_file.stem}_normalized.nii.gz"
         save_image(normalized, output_file)
@@ -305,7 +278,7 @@ uv sync --dev
 # Format code
 uv run ruff format intensity_normalization/
 
-# Lint code  
+# Lint code
 uv run ruff check intensity_normalization/
 
 # Type checking
@@ -323,36 +296,25 @@ uv run pytest --cov=intensity_normalization --cov-report=html
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make changes and add tests
-4. Ensure code quality (`uv run ruff check && uv run mypy`)
+4. Ensure code quality (`uv run ruff format && uv run ruff check --fix && uv run mypy`)
 5. Run tests (`uv run pytest`)
 6. Commit changes (`git commit -m 'Add amazing feature'`)
 7. Push to branch (`git push origin feature/amazing-feature`)
 8. Open a Pull Request
-
-## Performance
-
-Benchmarks on 256×256×256 T1-weighted MRI (Intel i7, 16GB RAM):
-
-| Method | Time | Memory |
-|--------|------|--------|
-| Z-Score | ~0.1s | ~500MB |
-| FCM | ~2.0s | ~600MB |
-| KDE | ~1.5s | ~550MB |
-| WhiteStripe | ~1.8s | ~580MB |
-| Nyúl (population) | ~3.0s | ~800MB |
 
 ## Citation
 
 If you use this package in your research, please cite:
 
 ```bibtex
-@software{reinhold2025intensity,
-  title={Intensity Normalization: A Modern Python Package for MR Image Intensity Standardization},
-  author={Reinhold, Jacob C.},
-  year={2025},
-  url={https://github.com/jcreinhold/intensity-normalization},
-  version={3.0.0}
-}
+@inproceedings{reinhold2019evaluating,
+  title={Evaluating the impact of intensity normalization on {MR} image synthesis},
+  author={Reinhold, Jacob C and Dewey, Blake E and Carass, Aaron and Prince, Jerry L},
+  booktitle={Medical Imaging 2019: Image Processing},
+  volume={10949},
+  pages={109493H},
+  year={2019},
+  organization={International Society for Optics and Photonics}}
 ```
 
 ## Related Papers
@@ -361,12 +323,7 @@ If you use this package in your research, please cite:
 - **Nyúl**: Nyúl, L.G., Udupa, J.K. "On standardizing the MR image intensity scale." Magnetic Resonance in Medicine 42.6 (1999): 1072-1081.
 - **WhiteStripe**: Shinohara, R.T., et al. "Statistical normalization techniques for magnetic resonance imaging." NeuroImage 132 (2016): 174-184.
 
-## License
-
-Apache License 2.0 - see [LICENSE](LICENSE) file for details.
-
 ## Support
 
-- **Documentation**: [Read the Docs](https://intensity-normalization.readthedocs.io/)
 - **Issues**: [GitHub Issues](https://github.com/jcreinhold/intensity-normalization/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/jcreinhold/intensity-normalization/discussions)

@@ -1,6 +1,7 @@
 """Pytest configuration and fixtures for intensity-normalization tests."""
 
 import tempfile
+from collections.abc import Generator, Sequence
 from pathlib import Path
 
 import numpy as np
@@ -62,7 +63,7 @@ def nibabel_image(sample_3d_data: npt.NDArray[np.floating]) -> NibabelImageAdapt
     import numpy as np
 
     affine = np.eye(4)
-    nib_img = nib.Nifti1Image(sample_3d_data, affine)
+    nib_img = nib.nifti1.Nifti1Image(sample_3d_data, affine)
     return NibabelImageAdapter(nib_img)
 
 
@@ -73,34 +74,34 @@ def nibabel_mask(sample_mask: npt.NDArray[np.floating]) -> NibabelImageAdapter:
     import numpy as np
 
     affine = np.eye(4)
-    nib_img = nib.Nifti1Image(sample_mask, affine)
+    nib_img = nib.nifti1.Nifti1Image(sample_mask, affine)
     return NibabelImageAdapter(nib_img)
 
 
 @pytest.fixture
-def temp_nifti_file(sample_3d_data: npt.NDArray[np.floating]) -> Path:
+def temp_nifti_file(sample_3d_data: npt.NDArray[np.floating]) -> Generator[Path, None, None]:
     """Create temporary NIfTI file."""
     import nibabel as nib
     import numpy as np
 
     with tempfile.NamedTemporaryFile(suffix=".nii.gz", delete=False) as f:
         affine = np.eye(4)
-        img = nib.Nifti1Image(sample_3d_data, affine)
-        nib.save(img, f.name)
+        img = nib.nifti1.Nifti1Image(sample_3d_data, affine)
+        nib.loadsave.save(img, f.name)
         yield Path(f.name)
         Path(f.name).unlink()
 
 
 @pytest.fixture
-def temp_mask_file(sample_mask: npt.NDArray[np.floating]) -> Path:
+def temp_mask_file(sample_mask: npt.NDArray[np.floating]) -> Generator[Path, None, None]:
     """Create temporary mask NIfTI file."""
     import nibabel as nib
     import numpy as np
 
     with tempfile.NamedTemporaryFile(suffix=".nii.gz", delete=False) as f:
         affine = np.eye(4)
-        img = nib.Nifti1Image(sample_mask, affine)
-        nib.save(img, f.name)
+        img = nib.nifti1.Nifti1Image(sample_mask, affine)
+        nib.loadsave.save(img, f.name)
         yield Path(f.name)
         Path(f.name).unlink()
 
@@ -130,7 +131,7 @@ def mask_fixture(
 
 
 @pytest.fixture
-def multiple_images(sample_3d_data: npt.NDArray[np.floating]) -> list[ImageProtocol]:
+def multiple_images(sample_3d_data: npt.NDArray[np.floating]) -> Sequence[ImageProtocol]:
     """Create multiple images for population-based testing."""
     import numpy as np
 

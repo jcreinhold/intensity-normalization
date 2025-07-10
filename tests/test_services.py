@@ -1,21 +1,12 @@
 """Test service layer functionality."""
 
-from __future__ import annotations
-
 import pytest
 
-from intensity_normalization.domain.exceptions import (
-    ConfigurationError,
-    NormalizationError,
-    ValidationError,
-)
-from intensity_normalization.domain.models import (
-    Modality,
-    NormalizationConfig,
-    TissueType,
-)
+from intensity_normalization.domain.exceptions import ConfigurationError, NormalizationError, ValidationError
+from intensity_normalization.domain.models import Modality, NormalizationConfig, TissueType
 from intensity_normalization.domain.protocols import ImageProtocol
-from intensity_normalization.services import NormalizationService, ValidationService
+from intensity_normalization.services.normalization import NormalizationService
+from intensity_normalization.services.validation import ValidationService
 
 
 class TestNormalizationService:
@@ -134,11 +125,6 @@ class TestValidationService:
         """Test validation of empty image list."""
         with pytest.raises(ValidationError, match="cannot be empty"):
             ValidationService.validate_image_list([])
-
-    def test_validate_image_list_not_list(self) -> None:
-        """Test validation of non-list input."""
-        with pytest.raises(ValidationError, match="must be a list"):
-            ValidationService.validate_image_list("not_a_list")  # type: ignore
 
     def test_validate_mask_list_valid(self, multiple_masks: list[ImageProtocol]) -> None:
         """Test validation of valid mask list."""

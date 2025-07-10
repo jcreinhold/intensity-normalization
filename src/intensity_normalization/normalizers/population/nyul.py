@@ -1,5 +1,7 @@
 """Nyul & Udupa piecewise linear histogram matching normalization."""
 
+from collections.abc import Sequence
+
 import numpy as np
 import numpy.typing as npt
 from scipy.interpolate import interp1d
@@ -34,8 +36,8 @@ class NyulNormalizer(PopulationNormalizer):
 
     def fit_population(
         self,
-        images: list[ImageProtocol],
-        masks: list[ImageProtocol | None] | None = None,
+        images: Sequence[ImageProtocol],
+        masks: Sequence[ImageProtocol | None] | None = None,
     ) -> "NyulNormalizer":
         """Fit standard scale for piecewise linear histogram matching."""
         if len(images) == 0:

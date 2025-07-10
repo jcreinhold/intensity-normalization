@@ -1,4 +1,5 @@
+blank_issues_enabled: false
 contact_links:
-- name: Question/Help/Support
-  url: https://github.com/jcreinhold/intensity-normalization/discussions
-  about: "All general questions not covered by the documentation should go to 'Discussions'."
+  - name: Question/Help/Support
+    url: https://github.com/jcreinhold/intensity-normalization/discussions
+    about: "All general questions should be posted to 'Discussions'."

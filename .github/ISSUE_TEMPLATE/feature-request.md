@@ -1,23 +1,40 @@
 ---
-name: "\U0001F680 Feature Request"
-about: Submit a proposal/request for a new intensity-normalization feature
+name: 🚀 Feature Request
+about: Suggest a new feature or enhancement
+title: "[FEATURE] "
+labels: ["enhancement", "triage"]
+assignees: ""
 ---
 
-## 🚀 Feature
-<!-- A clear, concise description of the feature proposal -->
+## 🚀 Feature Description
+
+<!-- A clear and concise description of the feature you'd like -->
 
 ## Motivation
 
-<!-- Outline the motivation for the proposal. -->
+<!-- Why is this feature needed? What problem does it solve? -->
 
-## Pitch
+## Proposed Solution
 
-<!-- A clear, concise description of what you want to happen. -->
+<!-- Describe how you'd like this to work -->
 
-## Alternatives
+```python
+# Example of how the API might look
+import intensity_normalization as inorm
 
-<!-- A clear, concise description of any alternative solutions. -->
+# Your proposed usage
+```
 
-## Additional context
+## Alternatives Considered
 
-<!-- Add other context or screenshots about the feature request here. -->
+<!-- Have you considered any alternative solutions or features? -->
+
+## Additional Context
+
+<!-- Add any other context, mockups, or examples about the feature request here -->
+
+## Would you be willing to help implement this feature?
+
+- [ ] Yes, I'd be happy to submit a PR
+- [ ] Yes, but I would need guidance
+- [ ] No, I don't have the time/expertise

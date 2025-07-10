@@ -1,36 +1,54 @@
 ---
-name: "\U0001F41B Bug Report"
-about: Submit a bug report to help improve intensity-normalization
+name: 🐛 Bug Report
+about: Report a bug to help improve intensity-normalization
+title: "[BUG] "
+labels: ["bug", "triage"]
+assignees: ""
 ---
 
-## 🐛 Bug
+## 🐛 Bug Description
 
-<!-- A clear, concise description of what the bug is. -->
+<!-- A clear and concise description of what the bug is. -->
 
 ## To Reproduce
 
 Steps to reproduce the behavior:
 
-1.
-2.
-3.
+```python
+# Minimal code example that reproduces the issue
+import intensity_normalization as inorm
 
-<!-- Provide code sample, error messages, and stack traces here. -->
+# Your code here
+```
 
 ## Expected behavior
 
-<!-- A clear, concise description of what you expected to happen. -->
+<!-- What you expected to happen -->
+
+## Actual behavior
+
+<!-- What actually happened. Include the full error message/traceback if applicable -->
+
+```
+# Error message/traceback here
+```
 
 ## Environment
 
- - intensity-normalization version (e.g., 0.3.8):
- - numpy version (e.g., 1.0):
- - OS (e.g., Linux):
- - How you installed intensity-normalization (`conda`, `pip`, source):
- - Build command you used (if installed from source):
- - Python version:
- - Any other relevant information:
+- intensity-normalization version: <!-- e.g., 0.3.0 -->
+- Python version: <!-- e.g., 3.12.0 -->
+- Operating System: <!-- e.g., Ubuntu 22.04, macOS 14, Windows 11 -->
+- Installation method: <!-- pip, uv, conda, source -->
+
+<details>
+<summary>Dependencies</summary>
+
+```
+# Output of: uv pip list | grep -E "(numpy|nibabel|scikit|scipy)"
+```
+
+</details>
 
 ## Additional context
 
-<!-- Add any other context about the problem here. -->
+<!-- Add any other context, screenshots, or examples about the problem here -->

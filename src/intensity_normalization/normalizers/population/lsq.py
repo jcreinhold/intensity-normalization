@@ -1,5 +1,7 @@
 """Least-squares fit tissue means normalization."""
 
+from collections.abc import Sequence
+
 import numpy as np
 import numpy.typing as npt
 from skfuzzy import cmeans
@@ -18,8 +20,8 @@ class LSQNormalizer(PopulationNormalizer):
 
     def fit_population(
         self,
-        images: list[ImageProtocol],
-        masks: list[ImageProtocol | None] | None = None,
+        images: Sequence[ImageProtocol],
+        masks: Sequence[ImageProtocol | None] | None = None,
     ) -> "LSQNormalizer":
         """Fit standard tissue means using the first image."""
         if len(images) == 0:

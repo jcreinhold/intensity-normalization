@@ -153,7 +153,7 @@ def normalize_directory_cli() -> int:
 
         # Get image files
         extensions = ["*.nii", "*.nii.gz", "*.mgz", "*.mgh", "*.mnc"]
-        image_files = []
+        image_files: list[Path] = []
         for ext in extensions:
             image_files.extend(input_dir.glob(ext))
 
@@ -168,7 +168,7 @@ def normalize_directory_cli() -> int:
         masks = None
         if args.mask_dir:
             mask_dir = Path(args.mask_dir)
-            mask_files = []
+            mask_files: list[Path | None] = []
             for img_file in image_files:
                 mask_file = mask_dir / img_file.name
                 if mask_file.exists():
