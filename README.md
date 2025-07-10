@@ -4,7 +4,7 @@ A modern Python package for normalizing MR image intensities.
 
 ## Features
 
-- **🔧 Universal Image Support**: Seamlessly works with numpy arrays and nibabel images (.nii, .nii.gz, .mgz, .mnc, etc.)
+- **🔧 Multiple Image Format Support**: Works with numpy arrays and nibabel images (.nii, .nii.gz, .mgz, .mnc, etc.)
 - **📊 6 Normalization Methods**: FCM, KDE, WhiteStripe, Z-score, Nyúl, LSQ
 - **⚡ High Performance**: Optimized implementations
 
