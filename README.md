@@ -13,6 +13,10 @@ A modern Python package for normalizing MR image intensities.
 ```bash
 pip install intensity-normalization
 ```
+Or via conda:
+```sh
+conda install conda-forge::intensity-normalization
+```
 
 ## Quick Start
 
