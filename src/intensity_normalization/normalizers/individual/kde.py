@@ -65,7 +65,7 @@ class KDENormalizer(BaseNormalizer):
         image_vec = image_data.flatten().astype(np.float64)
 
         # Create KDE
-        kde = gaussian_kde(image_vec)
+        kde = gaussian_kde(image_vec, bw_method=image_vec.max() / 80)
 
         # Create grid for evaluation
         grid = np.linspace(image_vec.min(), image_vec.max(), 80)
