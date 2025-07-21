@@ -27,7 +27,7 @@ license = { file = "LICENSE" }
 name = "intensity-normalization"
 readme = "README.md"
 requires-python = ">=3.11"
-version = "3.0.0"
+version = "3.0.1"
 
 [project.optional-dependencies]
 dev = ["mypy>=1.0.0", "pytest-cov>=4.0.0", "pytest>=7.0.0", "ruff>=0.1.0"]

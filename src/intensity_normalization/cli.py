@@ -120,7 +120,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--version",
         action="version",
-        version="intensity-normalization 3.0.0",
+        version="intensity-normalization 3.0.1",
         help="Show version information",
     )
 
@@ -262,7 +262,7 @@ def create_directory_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--version",
         action="version",
-        version="intensity-normalization 3.0.0",
+        version="intensity-normalization 3.0.1",
         help="Show version information",
     )
 
