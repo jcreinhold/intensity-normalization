@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import numpy as np
+
 from intensity_normalization import _image
 from intensity_normalization._image import ImageLike
 from intensity_normalization.errors import IntensityNormalizationError
@@ -32,11 +34,14 @@ def zscore(
         The normalized image, same type as ``image``.
     """
     data, restore = _image.unwrap(image)
-    mask_data = _image.unwrap(mask)[0] if mask is not None else None
+    mask_data = _image.unwrap_mask(image, mask)
     foreground = _image.foreground_values(data, mask_data)
-    std = float(foreground.std())
+    # statistics in float64: float32 accumulation can make the std of
+    # near-constant foregrounds spuriously nonzero
+    foreground64 = foreground.astype(np.float64)
+    std = float(foreground64.std())
     if std == 0.0:
         msg = "Foreground intensities have zero standard deviation; cannot z-score normalize."
         raise IntensityNormalizationError(msg)
-    normalized = (data - foreground.mean()) / std * norm_value
-    return restore(normalized)
+    normalized = (data - foreground64.mean()) / std * norm_value
+    return restore(normalized.astype(np.float32))

@@ -93,7 +93,7 @@ def fcm(
         The normalized image, same type as ``image``.
     """
     data, restore = _image.unwrap(image)
-    mask_data = _image.unwrap(mask)[0] if mask is not None else None
+    mask_data = _image.unwrap_mask(image, mask)
     foreground_mask = _image.get_mask(data, mask_data)
 
     weights: npt.NDArray[np.floating]

@@ -84,7 +84,7 @@ class LSQTransform(FittedTransform):
         membership: npt.NDArray[np.floating] | None = None,
     ) -> ImageLike:
         data, restore = _image.unwrap(image)
-        mask_data = _image.unwrap(mask)[0] if mask is not None else None
+        mask_data = _image.unwrap_mask(image, mask)
         foreground_mask = _image.get_mask(data, mask_data)
         scale = self._scale(data, foreground_mask, membership)
         if scale == 0.0:
@@ -140,7 +140,7 @@ def fit(
 
     data, _ = _image.unwrap(images[0])
     mask = masks[0] if masks is not None else None
-    mask_data = _image.unwrap(mask)[0] if mask is not None else None
+    mask_data = _image.unwrap_mask(images[0], mask)
     foreground_mask = _image.get_mask(data, mask_data)
 
     if membership is not None:

@@ -76,10 +76,23 @@ def smooth_histogram(
     if x.size == 0:
         msg = "Cannot estimate a histogram of zero intensities (empty foreground?)."
         raise IntensityNormalizationError(msg)
+    if x.min() == x.max():
+        msg = (
+            f"Foreground intensities are constant (all equal to {x.min():.4g}); "
+            "cannot estimate a histogram. Check the image and mask."
+        )
+        raise IntensityNormalizationError(msg)
     if x.size > max_samples:
         rng = np.random.default_rng(seed)
         x = rng.choice(x, size=max_samples, replace=False)
-    kde = scipy.stats.gaussian_kde(x)
+    try:
+        kde = scipy.stats.gaussian_kde(x)
+    except scipy.linalg.LinAlgError as exn:
+        msg = (
+            "Could not estimate a smooth histogram of the foreground "
+            "(near-constant intensities?). Check the image and mask."
+        )
+        raise IntensityNormalizationError(msg) from exn
     grid = np.linspace(x.min(), x.max(), _GRID_SIZE)
     return grid, kde(grid)
 

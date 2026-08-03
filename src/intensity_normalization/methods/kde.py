@@ -39,7 +39,7 @@ def kde(
         The normalized image, same type as ``image``.
     """
     data, restore = _image.unwrap(image)
-    mask_data = _image.unwrap(mask)[0] if mask is not None else None
+    mask_data = _image.unwrap_mask(image, mask)
     foreground = _image.foreground_values(data, mask_data)
     mode = histogram.tissue_mode(foreground, modality=modality, peak=peak, seed=seed)
     if mode == 0.0:

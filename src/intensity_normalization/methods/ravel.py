@@ -171,7 +171,9 @@ def fit_transform(
     ws_kwargs.setdefault("seed", seed)
 
     datas = [_image.unwrap(img)[0] for img in images]
-    mask_datas = [_image.unwrap(m)[0] if m is not None else None for m in masks] if masks else [None] * len(images)
+    mask_datas = (
+        [_image.unwrap_mask(img, m) for img, m in zip(images, masks, strict=True)] if masks else [None] * len(images)
+    )
     shape = datas[0].shape
     for i, data in enumerate(datas):
         if data.shape != shape:
@@ -239,7 +241,11 @@ def fit_transform(
         _, restore = _image.unwrap(image)
         corrected = normalized_matrix[:, i].reshape(work_shape)
         if register:
-            corrected_ants = ants.apply_transforms(natives[i], to_ants(corrected), inverse_transforms[i])
+            corrected_ants = ants.apply_transforms(
+                natives[i],
+                ants.new_image_like(fixed, corrected),
+                inverse_transforms[i],
+            )
             corrected = corrected_ants.numpy().astype(np.float32)
         normalized.append(restore(corrected.astype(np.float32)))
 

@@ -56,7 +56,7 @@ class NyulTransform(FittedTransform):
 
     def transform(self, image: ImageLike, /, mask: ImageLike | None = None) -> ImageLike:
         data, restore = _image.unwrap(image)
-        mask_data = _image.unwrap(mask)[0] if mask is not None else None
+        mask_data = _image.unwrap_mask(image, mask)
         foreground = _image.foreground_values(data, mask_data)
         landmarks = self.landmarks(foreground)
         mapping = interp1d(
@@ -122,11 +122,15 @@ def fit(
         max_percentile,
         percentile_step,
     )
+    if np.any(percentiles <= 0.0) or np.any(percentiles >= 100.0) or np.any(np.diff(percentiles) <= 0.0):
+        raise ValueError(
+            f"Percentile configuration must be strictly increasing within (0, 100); got grid {percentiles.tolist()}."
+        )
     standard_scale = np.zeros(len(percentiles))
     for i, image in enumerate(images):
         data, _ = _image.unwrap(image)
         mask = masks[i] if masks is not None else None
-        mask_data = _image.unwrap(mask)[0] if mask is not None else None
+        mask_data = _image.unwrap_mask(image, mask)
         foreground = _image.foreground_values(data, mask_data)
         landmarks = np.percentile(foreground, percentiles)
         lo, hi = landmarks[0], landmarks[-1]

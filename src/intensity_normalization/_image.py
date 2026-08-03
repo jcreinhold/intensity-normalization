@@ -16,7 +16,7 @@ import numpy.typing as npt
 
 from intensity_normalization.errors import IntensityNormalizationError
 
-__all__ = ["ImageLike", "foreground_values", "get_mask", "unwrap"]
+__all__ = ["ImageLike", "foreground_values", "get_mask", "unwrap", "unwrap_mask"]
 
 ImageLike = npt.NDArray[np.floating] | nib.spatialimages.SpatialImage
 Restorer = Callable[[npt.NDArray[np.floating]], ImageLike]
@@ -36,11 +36,45 @@ def unwrap(image: ImageLike, /) -> tuple[npt.NDArray[np.floating], Restorer]:
     if isinstance(image, nib.spatialimages.SpatialImage):
 
         def restore_nibabel(data: npt.NDArray[np.floating]) -> ImageLike:
-            return image.__class__(np.asanyarray(data), image.affine, image.header)
+            # Copy the header so the source image is never mutated, and set its
+            # datatype to the data's: without this, an int16 source header would
+            # silently truncate float32 normalized data on save. Clear any
+            # scaling so stored values equal the computed ones.
+            header = image.header.copy()
+            header.set_data_dtype(np.asanyarray(data).dtype)
+            if hasattr(header, "set_slope_inter"):
+                header.set_slope_inter(None, None)
+            return image.__class__(np.asanyarray(data), image.affine, header)
 
         return np.asanyarray(image.dataobj, dtype=np.float32), restore_nibabel
 
     raise TypeError(f"Unsupported image type: {type(image)}. Pass a numpy array or a nibabel spatial image.")
+
+
+def unwrap_mask(
+    image: ImageLike,
+    /,
+    mask: ImageLike | None,
+) -> npt.NDArray[np.floating] | None:
+    """Unwrap ``mask`` and validate it against ``image`` (None passes through).
+
+    For nibabel pairs the affines must agree: a mask in a different space with
+    a matching shape would otherwise silently corrupt results. Shape equality
+    itself is enforced in :func:`get_mask`.
+    """
+    if mask is None:
+        return None
+    if (
+        isinstance(image, nib.spatialimages.SpatialImage)
+        and isinstance(mask, nib.spatialimages.SpatialImage)
+        and not np.allclose(image.affine, mask.affine, rtol=0.0, atol=1e-3)
+    ):
+        msg = (
+            "The mask and image are in different spaces (affines differ). "
+            "Resample the mask into the image's space before normalizing."
+        )
+        raise IntensityNormalizationError(msg)
+    return unwrap(mask)[0]
 
 
 def get_mask(

@@ -34,7 +34,7 @@ def tissue_membership(
         label map with ``hard_segmentation=True``.
     """
     data, restore = _image.unwrap(image)
-    mask_data = _image.unwrap(mask)[0] if mask is not None else None
+    mask_data = _image.unwrap_mask(image, mask)
     foreground_mask = _image.get_mask(data, mask_data)
     _, membership_map = tissue_means(data, foreground_mask, seed=seed)
     if hard_segmentation:

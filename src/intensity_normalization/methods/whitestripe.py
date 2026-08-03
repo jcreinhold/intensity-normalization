@@ -52,7 +52,7 @@ def whitestripe(
     if width_u is None:
         width_u = width
     data, restore = _image.unwrap(image)
-    mask_data = _image.unwrap(mask)[0] if mask is not None else None
+    mask_data = _image.unwrap_mask(image, mask)
     foreground_mask = _image.get_mask(data, mask_data)
     foreground = data[foreground_mask]
 
@@ -63,7 +63,7 @@ def whitestripe(
     ws_l, ws_u = np.quantile(foreground, (lower, upper))
 
     stripe = foreground_mask & (data > ws_l) & (data < ws_u)
-    stripe_values = data[stripe]
+    stripe_values = data[stripe].astype(np.float64)
     if stripe_values.size == 0:
         msg = (
             "The white stripe is empty (no voxels within the intensity band "

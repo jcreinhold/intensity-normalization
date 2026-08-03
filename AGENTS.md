@@ -63,7 +63,31 @@ VIRTUAL_ENV=.venv-ants uv pip install -e ".[ants,plot]" pytest pytest-cov
 
 ## Testing philosophy
 
-Correctness is tested against synthetic phantoms with **known** tissue
-statistics (see `tests/conftest.py::make_phantom`), not against snapshots of
-previous versions. Serialization round-trips must be bit-exact. CLI tests use
-typer's `CliRunner` on generated NIfTI fixtures.
+Test the **public API contract**, never private internals (`_fcm.py`,
+`_image.py` internals). Suites by kind:
+
+- `tests/test_individual.py`, `test_population.py`, `test_ravel.py` — oracle
+  tests on phantoms with *known* tissue statistics (`conftest.make_phantom`).
+- `tests/test_laws.py` — hypothesis property tests: type/shape preservation,
+  finiteness, scale equivariance, determinism, nyul monotonicity,
+  serialization round-trips, rejection laws. Assertions on standardized
+  outputs use `atol`, never `rtol` (values cross zero).
+- `tests/test_metadata.py` — affine/header/dtype preservation: identical
+  affine and qform/sform codes, unmutated source header, float32 storage
+  dtype, save/reload round-trips, scaled (scl_slope) sources, mask/image
+  affine mismatch rejection.
+- `tests/test_regressions.py` — smallest reproducer per fixed bug; each
+  docstring names the failure it guards.
+- `tests/test_cli.py` — typer `CliRunner` end-to-end on generated NIfTI
+  fixtures: exit codes, output naming, save/load state equivalence.
+
+Hard-won invariants the suite guards (do not regress):
+
+- nibabel restore must copy the header and set its dtype to float32 — an
+  int16 source header truncates normalized floats on save otherwise.
+- Mask/image affine mismatch must raise (same shape, different space is a
+  silent-corruption trap).
+- Statistics over foregrounds are computed in float64 (float32 accumulation
+  makes near-constant foregrounds look non-degenerate).
+- Constant/near-constant foregrounds raise actionable errors, never NaN or
+  scipy `LinAlgError` leaks.
