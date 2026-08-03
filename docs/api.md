@@ -4,9 +4,8 @@
 import intensity_normalization as inorm
 ```
 
-numpy arrays in → numpy out; nibabel images in → nibabel images out
-(affine/header preserved). float64 inputs stay float64; other dtypes become
-float32. All stochastic steps take `seed=` (default 0, deterministic).
+numpy arrays in → numpy out; nibabel images in → nibabel images out (affine/header preserved). float64 inputs stay
+float64; other dtypes become float32. All stochastic steps take `seed=` (default 0, deterministic).
 
 ## Individual methods
 
@@ -72,7 +71,7 @@ pipeline already holds arrays.
 Signatures across the package use one vocabulary, importable from the root:
 
 | Name | Meaning |
-|---|---|
+| --- | --- |
 | `Image` | an intensity array or a nibabel spatial image |
 | `Mask` | a float or bool array, or a nibabel image |
 | `IntensityArray` | float image data (numpy) |

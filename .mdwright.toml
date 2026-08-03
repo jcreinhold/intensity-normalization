@@ -93,11 +93,11 @@ heading-attrs = "preserve"
 
 # Type: "preserve" | "one".
 # Blank lines before a top-level heading. `preserve` echoes the source. `one` emits exactly one blank line, inserting or collapsing as needed. A heading that opens the document has nothing before it and is left alone.
-blank-line-before-heading = "preserve"
+blank-line-before-heading = "one"
 
 # Type: "preserve" | "one".
 # Blank lines between a top-level heading and the block that follows it. `preserve` echoes the source. `one` emits exactly one blank line, inserting or collapsing as needed.
-blank-line-after-heading = "preserve"
+blank-line-after-heading = "one"
 
 [fmt.refs]
 # Type: "end" | "preserve".

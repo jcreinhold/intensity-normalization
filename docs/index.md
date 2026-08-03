@@ -1,21 +1,19 @@
 # intensity-normalization
 
-Normalize the intensities of magnetic resonance (MR) images — T1-w, T2-w, FLAIR,
-PD-w, and more — across scanners, sites, and sessions.
+Normalize the intensities of magnetic resonance (MR) images — T1-w, T2-w, FLAIR, PD-w, and more — across scanners,
+sites, and sessions.
 
 ![Before/after intensity normalization](img/intnorm_illustration.png)
 
-*Left: foreground intensity histograms of unnormalized T1-w images from the same
-scanner and protocol. Right: the same images after (FCM) normalization.*
+*Left: foreground intensity histograms of unnormalized T1-w images from the same scanner and protocol. Right: the same
+images after (FCM) normalization.*
 
 ## Why?
 
-MR images have no consistent intensity scale: the same tissue gets different
-intensities across scanners, pulse sequences, and even sessions on the same
-scanner. That inconsistency is an acquisition artifact, not a feature of the
-data — and it breaks downstream processing, especially machine learning, which
-usually assumes the data was drawn i.i.d. from one distribution. This package
-implements the standard fixes; see the [pre-print](https://arxiv.org/abs/1812.04652)
+MR images have no consistent intensity scale: the same tissue gets different intensities across scanners, pulse
+sequences, and even sessions on the same scanner. That inconsistency is an acquisition artifact, not a feature of the
+data — and it breaks downstream processing, especially machine learning, which usually assumes the data was drawn i.i.d.
+from one distribution. This package implements the standard fixes; see the [pre-print](https://arxiv.org/abs/1812.04652)
 for their measured impact on an image synthesis task.
 
 ## Install
@@ -39,8 +37,7 @@ pip install "intensity-normalization[ants]"   # RAVEL registration, preprocess, 
 pip install "intensity-normalization[plot]"   # histogram plotting
 ```
 
-(With uv, prefix the same commands with `uv pip`, or run the CLI without
-installing: `uvx intensity-normalize --help`.)
+(With uv, prefix the same commands with `uv pip`, or run the CLI without installing: `uvx intensity-normalize --help`.)
 
 ## 30-second example
 
