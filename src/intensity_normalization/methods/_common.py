@@ -3,12 +3,11 @@
 Every normalization is, in the end, one affine map of the intensities:
 estimate reference statistics from the foreground, then standardize the
 array by them. That application step lives here exactly once (PoSD ch. 9:
-repeated pattern -> one owner), including the float32 storage discipline.
+repeated pattern -> one owner), including the dtype discipline (float64 in
+-> float64 out; float32 otherwise).
 """
 
 from __future__ import annotations
-
-import numpy as np
 
 from intensity_normalization._image import IntensityArray
 
@@ -16,10 +15,10 @@ __all__ = ["standardize"]
 
 
 def standardize(data: IntensityArray, center: float, spread: float, norm_value: float) -> IntensityArray:
-    """``(data - center) / spread * norm_value``, stored float32.
+    """``(data - center) / spread * norm_value``, stored in ``data``'s dtype.
 
     Spread validity is the *caller's* check: the zero-spread error must name
     the statistic that failed ("white stripe has zero standard deviation"),
     so each core validates before calling and keeps its actionable message.
     """
-    return ((data - center) / spread * norm_value).astype(np.float32)
+    return ((data - center) / spread * norm_value).astype(data.dtype)

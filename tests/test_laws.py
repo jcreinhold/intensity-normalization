@@ -4,7 +4,7 @@ Each test states a contract the package must honor for *any* valid input, then
 checks it over generated cases. The oracle is the law, not an example.
 
 Laws covered:
-- type/shape preservation (numpy in -> numpy out, same shape, float32)
+- type/shape preservation (numpy in -> numpy out, same shape; float64 kept, else float32)
 - finiteness: valid inputs never produce NaN/Inf
 - scale equivariance: normalizing c*x equals normalizing x (c > 0)
 - shift invariance (zscore)
@@ -92,6 +92,16 @@ def test_zscore_type_shape_finite(pair) -> None:
     assert isinstance(out, np.ndarray) and out.shape == image.shape
     assert out.dtype == np.float32
     assert np.isfinite(out).all()
+
+
+@given(pair=phantom_3d())
+@FAST
+def test_float64_dtype_preserved(pair) -> None:
+    image, mask = pair
+    image = image.astype(np.float64)
+    for method in (inorm.zscore, inorm.whitestripe, inorm.kde, inorm.fcm):
+        out = method(image, mask)
+        assert out.dtype == np.float64, method.__name__
 
 
 @given(pair=phantom_3d())

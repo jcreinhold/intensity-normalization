@@ -3,7 +3,8 @@
 This is the only module in the package that knows about nibabel. Every public
 function routes through :func:`unwrap` so that numpy in -> numpy out and
 nibabel in -> nibabel out (affine/header preserved), with the actual data
-always handed to the math as float32 arrays.
+handed to the math as float arrays (float64 preserved; anything else
+canonicalized to float32).
 """
 
 from __future__ import annotations
@@ -68,18 +69,24 @@ _BACKGROUND_THRESHOLD = 1e-6
 
 
 def unwrap(image: Image | BinaryMask) -> tuple[IntensityArray, ImageMeta]:
-    """Split ``image`` into ``(data, meta)``: float32 array plus its context value.
+    """Split ``image`` into ``(data, meta)``: float array plus its context value.
 
-    Use :func:`restore` to wrap an array of the same shape back into the
-    source type (the header is copied at unwrap, so the source image's header
-    is never mutated).
+    ``data`` is float64 when the source is float64 (inexact dtypes are
+    preserved) and float32 otherwise (integers cannot round-trip a
+    normalization by construction). Use :func:`restore` to wrap an array of
+    the same shape back into the source type (the header is copied at unwrap,
+    so the source image's header is never mutated).
     """
     if isinstance(image, np.ndarray):
-        return np.asarray(image, dtype=np.float32), ImageMeta(np.ndarray, None, None)
+        dtype = np.float64 if image.dtype == np.float64 else np.float32
+        return np.asarray(image, dtype=dtype), ImageMeta(np.ndarray, None, None)
 
     if isinstance(image, nib.spatialimages.SpatialImage):
+        # the header's storage dtype decides: float64 sources stay float64;
+        # scaled/integer sources canonicalize to float32
+        dtype = np.float64 if image.header.get_data_dtype() == np.float64 else np.float32
         meta = ImageMeta(type(image), image.affine, image.header.copy())
-        return np.asanyarray(image.dataobj, dtype=np.float32), meta
+        return np.asanyarray(image.dataobj, dtype=dtype), meta
 
     raise TypeError(f"Unsupported image type: {type(image)}. Pass a numpy array or a nibabel spatial image.")
 

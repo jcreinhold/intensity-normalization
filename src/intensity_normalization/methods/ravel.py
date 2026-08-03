@@ -325,7 +325,7 @@ def fit_transform(
     normalized: list[Image] = []
     for i, meta in enumerate(metas):
         corrected = space.warp_back(i, corrected_datas[i])
-        normalized.append(_image.restore(meta, corrected.astype(np.float32)))
+        normalized.append(_image.restore(meta, corrected.astype(datas[i].dtype)))
     return result, normalized
 
 

@@ -100,8 +100,8 @@ Test the **public API contract**, never private internals (`_fcm.py`,
   serialization round-trips, rejection laws. Assertions on standardized
   outputs use `atol`, never `rtol` (values cross zero).
 - `tests/test_metadata.py` — affine/header/dtype preservation: identical
-  affine and qform/sform codes, unmutated source header, float32 storage
-  dtype, save/reload round-trips, scaled (scl_slope) sources, mask/image
+  affine and qform/sform codes, unmutated source header, inexact-dtype
+  preservation (float64 kept, else float32), save/reload round-trips, scaled (scl_slope) sources, mask/image
   affine mismatch rejection.
 - `tests/test_regressions.py` — smallest reproducer per fixed bug; each
   docstring names the failure it guards.
@@ -110,8 +110,12 @@ Test the **public API contract**, never private internals (`_fcm.py`,
 
 Hard-won invariants the suite guards (do not regress):
 
-- nibabel restore must copy the header and set its dtype to float32 — an
-  int16 source header truncates normalized floats on save otherwise.
+- nibabel restore must copy the header and set its dtype to the data's —
+  an int16 source header truncates normalized floats on save otherwise.
+  The image data path preserves float64 (float64 in -> float64 out) and
+  canonicalizes everything else to float32; derived/internal data (RAVEL's
+  image matrix, membership maps, learned parameters) stays float32 for
+  memory.
 - Mask/image affine mismatch must raise (same shape, different space is a
   silent-corruption trap).
 - Statistics over foregrounds are computed in float64 (float32 accumulation

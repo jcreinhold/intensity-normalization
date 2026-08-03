@@ -63,8 +63,10 @@ def test_affine_and_header_survive_normalization(dtype, affine) -> None:
     assert np.array_equal(out.affine, img.affine)
     assert out.header["qform_code"] == img.header["qform_code"]
     assert out.header["sform_code"] == img.header["sform_code"]
-    # stored dtype follows the normalized data, not the source dtype
-    assert out.header.get_data_dtype() == np.dtype(np.float32)
+    # stored dtype follows the normalized data: float64 is preserved,
+    # everything else canonicalizes to float32 (int dtypes cannot round-trip)
+    expected = np.float64 if dtype == np.float64 else np.float32
+    assert out.header.get_data_dtype() == np.dtype(expected)
     # the source image's header is never mutated
     assert img.header.get_data_dtype() == np.dtype(dtype)
 

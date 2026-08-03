@@ -61,7 +61,7 @@ class NyulTransform(FittedTransform):
             self.standard_scale,
             fill_value="extrapolate",
         )
-        return mapping(data).astype(np.float32)
+        return mapping(data).astype(data.dtype)
 
     def _state_dict(self) -> dict[str, np.ndarray]:
         return {
