@@ -14,10 +14,9 @@ MR images have no consistent intensity scale: the same tissue gets different
 intensities across scanners, pulse sequences, and even sessions on the same
 scanner. That inconsistency is an acquisition artifact, not a feature of the
 data — and it breaks downstream processing, especially machine learning, which
-usually assumes the data was drawn i.i.d. from one distribution.
-
-We used this package to explore the impact of intensity normalization on an
-image synthesis task ([pre-print](https://arxiv.org/abs/1812.04652)).
+usually assumes the data was drawn i.i.d. from one distribution. This package
+implements the standard fixes; see the [pre-print](https://arxiv.org/abs/1812.04652)
+for their measured impact on an image synthesis task.
 
 ## Install
 
@@ -51,4 +50,4 @@ or from the command line:
 intensity-normalize whitestripe t1w.nii.gz -m mask.nii.gz -p
 ```
 
-Next: [Quickstart](quickstart.md) · [Which method should I use?](methods.md)
+Next: [Quickstart](quickstart.md) · [How-to guides](how-to.md) · [Choosing a method](methods.md)

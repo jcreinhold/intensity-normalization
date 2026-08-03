@@ -3,7 +3,7 @@
 v4 is a clean break from v2/v3: new package layout, new Python API, one CLI.
 The algorithms are the same (and better tested); the interface was redesigned.
 
-## v4.1 (unreleased): histogram policy resolved at the boundary
+## Since v4.0: boundary-resolved options
 
 `ravel.fit_transform` takes `whitestripe=WhiteStripeSpec(...)` instead of
 `whitestripe_kwargs=dict(...)` — typed, documented in one place, typo-proof:

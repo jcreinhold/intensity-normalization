@@ -1,9 +1,8 @@
 """Shared math for the method cores (private).
 
-Every normalization is, in the end, one affine map of the intensities:
-estimate reference statistics from the foreground, then standardize the
-array by them. That application step lives here exactly once (PoSD ch. 9:
-repeated pattern -> one owner), including the dtype discipline (float64 in
+Every normalization ends in one affine map of the intensities: estimate
+reference statistics from the foreground, then standardize the array by them.
+That application step lives here once, dtype discipline included (float64 in
 -> float64 out; float32 otherwise).
 """
 

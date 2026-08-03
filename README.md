@@ -44,7 +44,8 @@ intensity-normalize nyul images/ -m masks/ -o normalized/ --save-state nyul.npz
 
 **[Documentation](https://jcreinhold.github.io/intensity-normalization/)** —
 [quickstart](https://jcreinhold.github.io/intensity-normalization/quickstart/),
-[which method?](https://jcreinhold.github.io/intensity-normalization/methods/),
+[how-to guides](https://jcreinhold.github.io/intensity-normalization/how-to/),
+[choosing a method](https://jcreinhold.github.io/intensity-normalization/methods/),
 [algorithms](https://jcreinhold.github.io/intensity-normalization/algorithms/),
 [CLI](https://jcreinhold.github.io/intensity-normalization/cli/),
 [API](https://jcreinhold.github.io/intensity-normalization/api/),

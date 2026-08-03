@@ -57,8 +57,8 @@ type Mask = MaskArray | nib.spatialimages.SpatialImage
 
 @dataclasses.dataclass(frozen=True)
 class ImageMeta:
-    """Everything needed to rebuild the user's image from an array (a value,
-    not a closure): the source class, its affine, and a copy of its header."""
+    """Everything needed to rebuild the user's image from an array: the source
+    class, its affine, and a copy of its header."""
 
     cls: type
     affine: np.ndarray | None

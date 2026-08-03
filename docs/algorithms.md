@@ -3,8 +3,7 @@
 For all descriptions, let $I(\mathbf{x})$ be the MR brain image under
 consideration where $\mathbf{x} \in [0,N] \times [0,M] \times [0,L] \subset
 \mathbb{N}^3$, and let $B \subset I$ be the brain mask (the set of voxels in
-the brain). See the [pre-print](https://arxiv.org/abs/1812.04652) for a more
-concise, refined description.
+the brain).
 
 ## Z-score
 

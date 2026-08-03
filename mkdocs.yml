@@ -26,7 +26,8 @@ theme:
 nav:
   - Home: index.md
   - Quickstart: quickstart.md
-  - Which method?: methods.md
+  - How-to guides: how-to.md
+  - Choosing a method: methods.md
   - How the methods work: algorithms.md
   - CLI reference: cli.md
   - API reference: api.md

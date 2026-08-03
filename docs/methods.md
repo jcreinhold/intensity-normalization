@@ -51,9 +51,9 @@ histogram plot** before batch-processing hundreds of scans.
 ## What every method assumes
 
 - **Brain masks** (or skull-stripped input) for everything except `zscore` and
-  `nyul`, which tolerate full-head images better. Bad masks are the #1 cause of
-  bad results and cryptic failures — v4 tries to fail loudly with an actionable
-  message, but garbage in is still garbage in.
+  `nyul`, which tolerate full-head images better. Bad masks are the top cause of
+  bad results. The package fails loudly with an actionable message, but
+  garbage in is still garbage in.
 - All brain-specific methods (`fcm`, `kde`, `whitestripe`, `lsq`, `ravel`)
   assume three tissue classes (CSF/GM/WM) exist. Heavy pathology, infants, or
   non-human primates can violate that.
