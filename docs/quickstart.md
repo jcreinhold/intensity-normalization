@@ -5,7 +5,7 @@ A five-minute lesson: install, normalize one T1-w image, check the result.
 ## Install
 
 ```bash
-pip install intensity-normalization
+pip install intensity-normalization  # or: uv pip install intensity-normalization
 ```
 
 ## Get a brain mask
@@ -48,7 +48,7 @@ Plot the foreground histogram before and after — the fastest way to catch a
 bad mask. Install the plotting extra and rerun with `-p`:
 
 ```bash
-pip install "intensity-normalization[plot]"
+pip install "intensity-normalization[plot]"  # or: uv pip install ...
 intensity-normalize fcm t1w.nii.gz -m brain_mask.nii.gz -p
 ```
 

@@ -20,10 +20,12 @@ package implements the standard fixes:
 ## Install
 
 ```bash
-pip install intensity-normalization
+pip install intensity-normalization            # or: uv pip install intensity-normalization
 pip install "intensity-normalization[ants]"  # ravel registration, preprocess, coregister
 pip install "intensity-normalization[plot]"  # histogram plotting
 ```
+
+The CLI also runs without installing: `uvx intensity-normalize --help`.
 
 ## Quickstart
 

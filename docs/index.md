@@ -20,9 +20,17 @@ for their measured impact on an image synthesis task.
 
 ## Install
 
-```bash
-pip install intensity-normalization
-```
+=== "pip"
+
+    ```bash
+    pip install intensity-normalization
+    ```
+
+=== "uv"
+
+    ```bash
+    uv pip install intensity-normalization
+    ```
 
 Optional extras:
 
@@ -30,6 +38,9 @@ Optional extras:
 pip install "intensity-normalization[ants]"   # RAVEL registration, preprocess, coregister
 pip install "intensity-normalization[plot]"   # histogram plotting
 ```
+
+(With uv, prefix the same commands with `uv pip`, or run the CLI without
+installing: `uvx intensity-normalize --help`.)
 
 ## 30-second example
 

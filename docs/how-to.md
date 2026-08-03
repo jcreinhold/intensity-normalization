@@ -1,8 +1,8 @@
 # How-to guides
 
 Task-oriented recipes. Each assumes the package is installed; plotting recipes
-also need `pip install "intensity-normalization[plot]"`, ANTs recipes need
-`pip install "intensity-normalization[ants]"`.
+also need the `[plot]` extra, ANTs recipes need `[ants]`, e.g.
+`pip install "intensity-normalization[plot]"` (or `uv pip install`).
 
 ## Normalize a directory of images
 
