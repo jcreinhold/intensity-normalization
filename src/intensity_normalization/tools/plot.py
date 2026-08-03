@@ -62,7 +62,7 @@ def plot_histograms(
         data, _ = _image.unwrap(image)
         mask = masks[i] if masks is not None else None
         mask_data = _image.unwrap_mask(image, mask)
-        foreground = _image.foreground_values(data, mask_data)
+        foreground = _image.foreground_values(data, _image.resolve_foreground(data, mask_data))
         grid, pdf = histogram.smooth_histogram(foreground, seed=seed)
         label = labels[i] if labels is not None else f"image {i}"
         ax.plot(grid, pdf, label=label)

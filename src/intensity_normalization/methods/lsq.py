@@ -13,7 +13,7 @@ from collections.abc import Sequence
 import numpy as np
 
 from intensity_normalization import _image
-from intensity_normalization._image import Image, IntensityArray, Mask, MaskArray
+from intensity_normalization._image import BinaryMask, Image, IntensityArray, Mask
 from intensity_normalization.errors import IntensityNormalizationError
 from intensity_normalization.methods._transform import FittedTransform
 from intensity_normalization.methods.fcm import tissue_means
@@ -66,7 +66,7 @@ class LSQTransform(FittedTransform):
     def _scale(
         self,
         data: IntensityArray,
-        foreground_mask: MaskArray,
+        foreground_mask: BinaryMask,
         membership: IntensityArray | None,
     ) -> float:
         membership_map = _check_membership(membership, tuple(data.shape))
@@ -95,7 +95,7 @@ class LSQTransform(FittedTransform):
     def transform_array(
         self,
         data: IntensityArray,
-        mask: IntensityArray | None = None,
+        foreground: BinaryMask,
         *,
         membership: IntensityArray | None = None,
         **kwargs: typing.Any,
@@ -104,12 +104,11 @@ class LSQTransform(FittedTransform):
 
         Args:
             data: intensity array.
-            mask: foreground (brain) mask array; estimated as positive voxels when None.
+            foreground: boolean foreground (brain) mask.
             membership: precomputed tissue membership map (same shape as data) for
                 non-T1-w images; computed from ``data`` when None.
         """
-        foreground_mask = _image.get_mask(data, mask)
-        scale = self._scale(data, foreground_mask, membership)
+        scale = self._scale(data, foreground, membership)
         if scale == 0.0:
             msg = "Least-squares scale factor is zero; cannot normalize. Check the image and mask."
             raise IntensityNormalizationError(msg)
@@ -136,7 +135,7 @@ class LSQTransform(FittedTransform):
 
 def fit_array(
     datas: Sequence[IntensityArray],
-    masks: Sequence[IntensityArray | None] | None = None,
+    foregrounds: Sequence[BinaryMask],
     *,
     norm_value: float = 1.0,
     seed: int | None = 0,
@@ -150,7 +149,8 @@ def fit_array(
 
     Args:
         datas: T1-w intensity arrays.
-        masks: optional foreground (brain) mask array per array.
+        foregrounds: boolean foreground (brain) mask per array (the reference's
+            is used).
         norm_value: intensity the reference CSF mean is mapped to.
         seed: RNG seed for the FCM tissue fit; ``None`` is nondeterministic.
         membership: precomputed membership map of the reference (shape
@@ -163,11 +163,11 @@ def fit_array(
     """
     if len(datas) == 0:
         raise IntensityNormalizationError("No images provided to fit.")
-    if masks is not None and len(masks) != len(datas):
-        raise ValueError(f"Got {len(datas)} images but {len(masks)} masks.")
+    if len(foregrounds) != len(datas):
+        raise ValueError(f"Got {len(datas)} images but {len(foregrounds)} foreground masks.")
 
     data = datas[0]
-    foreground_mask = _image.get_mask(data, masks[0] if masks is not None else None)
+    foreground_mask = foregrounds[0]
 
     membership_map = _check_membership(membership, tuple(data.shape))
     if membership_map is None:
@@ -210,8 +210,8 @@ def fit(
     if masks is not None and len(masks) != len(images):
         raise ValueError(f"Got {len(images)} images but {len(masks)} masks.")
     data = _image.unwrap(images[0])[0]
-    mask_data = _image.unwrap_mask(images[0], masks[0] if masks is not None else None)
-    return fit_array([data], [mask_data], norm_value=norm_value, seed=seed, membership=membership)
+    foreground = _image.resolve_foreground(data, _image.unwrap_mask(images[0], masks[0] if masks is not None else None))
+    return fit_array([data], [foreground], norm_value=norm_value, seed=seed, membership=membership)
 
 
 def fit_transform(

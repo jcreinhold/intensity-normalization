@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 
 from intensity_normalization import _image
-from intensity_normalization._image import Image, IntensityArray, Mask, MaskArray
+from intensity_normalization._image import BinaryMask, Image, IntensityArray, Mask
 from intensity_normalization.errors import IntensityNormalizationError
 from intensity_normalization.methods import _fcm
 
@@ -24,7 +24,7 @@ def _tissue_index(tissue: str) -> int:
 
 def tissue_means(
     data: IntensityArray,
-    foreground_mask: MaskArray,
+    foreground_mask: BinaryMask,
     *,
     seed: int | None = 0,
     max_samples: int = 200_000,
@@ -59,7 +59,7 @@ def tissue_means(
 
 def fcm_array(
     data: IntensityArray,
-    mask: IntensityArray | None = None,
+    foreground: BinaryMask,
     *,
     modality: str = "t1",
     tissue: str = "wm",
@@ -76,11 +76,11 @@ def fcm_array(
 
     Args:
         data: intensity array.
-        mask: foreground (brain) mask array. If None, estimated as positive voxels.
+        foreground: boolean foreground (brain) mask.
         modality: "t1" computes memberships from ``data`` itself. For other
             modalities, pass ``membership`` (from a co-registered T1-w image,
-            e.g. via :func:`intensity_normalization.tissue_membership`) or a
-            ``mask`` to use as hard tissue weights.
+            e.g. via :func:`intensity_normalization.tissue_membership`);
+            otherwise ``foreground`` is used as hard tissue weights.
         tissue: "csf", "gm", or "wm".
         membership: precomputed tissue membership map (same shape as data).
         norm_value: intensity the tissue mean is mapped to.
@@ -89,8 +89,6 @@ def fcm_array(
     Returns:
         The normalized intensity array.
     """
-    foreground_mask = _image.get_mask(data, mask)
-
     weights: IntensityArray
     if membership is not None:
         if membership.shape != data.shape:
@@ -101,20 +99,12 @@ def fcm_array(
             raise IntensityNormalizationError(msg)
         weights = np.asarray(membership, dtype=np.float32)
     elif modality.lower() == "t1":
-        _, membership_map = tissue_means(data, foreground_mask, seed=seed)
+        _, membership_map = tissue_means(data, foreground, seed=seed)
         weights = membership_map[..., _tissue_index(tissue)]
-    elif mask is not None:
-        weights = foreground_mask.astype(np.float32)
     else:
-        msg = (
-            f"FCM tissue memberships are only meaningful on T1-w images; got "
-            f"modality={modality!r}. Pass membership= from a co-registered T1-w "
-            "image (see intensity_normalization.tissue_membership) or a mask "
-            "to use as tissue weights."
-        )
-        raise IntensityNormalizationError(msg)
+        weights = foreground.astype(np.float32)
 
-    tissue_mean = float(np.average(data[foreground_mask], weights=weights[foreground_mask]))
+    tissue_mean = float(np.average(data[foreground], weights=weights[foreground]))
     if tissue_mean == 0.0:
         msg = f"The {tissue} mean is zero; cannot scale by it. Check the image and mask."
         raise IntensityNormalizationError(msg)
@@ -149,9 +139,18 @@ def fcm(
         The normalized image, same type as ``image``.
     """
     data, restore = _image.unwrap(image)
+    if modality.lower() != "t1" and membership is None and mask is None:
+        msg = (
+            f"FCM tissue memberships are only meaningful on T1-w images; got "
+            f"modality={modality!r}. Pass membership= from a co-registered T1-w "
+            "image (see intensity_normalization.tissue_membership) or a mask "
+            "to use as tissue weights."
+        )
+        raise IntensityNormalizationError(msg)
+    foreground = _image.resolve_foreground(data, _image.unwrap_mask(image, mask))
     normalized = fcm_array(
         data,
-        _image.unwrap_mask(image, mask),
+        foreground,
         modality=modality,
         tissue=tissue,
         membership=membership,

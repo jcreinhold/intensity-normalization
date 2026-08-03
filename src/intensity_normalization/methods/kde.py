@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from intensity_normalization import _image, histogram
-from intensity_normalization._image import Image, IntensityArray, Mask
+from intensity_normalization._image import BinaryMask, Image, IntensityArray, Mask
 from intensity_normalization.errors import IntensityNormalizationError
 
 __all__ = ["kde", "kde_array"]
@@ -11,7 +11,7 @@ __all__ = ["kde", "kde_array"]
 
 def kde_array(
     data: IntensityArray,
-    mask: IntensityArray | None = None,
+    foreground: BinaryMask,
     *,
     modality: str = "t1",
     peak: histogram.Peak | None = None,
@@ -26,7 +26,7 @@ def kde_array(
 
     Args:
         data: intensity array.
-        mask: foreground (brain) mask array. If None, estimated as positive voxels.
+        foreground: boolean foreground (brain) mask.
         modality: one of "t1", "t2", "flair", "pd", "md", "other"; selects
             which histogram peak is the tissue of interest.
         peak: explicit peak override ("last", "largest", "first") for
@@ -37,8 +37,8 @@ def kde_array(
     Returns:
         The normalized intensity array.
     """
-    foreground = _image.foreground_values(data, mask)
-    mode = histogram.tissue_mode(foreground, modality=modality, peak=peak, seed=seed)
+    foreground_values = _image.foreground_values(data, foreground)
+    mode = histogram.tissue_mode(foreground_values, modality=modality, peak=peak, seed=seed)
     if mode == 0.0:
         msg = "The tissue mode is at zero intensity; cannot scale by it. Check the image and mask."
         raise IntensityNormalizationError(msg)
@@ -70,7 +70,6 @@ def kde(
         The normalized image, same type as ``image``.
     """
     data, restore = _image.unwrap(image)
-    normalized = kde_array(
-        data, _image.unwrap_mask(image, mask), modality=modality, peak=peak, norm_value=norm_value, seed=seed
-    )
+    foreground = _image.resolve_foreground(data, _image.unwrap_mask(image, mask))
+    normalized = kde_array(data, foreground, modality=modality, peak=peak, norm_value=norm_value, seed=seed)
     return restore(normalized)

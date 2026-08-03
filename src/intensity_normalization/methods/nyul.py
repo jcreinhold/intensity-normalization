@@ -10,7 +10,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 from intensity_normalization import _image
-from intensity_normalization._image import Image, IntensityArray, Mask
+from intensity_normalization._image import BinaryMask, Image, IntensityArray, Mask
 from intensity_normalization.errors import IntensityNormalizationError
 from intensity_normalization.methods._transform import FittedTransform
 
@@ -54,12 +54,10 @@ class NyulTransform(FittedTransform):
         """Landmark intensities of a 1D foreground array."""
         return np.percentile(intensities, self.landmark_percentiles)
 
-    def transform_array(
-        self, data: IntensityArray, mask: IntensityArray | None = None, **kwargs: typing.Any
-    ) -> IntensityArray:
-        foreground = _image.foreground_values(data, mask)
+    def transform_array(self, data: IntensityArray, foreground: BinaryMask, **kwargs: typing.Any) -> IntensityArray:
+        foreground_values = _image.foreground_values(data, foreground)
         mapping = interp1d(
-            self.landmark_intensities(foreground),
+            self.landmark_intensities(foreground_values),
             self.standard_scale,
             fill_value="extrapolate",
         )
@@ -78,7 +76,7 @@ class NyulTransform(FittedTransform):
 
 def fit_array(
     datas: Sequence[IntensityArray],
-    masks: Sequence[IntensityArray | None] | None = None,
+    foregrounds: Sequence[BinaryMask],
     *,
     landmarks: Sequence[float] | None = None,
     output_min_value: float = 1.0,
@@ -91,8 +89,7 @@ def fit_array(
 
     Args:
         datas: intensity arrays, all one modality.
-        masks: optional foreground (brain) mask array per array; where omitted,
-            the foreground is estimated as positive voxels.
+        foregrounds: boolean foreground (brain) mask per array.
         landmarks: landmark percentiles, strictly increasing within (0, 100);
             defaults to the standard grid 1, 10, ..., 90, 99.
         output_min_value: intensity the first landmark maps to.
@@ -103,15 +100,13 @@ def fit_array(
     """
     if len(datas) == 0:
         raise IntensityNormalizationError("No images provided to fit.")
-    if masks is not None and len(masks) != len(datas):
-        raise ValueError(f"Got {len(datas)} images but {len(masks)} masks.")
+    if len(foregrounds) != len(datas):
+        raise ValueError(f"Got {len(datas)} images but {len(foregrounds)} foreground masks.")
 
     percentiles = _validate_landmarks(landmarks)
     standard_scale = np.zeros(len(percentiles))
-    for i, data in enumerate(datas):
-        mask = masks[i] if masks is not None else None
-        foreground = _image.foreground_values(data, mask)
-        intensities = np.percentile(foreground, percentiles)
+    for i, (data, foreground) in enumerate(zip(datas, foregrounds, strict=True)):
+        intensities = np.percentile(_image.foreground_values(data, foreground), percentiles)
         lo, hi = intensities[0], intensities[-1]
         if hi == lo:
             msg = (
@@ -152,10 +147,13 @@ def fit(
     if masks is not None and len(masks) != len(images):
         raise ValueError(f"Got {len(images)} images but {len(masks)} masks.")
     datas = [_image.unwrap(image)[0] for image in images]
-    mask_datas = [_image.unwrap_mask(image, masks[i] if masks is not None else None) for i, image in enumerate(images)]
+    foregrounds = [
+        _image.resolve_foreground(data, _image.unwrap_mask(image, masks[i] if masks is not None else None))
+        for i, (image, data) in enumerate(zip(images, datas, strict=True))
+    ]
     return fit_array(
         datas,
-        mask_datas if masks is not None else None,
+        foregrounds,
         landmarks=landmarks,
         output_min_value=output_min_value,
         output_max_value=output_max_value,

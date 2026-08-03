@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 
 from intensity_normalization import _image
-from intensity_normalization._image import Image, IntensityArray, Mask
+from intensity_normalization._image import BinaryMask, Image, IntensityArray, Mask
 from intensity_normalization.methods.fcm import tissue_means
 
 __all__ = ["tissue_membership", "tissue_membership_array"]
@@ -13,7 +13,7 @@ __all__ = ["tissue_membership", "tissue_membership_array"]
 
 def tissue_membership_array(
     data: IntensityArray,
-    mask: IntensityArray | None = None,
+    foreground: BinaryMask,
     *,
     hard_segmentation: bool = False,
     seed: int | None = 0,
@@ -22,7 +22,7 @@ def tissue_membership_array(
 
     Args:
         data: T1-w intensity array.
-        mask: foreground (brain) mask array. If None, estimated as positive voxels.
+        foreground: boolean foreground (brain) mask.
         hard_segmentation: return a hard 3D label map (0 background, 1 CSF,
             2 GM, 3 WM) instead of per-class membership maps.
         seed: RNG seed for the FCM fit; ``None`` is nondeterministic.
@@ -32,11 +32,10 @@ def tissue_membership_array(
         (see :data:`intensity_normalization.methods.fcm.TISSUES`), or a 3D
         label array with ``hard_segmentation=True``.
     """
-    foreground_mask = _image.get_mask(data, mask)
-    _, membership_map = tissue_means(data, foreground_mask, seed=seed)
+    _, membership_map = tissue_means(data, foreground, seed=seed)
     if hard_segmentation:
         labels = np.zeros(data.shape, dtype=np.float32)
-        labels[foreground_mask] = membership_map[foreground_mask].argmax(axis=1) + 1
+        labels[foreground] = membership_map[foreground].argmax(axis=1) + 1
         return labels
     return membership_map
 
@@ -63,5 +62,6 @@ def tissue_membership(
         label map with ``hard_segmentation=True``.
     """
     data, restore = _image.unwrap(image)
-    out = tissue_membership_array(data, _image.unwrap_mask(image, mask), hard_segmentation=hard_segmentation, seed=seed)
+    foreground = _image.resolve_foreground(data, _image.unwrap_mask(image, mask))
+    out = tissue_membership_array(data, foreground, hard_segmentation=hard_segmentation, seed=seed)
     return restore(out)

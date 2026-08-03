@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 
 from intensity_normalization import _image
-from intensity_normalization._image import Image, IntensityArray, Mask
+from intensity_normalization._image import BinaryMask, Image, IntensityArray, Mask
 from intensity_normalization.errors import IntensityNormalizationError
 
 __all__ = ["zscore", "zscore_array"]
@@ -13,7 +13,7 @@ __all__ = ["zscore", "zscore_array"]
 
 def zscore_array(
     data: IntensityArray,
-    mask: IntensityArray | None = None,
+    foreground: BinaryMask,
     *,
     norm_value: float = 1.0,
 ) -> IntensityArray:
@@ -25,18 +25,16 @@ def zscore_array(
 
     Args:
         data: intensity array.
-        mask: foreground (brain) mask array. If None, the foreground is
-            estimated as positive voxels (i.e., the image is assumed
-            skull-stripped).
+        foreground: boolean foreground (brain) mask (see
+            :func:`intensity_normalization._image.resolve_foreground`).
         norm_value: multiply the standardized array by this value.
 
     Returns:
         The normalized intensity array.
     """
-    foreground = _image.foreground_values(data, mask)
+    foreground64 = _image.foreground_values(data, foreground).astype(np.float64)
     # statistics in float64: float32 accumulation can make the std of
     # near-constant foregrounds spuriously nonzero
-    foreground64 = foreground.astype(np.float64)
     std = float(foreground64.std())
     if std == 0.0:
         msg = "Foreground intensities have zero standard deviation; cannot z-score normalize."
@@ -63,5 +61,5 @@ def zscore(
         The normalized image, same type as ``image``.
     """
     data, restore = _image.unwrap(image)
-    normalized = zscore_array(data, _image.unwrap_mask(image, mask), norm_value=norm_value)
-    return restore(normalized)
+    foreground = _image.resolve_foreground(data, _image.unwrap_mask(image, mask))
+    return restore(zscore_array(data, foreground, norm_value=norm_value))

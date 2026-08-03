@@ -17,13 +17,14 @@ import numpy as np
 from intensity_normalization.errors import IntensityNormalizationError
 
 __all__ = [
+    "BinaryMask",
     "ForegroundIntensities",
     "Image",
     "IntensityArray",
     "Mask",
     "MaskArray",
     "foreground_values",
-    "get_mask",
+    "resolve_foreground",
     "unwrap",
     "unwrap_mask",
 ]
@@ -37,13 +38,16 @@ type IntensityArray = np.ndarray[AnyShape, np.dtype[np.floating]]
 type ForegroundIntensities = np.ndarray[OneDimShape, np.dtype[np.floating]]
 """1-D samples of the intensities inside a foreground (brain) mask."""
 
-type MaskArray = np.ndarray[AnyShape, np.dtype[np.bool_]]
-"""Boolean mask array, True inside the region of interest."""
+type BinaryMask = np.ndarray[AnyShape, np.dtype[np.bool_]]
+"""A thresholded mask: boolean array, True inside the region of interest."""
+
+type MaskArray = IntensityArray | BinaryMask
+"""A mask in array form: float (thresholded at > 0) or already-binary."""
 
 type Image = IntensityArray | nib.spatialimages.SpatialImage
 """An MR image as users hand it to us: a plain intensity array or a nibabel spatial image."""
 
-type Mask = IntensityArray | MaskArray | nib.spatialimages.SpatialImage
+type Mask = MaskArray | nib.spatialimages.SpatialImage
 """A mask as users hand it to us: a float or bool array, or a nibabel image."""
 
 type Restorer = Callable[[IntensityArray], Image]
@@ -51,7 +55,7 @@ type Restorer = Callable[[IntensityArray], Image]
 _BACKGROUND_THRESHOLD = 1e-6
 
 
-def unwrap(image: Image | MaskArray) -> tuple[IntensityArray, Restorer]:
+def unwrap(image: Image | BinaryMask) -> tuple[IntensityArray, Restorer]:
     """Return ``(data, restore)`` where ``restore`` wraps data back into image's type.
 
     ``data`` is a float32 array. ``restore`` must be called with an array of
@@ -78,12 +82,12 @@ def unwrap(image: Image | MaskArray) -> tuple[IntensityArray, Restorer]:
     raise TypeError(f"Unsupported image type: {type(image)}. Pass a numpy array or a nibabel spatial image.")
 
 
-def unwrap_mask(image: Image, mask: Mask | None) -> IntensityArray | None:
-    """Unwrap ``mask`` and validate it against ``image`` (None passes through).
+def unwrap_mask(image: Image, mask: Mask | None) -> BinaryMask | None:
+    """Unwrap ``mask``, binarize it (``> 0``), and validate it against ``image``.
 
-    For nibabel pairs the affines must agree: a mask in a different space with
-    a matching shape would otherwise silently corrupt results. Shape equality
-    itself is enforced in :func:`get_mask`.
+    None passes through. For nibabel pairs the affines must agree: a mask in
+    a different space with a matching shape would otherwise silently corrupt
+    results. Shape equality itself is enforced in :func:`resolve_foreground`.
     """
     if mask is None:
         return None
@@ -97,11 +101,14 @@ def unwrap_mask(image: Image, mask: Mask | None) -> IntensityArray | None:
             "Resample the mask into the image's space before normalizing."
         )
         raise IntensityNormalizationError(msg)
-    return unwrap(mask)[0]
+    return unwrap(mask)[0] > 0.0
 
 
-def get_mask(image: IntensityArray, mask: IntensityArray | MaskArray | None = None) -> MaskArray:
-    """Boolean foreground mask; estimated as positive voxels when ``mask`` is None.
+def resolve_foreground(image: IntensityArray, mask: BinaryMask | None) -> BinaryMask:
+    """The one owner of foreground semantics; no core ever sees ``mask=None``.
+
+    ``mask=None`` is estimated as positive voxels (the only place that policy
+    lives); a given mask is validated for shape and non-emptiness.
 
     Raises:
         IntensityNormalizationError: mask shape mismatch or empty foreground,
@@ -122,7 +129,7 @@ def get_mask(image: IntensityArray, mask: IntensityArray | MaskArray | None = No
                 "The mask must be resampled to the image space first."
             )
             raise IntensityNormalizationError(msg)
-        out = mask > 0.0
+        out = mask
     if not out.any():
         msg = (
             "The foreground is empty: no positive voxels inside the mask. "
@@ -132,6 +139,6 @@ def get_mask(image: IntensityArray, mask: IntensityArray | MaskArray | None = No
     return out
 
 
-def foreground_values(image: IntensityArray, mask: IntensityArray | None = None) -> ForegroundIntensities:
-    """1D array of the foreground (in-mask) intensities of ``image``."""
-    return image[get_mask(image, mask)]
+def foreground_values(image: IntensityArray, foreground: BinaryMask) -> ForegroundIntensities:
+    """1D array of the in-foreground intensities of ``image``."""
+    return image[foreground]

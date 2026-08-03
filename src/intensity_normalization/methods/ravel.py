@@ -20,7 +20,7 @@ import scipy.sparse
 import scipy.sparse.linalg
 
 from intensity_normalization import _image
-from intensity_normalization._image import Image, IntensityArray, Mask, MaskArray
+from intensity_normalization._image import BinaryMask, Image, IntensityArray, Mask
 from intensity_normalization.errors import IntensityNormalizationError
 from intensity_normalization.methods._transform import _load_stamped, _save_stamped
 from intensity_normalization.methods.fcm import tissue_means
@@ -41,7 +41,7 @@ class RavelResult:
     """
 
     unwanted_factors: IntensityArray
-    control_mask: MaskArray
+    control_mask: BinaryMask
     control_voxels: IntensityArray
     num_unwanted_factors: int = 1
 
@@ -96,7 +96,7 @@ class _WorkSpace:
         self,
         shape: tuple[int, ...],
         ws_images: list[IntensityArray],
-        masks: list[IntensityArray | None],
+        masks: list[BinaryMask | None],
         warp_backs: list[Callable[[IntensityArray], IntensityArray]] | None = None,
     ) -> None:
         self.shape = shape
@@ -113,7 +113,7 @@ class _WorkSpace:
 
 def _native_space(
     ws_datas: list[IntensityArray],
-    mask_datas: list[IntensityArray | None],
+    mask_datas: list[BinaryMask | None],
 ) -> _WorkSpace:
     return _WorkSpace(tuple(ws_datas[0].shape), ws_datas, mask_datas)
 
@@ -121,7 +121,7 @@ def _native_space(
 def _template_space(
     images: Sequence[Image],
     ws_datas: list[IntensityArray],
-    mask_datas: list[IntensityArray | None],
+    mask_datas: list[BinaryMask | None],
     template: Image | None,
 ) -> _WorkSpace:
     """Register to a template; correction happens there, results warp back.
@@ -138,7 +138,7 @@ def _template_space(
     ants = require_ants()
     fixed = to_ants(template) if template is not None else to_ants(images[0])
     ws_in_space: list[IntensityArray] = []
-    masks_in_space: list[IntensityArray | None] = []
+    masks_in_space: list[BinaryMask | None] = []
     warp_backs: list[Callable[[IntensityArray], IntensityArray]] = []
     for image, ws_data, mask_data in zip(images, ws_datas, mask_datas, strict=True):
         native = to_ants(image)
@@ -162,7 +162,7 @@ def _template_space(
                 registration["fwdtransforms"],
                 interpolator="nearestNeighbor",
             )
-            masks_in_space.append(warped_mask.numpy().astype(np.float32))
+            masks_in_space.append(warped_mask.numpy() > 0.0)
         else:
             masks_in_space.append(None)
 
@@ -180,10 +180,10 @@ def _template_space(
 
 def _control_voxels(
     image_matrix: IntensityArray,
-    csf_masks: Sequence[MaskArray],
+    csf_masks: Sequence[BinaryMask],
     quantile_to_label_csf: float,
     shape: tuple[int, ...],
-) -> tuple[MaskArray, IntensityArray]:
+) -> tuple[BinaryMask, IntensityArray]:
     """Control voxels: CSF in at least ``quantile_to_label_csf`` of the images."""
     count = np.stack([csf.ravel() for csf in csf_masks]).sum(axis=0)
     threshold = np.floor(image_matrix.shape[1] * quantile_to_label_csf)
@@ -278,7 +278,7 @@ def fit_transform(
         raise ValueError(f"Got {len(images)} images but {len(masks)} masks.")
 
     datas = [_image.unwrap(img)[0] for img in images]
-    mask_datas: list[IntensityArray | None] = (
+    mask_datas: list[BinaryMask | None] = (
         [_image.unwrap_mask(img, m) for img, m in zip(images, masks, strict=True)] if masks else [None] * len(images)
     )
     shape = datas[0].shape
@@ -294,7 +294,8 @@ def fit_transform(
     ws_kwargs = dict(whitestripe_kwargs or {})
     ws_kwargs.setdefault("seed", seed)
     ws_datas = [
-        whitestripe_array(data, mask_data, **ws_kwargs) for data, mask_data in zip(datas, mask_datas, strict=True)
+        whitestripe_array(data, _image.resolve_foreground(data, mask_data), **ws_kwargs)
+        for data, mask_data in zip(datas, mask_datas, strict=True)
     ]
 
     space = _template_space(images, ws_datas, mask_datas, template) if register else _native_space(ws_datas, mask_datas)
@@ -320,7 +321,7 @@ def fit_transform(
 
 def ravel_array(
     ws_images: Sequence[IntensityArray],
-    masks: Sequence[IntensityArray | None] | None = None,
+    masks: Sequence[BinaryMask | None] | None = None,
     *,
     membership_threshold: float = 0.99,
     num_unwanted_factors: int = 1,
@@ -378,18 +379,18 @@ def ravel_array(
 
 def _csf_mask(
     ws_data: IntensityArray,
-    mask_data: IntensityArray | None,
+    mask_data: BinaryMask | None,
     masks_are_csf: bool,
     membership_threshold: float,
     seed: int | None,
     index: int,
-) -> MaskArray:
+) -> BinaryMask:
     """Boolean CSF control mask for one (WhiteStripe-normalized) image."""
     if masks_are_csf:
         if mask_data is None:
             raise ValueError("masks_are_csf=True requires CSF masks in `masks`.")
         return mask_data > 0
-    foreground_mask = _image.get_mask(ws_data, mask_data)
+    foreground_mask = _image.resolve_foreground(ws_data, mask_data)
     _, membership_map = tissue_means(ws_data, foreground_mask, seed=seed)
     csf = membership_map[..., 0] > membership_threshold
     if not csf.any():

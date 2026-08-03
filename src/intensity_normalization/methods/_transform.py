@@ -14,7 +14,7 @@ from os import PathLike
 import numpy as np
 
 from intensity_normalization import _image
-from intensity_normalization._image import Image, IntensityArray, Mask
+from intensity_normalization._image import BinaryMask, Image, IntensityArray, Mask
 
 __all__ = ["FittedTransform", "_load_stamped", "_save_stamped"]
 
@@ -75,17 +75,18 @@ class FittedTransform(abc.ABC):
     def transform(self, image: Image, mask: Mask | None = None, **kwargs: typing.Any) -> Image:
         """Apply the learned transform to one image (numpy array or nibabel image)."""
         data, restore = _image.unwrap(image)
-        out = self.transform_array(data, _image.unwrap_mask(image, mask), **kwargs)
+        foreground = _image.resolve_foreground(data, _image.unwrap_mask(image, mask))
+        out = self.transform_array(data, foreground, **kwargs)
         return restore(out)
 
     @abc.abstractmethod
     def transform_array(
         self,
         data: IntensityArray,
-        mask: IntensityArray | None = None,
+        foreground: BinaryMask,
         **kwargs: typing.Any,
     ) -> IntensityArray:
-        """Apply the learned transform to an intensity array."""
+        """Apply the learned transform to an intensity array within ``foreground``."""
 
     @abc.abstractmethod
     def _state_dict(self) -> dict[str, np.ndarray]:
