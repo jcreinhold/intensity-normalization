@@ -21,10 +21,11 @@ from intensity_normalization import io
 from intensity_normalization.errors import IntensityNormalizationError
 from intensity_normalization.methods._transform import FittedTransform
 
-MethodKwargs = dict[str, typing.Any]
-Job = dict[str, typing.Any]
+type MethodKwargs = dict[str, typing.Any]
+type Job = dict[str, typing.Any]
 
 # --- the shared CLI contract: each option defined exactly once ---------------
+# (plain assignments, not `type` statements: typer reads these at runtime)
 
 ImagesArg = Annotated[list[pathlib.Path], typer.Argument(help="Image(s) or directories to normalize.")]
 MaskOpt = Annotated[pathlib.Path | None, typer.Option("--mask", "-m", help="Foreground (brain) mask (single image).")]
@@ -152,7 +153,7 @@ def _run_individual(
             typer.echo(f"wrote {path}")
 
     if plot:
-        import matplotlib.pyplot as plt
+        import matplotlib.pyplot as plt  # ty: ignore[unresolved-import]  # optional dep
 
         import intensity_normalization as inorm
 

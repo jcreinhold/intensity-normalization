@@ -13,14 +13,14 @@ from os import PathLike
 
 import numpy as np
 
-from intensity_normalization._image import ImageLike
+from intensity_normalization import _image
+from intensity_normalization._image import Image, IntensityArray, Mask
 
 __all__ = ["FittedTransform", "_load_stamped", "_save_stamped"]
 
 
 def _save_stamped(
     path: str | PathLike[str],
-    /,
     method: str,
     version: int,
     state: dict[str, np.ndarray],
@@ -36,7 +36,6 @@ def _save_stamped(
 
 def _load_stamped(
     path: str | PathLike[str],
-    /,
     method: str,
     version: int,
 ) -> dict[str, np.ndarray]:
@@ -70,18 +69,23 @@ class FittedTransform(abc.ABC):
     #: serialization format version, bumped on incompatible changes
     format_version: typing.ClassVar[int] = 1
 
-    def __call__(
-        self,
-        image: ImageLike,
-        /,
-        mask: ImageLike | None = None,
-        **kwargs: typing.Any,
-    ) -> ImageLike:
+    def __call__(self, image: Image, mask: Mask | None = None, **kwargs: typing.Any) -> Image:
         return self.transform(image, mask, **kwargs)
 
+    def transform(self, image: Image, mask: Mask | None = None, **kwargs: typing.Any) -> Image:
+        """Apply the learned transform to one image (numpy array or nibabel image)."""
+        data, restore = _image.unwrap(image)
+        out = self.transform_array(data, _image.unwrap_mask(image, mask), **kwargs)
+        return restore(out)
+
     @abc.abstractmethod
-    def transform(self, image: ImageLike, /, mask: ImageLike | None = None) -> ImageLike:
-        """Apply the learned transform to one image."""
+    def transform_array(
+        self,
+        data: IntensityArray,
+        mask: IntensityArray | None = None,
+        **kwargs: typing.Any,
+    ) -> IntensityArray:
+        """Apply the learned transform to an intensity array."""
 
     @abc.abstractmethod
     def _state_dict(self) -> dict[str, np.ndarray]:
@@ -92,12 +96,12 @@ class FittedTransform(abc.ABC):
     def _from_state_dict(cls, state: dict[str, np.ndarray]) -> FittedTransform:
         """Rebuild a transform from its state dict."""
 
-    def save(self, path: str | PathLike[str], /) -> None:
+    def save(self, path: str | PathLike[str]) -> None:
         """Save the fitted transform to ``path`` (``.npz``)."""
         _save_stamped(path, self.method, self.format_version, self._state_dict())
 
     @classmethod
-    def load(cls, path: str | PathLike[str], /) -> FittedTransform:
+    def load(cls, path: str | PathLike[str]) -> FittedTransform:
         """Load a transform saved with :meth:`save`.
 
         Raises:

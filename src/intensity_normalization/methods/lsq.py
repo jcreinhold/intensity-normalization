@@ -11,21 +11,20 @@ import typing
 from collections.abc import Sequence
 
 import numpy as np
-import numpy.typing as npt
 
 from intensity_normalization import _image
-from intensity_normalization._image import ImageLike
+from intensity_normalization._image import Image, IntensityArray, Mask, MaskArray
 from intensity_normalization.errors import IntensityNormalizationError
 from intensity_normalization.methods._transform import FittedTransform
 from intensity_normalization.methods.fcm import tissue_means
 
-__all__ = ["LSQTransform", "fit", "fit_transform"]
+__all__ = ["LSQTransform", "fit", "fit_array", "fit_transform"]
 
 
 def _check_membership(
-    membership: npt.NDArray[np.floating] | None,
+    membership: IntensityArray | None,
     data_shape: tuple[int, ...],
-) -> npt.NDArray[np.floating] | None:
+) -> IntensityArray | None:
     """The one owner of the membership-map contract (single validation site)."""
     if membership is None:
         return None
@@ -51,8 +50,8 @@ class LSQTransform(FittedTransform):
     change after construction.
     """
 
-    standard_tissue_means: npt.NDArray[np.floating]
-    reference_membership: npt.NDArray[np.floating]
+    standard_tissue_means: IntensityArray
+    reference_membership: IntensityArray
     norm_value: float = 1.0
     seed: int | None = 0
 
@@ -66,9 +65,9 @@ class LSQTransform(FittedTransform):
 
     def _scale(
         self,
-        data: npt.NDArray[np.floating],
-        foreground_mask: npt.NDArray[np.bool_],
-        membership: npt.NDArray[np.floating] | None,
+        data: IntensityArray,
+        foreground_mask: MaskArray,
+        membership: IntensityArray | None,
     ) -> float:
         membership_map = _check_membership(membership, tuple(data.shape))
         if membership_map is not None:
@@ -93,22 +92,28 @@ class LSQTransform(FittedTransform):
             raise IntensityNormalizationError(msg)
         return numerator / denominator
 
-    def transform(
+    def transform_array(
         self,
-        image: ImageLike,
-        /,
-        mask: ImageLike | None = None,
+        data: IntensityArray,
+        mask: IntensityArray | None = None,
         *,
-        membership: npt.NDArray[np.floating] | None = None,
-    ) -> ImageLike:
-        data, restore = _image.unwrap(image)
-        mask_data = _image.unwrap_mask(image, mask)
-        foreground_mask = _image.get_mask(data, mask_data)
+        membership: IntensityArray | None = None,
+        **kwargs: typing.Any,
+    ) -> IntensityArray:
+        """Apply the learned least-squares scale to an intensity array.
+
+        Args:
+            data: intensity array.
+            mask: foreground (brain) mask array; estimated as positive voxels when None.
+            membership: precomputed tissue membership map (same shape as data) for
+                non-T1-w images; computed from ``data`` when None.
+        """
+        foreground_mask = _image.get_mask(data, mask)
         scale = self._scale(data, foreground_mask, membership)
         if scale == 0.0:
             msg = "Least-squares scale factor is zero; cannot normalize. Check the image and mask."
             raise IntensityNormalizationError(msg)
-        return restore(data / scale * self.norm_value)
+        return data / scale * self.norm_value
 
     def _state_dict(self) -> dict[str, np.ndarray]:
         return {
@@ -129,20 +134,63 @@ class LSQTransform(FittedTransform):
         )
 
 
-def fit(
-    images: Sequence[ImageLike],
-    /,
-    masks: Sequence[ImageLike | None] | None = None,
+def fit_array(
+    datas: Sequence[IntensityArray],
+    masks: Sequence[IntensityArray | None] | None = None,
     *,
     norm_value: float = 1.0,
     seed: int | None = 0,
-    membership: npt.NDArray[np.floating] | None = None,
+    membership: IntensityArray | None = None,
 ) -> LSQTransform:
-    """Learn standard tissue means from a reference image.
+    """Learn standard tissue means from a reference intensity array.
 
-    The first image is the reference (per the original method): its tissue
+    The first array is the reference (per the original method): its tissue
     means, computed after scaling its CSF mean to ``norm_value``, become the
-    standard that other images are scaled toward.
+    standard that other arrays are scaled toward.
+
+    Args:
+        datas: T1-w intensity arrays.
+        masks: optional foreground (brain) mask array per array.
+        norm_value: intensity the reference CSF mean is mapped to.
+        seed: RNG seed for the FCM tissue fit; ``None`` is nondeterministic.
+        membership: precomputed membership map of the reference (shape
+            ``data.shape + (3,)``) for non-T1-w references; computed from the
+            reference itself when None.
+
+    Returns:
+        A fitted :class:`LSQTransform`. Its ``reference_membership`` attribute
+        holds the reference's CSF/GM/WM membership map.
+    """
+    if len(datas) == 0:
+        raise IntensityNormalizationError("No images provided to fit.")
+    if masks is not None and len(masks) != len(datas):
+        raise ValueError(f"Got {len(datas)} images but {len(masks)} masks.")
+
+    data = datas[0]
+    foreground_mask = _image.get_mask(data, masks[0] if masks is not None else None)
+
+    membership_map = _check_membership(membership, tuple(data.shape))
+    if membership_map is None:
+        _, membership_map = tissue_means(data, foreground_mask, seed=seed)
+    foreground = data[foreground_mask]
+    csf_mean = float(np.average(foreground, weights=membership_map[..., 0][foreground_mask]))
+    if csf_mean == 0.0:
+        msg = "The CSF mean of the reference image is zero. Check the image and mask."
+        raise IntensityNormalizationError(msg)
+    normed = data / csf_mean * norm_value
+    standard_means, _ = tissue_means(normed, foreground_mask, seed=seed)
+    return LSQTransform(standard_means, membership_map, norm_value=norm_value, seed=seed)
+
+
+def fit(
+    images: Sequence[Image],
+    masks: Sequence[Mask | None] | None = None,
+    *,
+    norm_value: float = 1.0,
+    seed: int | None = 0,
+    membership: IntensityArray | None = None,
+) -> LSQTransform:
+    """Learn standard tissue means from a reference image; see :func:`fit_array`.
 
     Args:
         images: T1-w MR images (numpy arrays or nibabel images).
@@ -161,31 +209,16 @@ def fit(
         raise IntensityNormalizationError("No images provided to fit.")
     if masks is not None and len(masks) != len(images):
         raise ValueError(f"Got {len(images)} images but {len(masks)} masks.")
-
-    data, _ = _image.unwrap(images[0])
-    mask = masks[0] if masks is not None else None
-    mask_data = _image.unwrap_mask(images[0], mask)
-    foreground_mask = _image.get_mask(data, mask_data)
-
-    membership_map = _check_membership(membership, tuple(data.shape))
-    if membership_map is None:
-        _, membership_map = tissue_means(data, foreground_mask, seed=seed)
-    foreground = data[foreground_mask]
-    csf_mean = float(np.average(foreground, weights=membership_map[..., 0][foreground_mask]))
-    if csf_mean == 0.0:
-        msg = "The CSF mean of the reference image is zero. Check the image and mask."
-        raise IntensityNormalizationError(msg)
-    normed = data / csf_mean * norm_value
-    standard_means, _ = tissue_means(normed, foreground_mask, seed=seed)
-    return LSQTransform(standard_means, membership_map, norm_value=norm_value, seed=seed)
+    data = _image.unwrap(images[0])[0]
+    mask_data = _image.unwrap_mask(images[0], masks[0] if masks is not None else None)
+    return fit_array([data], [mask_data], norm_value=norm_value, seed=seed, membership=membership)
 
 
 def fit_transform(
-    images: Sequence[ImageLike],
-    /,
-    masks: Sequence[ImageLike | None] | None = None,
+    images: Sequence[Image],
+    masks: Sequence[Mask | None] | None = None,
     **kwargs: typing.Any,
-) -> tuple[LSQTransform, list[ImageLike]]:
+) -> tuple[LSQTransform, list[Image]]:
     """Fit on the reference image and normalize all ``images``."""
     tx = fit(images, masks, **kwargs)
     normed = [tx(img, masks[i] if masks is not None else None) for i, img in enumerate(images)]

@@ -11,16 +11,15 @@ from collections.abc import Sequence
 from os import PathLike
 
 from intensity_normalization import _image, histogram
-from intensity_normalization._image import ImageLike
+from intensity_normalization._image import Image
 from intensity_normalization.errors import IntensityNormalizationError
 
 __all__ = ["plot_histograms"]
 
 
 def plot_histograms(
-    images: Sequence[ImageLike],
-    /,
-    masks: Sequence[ImageLike | None] | None = None,
+    images: Sequence[Image],
+    masks: Sequence[Image | None] | None = None,
     *,
     labels: Sequence[str] | None = None,
     title: str | None = None,
@@ -48,7 +47,7 @@ def plot_histograms(
         The matplotlib ``Figure``.
     """
     try:
-        import matplotlib.pyplot as plt
+        import matplotlib.pyplot as plt  # ty: ignore[unresolved-import]  # optional dep
     except ImportError as exn:
         msg = "Plotting requires matplotlib. Install it with: pip install 'intensity-normalization[plot]'"
         raise IntensityNormalizationError(msg) from exn

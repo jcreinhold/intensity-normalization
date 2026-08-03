@@ -13,7 +13,7 @@ import nibabel.spatialimages  # explicit so nib.spatialimages resolves
 import numpy as np
 
 from intensity_normalization._ants import require_ants, to_ants
-from intensity_normalization._image import ImageLike
+from intensity_normalization._image import Image
 
 __all__ = ["coregister", "preprocess", "require_ants", "to_ants"]
 
@@ -35,7 +35,7 @@ def _ants_to_nibabel(
     return nib.nifti1.Nifti1Image(data, affine)
 
 
-def _from_ants(reference: ImageLike | ANTsImage, /, result: ANTsImage) -> ImageLike | ANTsImage:
+def _from_ants(reference: Image | ANTsImage, result: ANTsImage) -> Image | ANTsImage:
     """Convert an ANTs result back to the type of the input it came from."""
     from ants.core.ants_image import ANTsImage as _ANTsImage  # ty: ignore[unresolved-import]  # optional dep
 
@@ -47,16 +47,15 @@ def _from_ants(reference: ImageLike | ANTsImage, /, result: ANTsImage) -> ImageL
 
 
 def coregister(
-    image: ImageLike | ANTsImage,
-    /,
-    template: ImageLike | ANTsImage | None = None,
+    image: Image | ANTsImage,
+    template: Image | ANTsImage | None = None,
     *,
     type_of_transform: str = "Affine",
     interpolator: str = "bSpline",
     metric: str = "mattes",
     initial_rigid: bool = True,
-    template_mask: ImageLike | ANTsImage | None = None,
-) -> ImageLike | ANTsImage:
+    template_mask: Image | ANTsImage | None = None,
+) -> Image | ANTsImage:
     """Register ``image`` to ``template`` with ANTs (MNI template if None).
 
     Args:
@@ -116,16 +115,15 @@ _INTERP_TYPES: dict[str, int] = {
 
 
 def preprocess(
-    image: ImageLike,
-    /,
-    mask: ImageLike | None = None,
+    image: Image,
+    mask: Image | None = None,
     *,
     resolution: tuple[float, float, float] | None = None,
     orientation: str = "RAS",
     n4_convergence_options: dict[str, typing.Any] | None = None,
     interp_type: str = "linear",
     second_n4_with_smoothed_mask: bool = True,
-) -> tuple[ImageLike, ImageLike]:
+) -> tuple[Image, Image]:
     """Preprocess an MR image: N4 bias correction, optional resample, reorientation.
 
     Args:

@@ -16,18 +16,17 @@ from collections.abc import Callable, Sequence
 from os import PathLike
 
 import numpy as np
-import numpy.typing as npt
 import scipy.sparse
 import scipy.sparse.linalg
 
 from intensity_normalization import _image
-from intensity_normalization._image import ImageLike
+from intensity_normalization._image import Image, IntensityArray, Mask, MaskArray
 from intensity_normalization.errors import IntensityNormalizationError
 from intensity_normalization.methods._transform import _load_stamped, _save_stamped
 from intensity_normalization.methods.fcm import tissue_means
-from intensity_normalization.methods.whitestripe import whitestripe
+from intensity_normalization.methods.whitestripe import whitestripe_array
 
-__all__ = ["RavelResult", "fit_transform"]
+__all__ = ["RavelResult", "fit_transform", "ravel_array"]
 
 
 @dataclasses.dataclass(frozen=True, eq=False)
@@ -41,9 +40,9 @@ class RavelResult:
     change after construction, so a saved result always matches memory.
     """
 
-    unwanted_factors: npt.NDArray[np.floating]
-    control_mask: npt.NDArray[np.bool_]
-    control_voxels: npt.NDArray[np.floating]
+    unwanted_factors: IntensityArray
+    control_mask: MaskArray
+    control_voxels: IntensityArray
     num_unwanted_factors: int = 1
 
     method: typing.ClassVar[str] = "ravel"
@@ -57,7 +56,7 @@ class RavelResult:
         self.control_mask.setflags(write=False)
         self.control_voxels.setflags(write=False)
 
-    def save(self, path: str | PathLike[str], /) -> None:
+    def save(self, path: str | PathLike[str]) -> None:
         """Save the learned artifacts to ``path`` (``.npz``) for provenance."""
         _save_stamped(
             path,
@@ -72,7 +71,7 @@ class RavelResult:
         )
 
     @classmethod
-    def load(cls, path: str | PathLike[str], /) -> RavelResult:
+    def load(cls, path: str | PathLike[str]) -> RavelResult:
         """Load artifacts saved with :meth:`save`."""
         state = _load_stamped(path, cls.method, cls.format_version)
         return cls(
@@ -96,16 +95,16 @@ class _WorkSpace:
     def __init__(
         self,
         shape: tuple[int, ...],
-        ws_images: list[npt.NDArray[np.floating]],
-        masks: list[npt.NDArray[np.floating] | None],
-        warp_backs: list[Callable[[npt.NDArray[np.floating]], npt.NDArray[np.floating]]] | None = None,
+        ws_images: list[IntensityArray],
+        masks: list[IntensityArray | None],
+        warp_backs: list[Callable[[IntensityArray], IntensityArray]] | None = None,
     ) -> None:
         self.shape = shape
         self.ws_images = ws_images
         self.masks = masks
         self._warp_backs = warp_backs
 
-    def warp_back(self, index: int, corrected: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
+    def warp_back(self, index: int, corrected: IntensityArray) -> IntensityArray:
         """Move a corrected image from the working space to native space."""
         if self._warp_backs is None:
             return corrected
@@ -113,17 +112,17 @@ class _WorkSpace:
 
 
 def _native_space(
-    ws_datas: list[npt.NDArray[np.floating]],
-    mask_datas: list[npt.NDArray[np.floating] | None],
+    ws_datas: list[IntensityArray],
+    mask_datas: list[IntensityArray | None],
 ) -> _WorkSpace:
     return _WorkSpace(tuple(ws_datas[0].shape), ws_datas, mask_datas)
 
 
 def _template_space(
-    images: Sequence[ImageLike],
-    ws_datas: list[npt.NDArray[np.floating]],
-    mask_datas: list[npt.NDArray[np.floating] | None],
-    template: ImageLike | None,
+    images: Sequence[Image],
+    ws_datas: list[IntensityArray],
+    mask_datas: list[IntensityArray | None],
+    template: Image | None,
 ) -> _WorkSpace:
     """Register to a template; correction happens there, results warp back.
 
@@ -138,9 +137,9 @@ def _template_space(
 
     ants = require_ants()
     fixed = to_ants(template) if template is not None else to_ants(images[0])
-    ws_in_space: list[npt.NDArray[np.floating]] = []
-    masks_in_space: list[npt.NDArray[np.floating] | None] = []
-    warp_backs: list[Callable[[npt.NDArray[np.floating]], npt.NDArray[np.floating]]] = []
+    ws_in_space: list[IntensityArray] = []
+    masks_in_space: list[IntensityArray | None] = []
+    warp_backs: list[Callable[[IntensityArray], IntensityArray]] = []
     for image, ws_data, mask_data in zip(images, ws_datas, mask_datas, strict=True):
         native = to_ants(image)
         registration = ants.registration(
@@ -168,10 +167,10 @@ def _template_space(
             masks_in_space.append(None)
 
         def warp_back(
-            corrected: npt.NDArray[np.floating],
+            corrected: IntensityArray,
             _native: typing.Any = native,
             _inv: list[str] = registration["invtransforms"],
-        ) -> npt.NDArray[np.floating]:
+        ) -> IntensityArray:
             back = ants.apply_transforms(_native, ants.new_image_like(fixed, corrected), _inv)
             return back.numpy().astype(np.float32)
 
@@ -180,11 +179,11 @@ def _template_space(
 
 
 def _control_voxels(
-    image_matrix: npt.NDArray[np.floating],
-    csf_masks: Sequence[npt.NDArray[np.bool_]],
+    image_matrix: IntensityArray,
+    csf_masks: Sequence[MaskArray],
     quantile_to_label_csf: float,
     shape: tuple[int, ...],
-) -> tuple[npt.NDArray[np.bool_], npt.NDArray[np.floating]]:
+) -> tuple[MaskArray, IntensityArray]:
     """Control voxels: CSF in at least ``quantile_to_label_csf`` of the images."""
     count = np.stack([csf.ravel() for csf in csf_masks]).sum(axis=0)
     threshold = np.floor(image_matrix.shape[1] * quantile_to_label_csf)
@@ -200,10 +199,10 @@ def _control_voxels(
 
 
 def _unwanted_factors(
-    control_voxels: npt.NDArray[np.floating],
+    control_voxels: IntensityArray,
     num_unwanted_factors: int,
     sparse_svd: bool,
-) -> npt.NDArray[np.floating]:
+) -> IntensityArray:
     if sparse_svd:
         _, _, vh = scipy.sparse.linalg.svds(
             scipy.sparse.bsr_matrix(control_voxels),
@@ -216,9 +215,9 @@ def _unwanted_factors(
 
 
 def _correction(
-    image_matrix: npt.NDArray[np.floating],
-    unwanted_factors: npt.NDArray[np.floating],
-) -> npt.NDArray[np.floating]:
+    image_matrix: IntensityArray,
+    unwanted_factors: IntensityArray,
+) -> IntensityArray:
     """Remove the unwanted-factor trend from each voxel's across-image course."""
     beta = np.linalg.solve(
         unwanted_factors.T @ unwanted_factors,
@@ -231,9 +230,8 @@ def _correction(
 
 
 def fit_transform(
-    images: Sequence[ImageLike],
-    /,
-    masks: Sequence[ImageLike | None] | None = None,
+    images: Sequence[Image],
+    masks: Sequence[Mask | None] | None = None,
     *,
     register: bool = True,
     membership_threshold: float = 0.99,
@@ -241,10 +239,10 @@ def fit_transform(
     sparse_svd: bool = False,
     quantile_to_label_csf: float = 1.0,
     masks_are_csf: bool = False,
-    template: ImageLike | None = None,
+    template: Image | None = None,
     whitestripe_kwargs: dict[str, typing.Any] | None = None,
     seed: int | None = 0,
-) -> tuple[RavelResult, list[ImageLike]]:
+) -> tuple[RavelResult, list[Image]]:
     """WhiteStripe-normalize then RAVEL-correct a set of co-registered images.
 
     All images must have the same shape and be (at least rigidly) co-registered;
@@ -280,7 +278,7 @@ def fit_transform(
         raise ValueError(f"Got {len(images)} images but {len(masks)} masks.")
 
     datas = [_image.unwrap(img)[0] for img in images]
-    mask_datas: list[npt.NDArray[np.floating] | None] = (
+    mask_datas: list[IntensityArray | None] = (
         [_image.unwrap_mask(img, m) for img, m in zip(images, masks, strict=True)] if masks else [None] * len(images)
     )
     shape = datas[0].shape
@@ -296,45 +294,96 @@ def fit_transform(
     ws_kwargs = dict(whitestripe_kwargs or {})
     ws_kwargs.setdefault("seed", seed)
     ws_datas = [
-        _image.unwrap(whitestripe(data, mask_data, **ws_kwargs))[0]
-        for data, mask_data in zip(datas, mask_datas, strict=True)
+        whitestripe_array(data, mask_data, **ws_kwargs) for data, mask_data in zip(datas, mask_datas, strict=True)
     ]
 
     space = _template_space(images, ws_datas, mask_datas, template) if register else _native_space(ws_datas, mask_datas)
 
-    image_matrix = np.stack([ws.ravel() for ws in space.ws_images], axis=1).astype(np.float32)
+    result, corrected_datas = ravel_array(
+        space.ws_images,
+        space.masks,
+        membership_threshold=membership_threshold,
+        num_unwanted_factors=num_unwanted_factors,
+        sparse_svd=sparse_svd,
+        quantile_to_label_csf=quantile_to_label_csf,
+        masks_are_csf=masks_are_csf,
+        seed=seed,
+    )
+
+    normalized: list[Image] = []
+    for i, image in enumerate(images):
+        _, restore = _image.unwrap(image)
+        corrected = space.warp_back(i, corrected_datas[i])
+        normalized.append(restore(corrected.astype(np.float32)))
+    return result, normalized
+
+
+def ravel_array(
+    ws_images: Sequence[IntensityArray],
+    masks: Sequence[IntensityArray | None] | None = None,
+    *,
+    membership_threshold: float = 0.99,
+    num_unwanted_factors: int = 1,
+    sparse_svd: bool = False,
+    quantile_to_label_csf: float = 1.0,
+    masks_are_csf: bool = False,
+    seed: int | None = 0,
+) -> tuple[RavelResult, list[IntensityArray]]:
+    """RAVEL-correct a set of WhiteStripe-normalized, co-registered intensity arrays.
+
+    This is the registration-free core: every array must already be in one
+    common (working) space with voxel-wise correspondence.
+
+    Args:
+        ws_images: WhiteStripe-normalized intensity arrays, all the same shape.
+        masks: foreground (brain) mask array per array (CSF masks if
+            ``masks_are_csf``).
+        membership_threshold: FCM CSF membership threshold for control voxels.
+        num_unwanted_factors: ``b`` in the RAVEL paper.
+        sparse_svd: use a sparse SVD (lower memory) for the factor estimation.
+        quantile_to_label_csf: fraction of arrays in which a voxel must be CSF
+            to be a control voxel (1.0 = strict intersection).
+        masks_are_csf: ``masks`` are boolean CSF masks, not brain masks.
+        seed: RNG seed for the FCM tissue fits; ``None`` is nondeterministic.
+
+    Returns:
+        ``(result, corrected)``: the learned :class:`RavelResult` artifacts
+        and the corrected intensity arrays, all in the working space.
+    """
+    if len(ws_images) == 0:
+        raise IntensityNormalizationError("No images provided to normalize.")
+    if masks is not None and len(masks) != len(ws_images):
+        raise ValueError(f"Got {len(ws_images)} images but {len(masks)} masks.")
+    shape = tuple(ws_images[0].shape)
+
+    image_matrix = np.stack([ws.ravel() for ws in ws_images], axis=1).astype(np.float32)
     csf_masks = [
         _csf_mask(ws, mask_data, masks_are_csf, membership_threshold, seed, i)
-        for i, (ws, mask_data) in enumerate(zip(space.ws_images, space.masks, strict=True))
+        for i, (ws, mask_data) in enumerate(zip(ws_images, masks or [None] * len(ws_images), strict=True))
     ]
-    control_mask, control_voxels = _control_voxels(image_matrix, csf_masks, quantile_to_label_csf, space.shape)
+    control_mask, control_voxels = _control_voxels(image_matrix, csf_masks, quantile_to_label_csf, shape)
 
     unwanted = _unwanted_factors(control_voxels, num_unwanted_factors, sparse_svd)
     normalized_matrix = _correction(image_matrix, unwanted)
 
-    normalized: list[ImageLike] = []
-    for i, image in enumerate(images):
-        _, restore = _image.unwrap(image)
-        corrected = space.warp_back(i, normalized_matrix[:, i].reshape(space.shape))
-        normalized.append(restore(corrected.astype(np.float32)))
-
+    corrected = [normalized_matrix[:, i].reshape(shape) for i in range(len(ws_images))]
     result = RavelResult(
         unwanted,
         control_mask,
         control_voxels,
         num_unwanted_factors=num_unwanted_factors,
     )
-    return result, normalized
+    return result, corrected
 
 
 def _csf_mask(
-    ws_data: npt.NDArray[np.floating],
-    mask_data: npt.NDArray[np.floating] | None,
+    ws_data: IntensityArray,
+    mask_data: IntensityArray | None,
     masks_are_csf: bool,
     membership_threshold: float,
     seed: int | None,
     index: int,
-) -> npt.NDArray[np.bool_]:
+) -> MaskArray:
     """Boolean CSF control mask for one (WhiteStripe-normalized) image."""
     if masks_are_csf:
         if mask_data is None:

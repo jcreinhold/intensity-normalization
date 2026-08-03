@@ -10,24 +10,23 @@ to CSF / GM / WM in that order.
 from __future__ import annotations
 
 import numpy as np
-import numpy.typing as npt
+
+from intensity_normalization._image import IntensityArray
 
 __all__ = ["fuzzy_cmeans", "predict_memberships"]
 
 
-def _sort_by_center(
-    centers: npt.NDArray[np.floating], memberships: npt.NDArray[np.floating]
-) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.floating]]:
+def _sort_by_center(centers: IntensityArray, memberships: IntensityArray) -> tuple[IntensityArray, IntensityArray]:
     order = np.argsort(centers)
     return centers[order], memberships[order]
 
 
 def predict_memberships(
-    data: npt.NDArray[np.floating],
-    centers: npt.NDArray[np.floating],
+    data: IntensityArray,
+    centers: IntensityArray,
     *,
     m: float = 2.0,
-) -> npt.NDArray[np.floating]:
+) -> IntensityArray:
     """Compute fuzzy memberships of ``data`` to fixed ``centers``.
 
     Args:
@@ -49,14 +48,14 @@ def predict_memberships(
 
 
 def fuzzy_cmeans(
-    data: npt.NDArray[np.floating],
+    data: IntensityArray,
     n_classes: int = 3,
     *,
     m: float = 2.0,
     tolerance: float = 5e-3,
     max_iterations: int = 50,
     seed: int | None = 0,
-) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.floating]]:
+) -> tuple[IntensityArray, IntensityArray]:
     """Cluster 1D intensities with fuzzy c-means.
 
     Args:

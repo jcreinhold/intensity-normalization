@@ -10,7 +10,6 @@ classifiers = [
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Topic :: Scientific/Engineering :: Image Processing",
@@ -21,7 +20,7 @@ description = "Normalize intensities of MR image modalities"
 license = { file = "LICENSE" }
 name = "intensity-normalization"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 version = "4.0.0"
 
 [project.optional-dependencies]
@@ -42,7 +41,7 @@ intensity-normalize = "intensity_normalization.cli:main"
 [tool.ruff]
 line-length = 120
 src = ["intensity_normalization"]
-target-version = "py311"
+target-version = "py312"
 
 [tool.ruff.lint]
 ignore = [

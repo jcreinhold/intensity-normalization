@@ -14,10 +14,10 @@ from __future__ import annotations
 import typing
 
 import numpy as np
-import numpy.typing as npt
 import scipy.signal
 import scipy.stats
 
+from intensity_normalization._image import ForegroundIntensities, IntensityArray
 from intensity_normalization.errors import IntensityNormalizationError
 
 __all__ = [
@@ -31,7 +31,7 @@ __all__ = [
     "tissue_mode",
 ]
 
-Peak = typing.Literal["last", "largest", "first"]
+Peak = typing.Literal["last", "largest", "first"]  # plain assignment: typing.get_args(Peak) is used at runtime
 
 VALID_PEAKS: tuple[Peak, ...] = typing.get_args(Peak)
 
@@ -52,12 +52,8 @@ _MAX_KDE_SAMPLES = 50_000
 
 
 def smooth_histogram(
-    intensities: npt.NDArray[np.floating],
-    /,
-    *,
-    max_samples: int = _MAX_KDE_SAMPLES,
-    seed: int | None = 0,
-) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.floating]]:
+    intensities: ForegroundIntensities, *, max_samples: int = _MAX_KDE_SAMPLES, seed: int | None = 0
+) -> tuple[IntensityArray, IntensityArray]:
     """Kernel density estimate of the intensity distribution.
 
     Uses a seeded subsample of at most ``max_samples`` intensities: the KDE is
@@ -97,19 +93,13 @@ def smooth_histogram(
     return grid, kde(grid)
 
 
-def largest_mode(intensities: npt.NDArray[np.floating], /, **kwargs: typing.Any) -> float:
+def largest_mode(intensities: ForegroundIntensities, **kwargs: typing.Any) -> float:
     """Mode of the largest tissue class (global maximum of the smoothed histogram)."""
     grid, pdf = smooth_histogram(intensities, **kwargs)
     return float(grid[np.argmax(pdf)])
 
 
-def last_mode(
-    intensities: npt.NDArray[np.floating],
-    /,
-    *,
-    tail_percentage: float = 96.0,
-    **kwargs: typing.Any,
-) -> float:
+def last_mode(intensities: ForegroundIntensities, *, tail_percentage: float = 96.0, **kwargs: typing.Any) -> float:
     """Mode of the highest-intensity tissue class (last local maximum of the histogram).
 
     The histogram above ``tail_percentage`` is removed first, so bright tails
@@ -126,13 +116,7 @@ def last_mode(
     return float(grid[maxima[-1]])
 
 
-def first_mode(
-    intensities: npt.NDArray[np.floating],
-    /,
-    *,
-    tail_percentage: float = 99.0,
-    **kwargs: typing.Any,
-) -> float:
+def first_mode(intensities: ForegroundIntensities, *, tail_percentage: float = 99.0, **kwargs: typing.Any) -> float:
     """Mode of the lowest-intensity tissue class (first local maximum of the histogram)."""
     if not 0.0 < tail_percentage < 100.0:
         raise ValueError(f"tail_percentage must be in (0, 100). Got {tail_percentage}.")
@@ -146,12 +130,7 @@ def first_mode(
 
 
 def tissue_mode(
-    intensities: npt.NDArray[np.floating],
-    /,
-    *,
-    modality: str = "t1",
-    peak: Peak | None = None,
-    **kwargs: typing.Any,
+    intensities: ForegroundIntensities, *, modality: str = "t1", peak: Peak | None = None, **kwargs: typing.Any
 ) -> float:
     """Mode of the tissue of interest for ``modality`` (or an explicit ``peak``).
 

@@ -13,19 +13,45 @@ from collections.abc import Callable
 import nibabel as nib
 import nibabel.spatialimages  # explicit so nib.spatialimages resolves
 import numpy as np
-import numpy.typing as npt
 
 from intensity_normalization.errors import IntensityNormalizationError
 
-__all__ = ["ImageLike", "foreground_values", "get_mask", "unwrap", "unwrap_mask"]
+__all__ = [
+    "ForegroundIntensities",
+    "Image",
+    "IntensityArray",
+    "Mask",
+    "MaskArray",
+    "foreground_values",
+    "get_mask",
+    "unwrap",
+    "unwrap_mask",
+]
 
-ImageLike = npt.NDArray[np.floating] | nib.spatialimages.SpatialImage
-Restorer = Callable[[npt.NDArray[np.floating]], ImageLike]
+type AnyShape = tuple[int, ...]
+type OneDimShape = tuple[int]
+
+type IntensityArray = np.ndarray[AnyShape, np.dtype[np.floating]]
+"""Image-shaped float data — the currency of every math function in the package."""
+
+type ForegroundIntensities = np.ndarray[OneDimShape, np.dtype[np.floating]]
+"""1-D samples of the intensities inside a foreground (brain) mask."""
+
+type MaskArray = np.ndarray[AnyShape, np.dtype[np.bool_]]
+"""Boolean mask array, True inside the region of interest."""
+
+type Image = IntensityArray | nib.spatialimages.SpatialImage
+"""An MR image as users hand it to us: a plain intensity array or a nibabel spatial image."""
+
+type Mask = IntensityArray | MaskArray | nib.spatialimages.SpatialImage
+"""A mask as users hand it to us: a float or bool array, or a nibabel image."""
+
+type Restorer = Callable[[IntensityArray], Image]
 
 _BACKGROUND_THRESHOLD = 1e-6
 
 
-def unwrap(image: ImageLike, /) -> tuple[npt.NDArray[np.floating], Restorer]:
+def unwrap(image: Image | MaskArray) -> tuple[IntensityArray, Restorer]:
     """Return ``(data, restore)`` where ``restore`` wraps data back into image's type.
 
     ``data`` is a float32 array. ``restore`` must be called with an array of
@@ -36,7 +62,7 @@ def unwrap(image: ImageLike, /) -> tuple[npt.NDArray[np.floating], Restorer]:
 
     if isinstance(image, nib.spatialimages.SpatialImage):
 
-        def restore_nibabel(data: npt.NDArray[np.floating]) -> ImageLike:
+        def restore_nibabel(data: IntensityArray) -> Image:
             # Copy the header so the source image is never mutated, and set its
             # datatype to the data's: without this, an int16 source header would
             # silently truncate float32 normalized data on save. Clear any
@@ -52,11 +78,7 @@ def unwrap(image: ImageLike, /) -> tuple[npt.NDArray[np.floating], Restorer]:
     raise TypeError(f"Unsupported image type: {type(image)}. Pass a numpy array or a nibabel spatial image.")
 
 
-def unwrap_mask(
-    image: ImageLike,
-    /,
-    mask: ImageLike | None,
-) -> npt.NDArray[np.floating] | None:
+def unwrap_mask(image: Image, mask: Mask | None) -> IntensityArray | None:
     """Unwrap ``mask`` and validate it against ``image`` (None passes through).
 
     For nibabel pairs the affines must agree: a mask in a different space with
@@ -78,11 +100,7 @@ def unwrap_mask(
     return unwrap(mask)[0]
 
 
-def get_mask(
-    image: npt.NDArray[np.floating],
-    /,
-    mask: npt.NDArray[np.floating] | None = None,
-) -> npt.NDArray[np.bool_]:
+def get_mask(image: IntensityArray, mask: IntensityArray | MaskArray | None = None) -> MaskArray:
     """Boolean foreground mask; estimated as positive voxels when ``mask`` is None.
 
     Raises:
@@ -114,10 +132,6 @@ def get_mask(
     return out
 
 
-def foreground_values(
-    image: npt.NDArray[np.floating],
-    /,
-    mask: npt.NDArray[np.floating] | None = None,
-) -> npt.NDArray[np.floating]:
+def foreground_values(image: IntensityArray, mask: IntensityArray | None = None) -> ForegroundIntensities:
     """1D array of the foreground (in-mask) intensities of ``image``."""
     return image[get_mask(image, mask)]

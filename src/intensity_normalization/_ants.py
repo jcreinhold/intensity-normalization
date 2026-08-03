@@ -14,7 +14,7 @@ import nibabel as nib
 import nibabel.spatialimages  # explicit so nib.spatialimages resolves
 import numpy as np
 
-from intensity_normalization._image import ImageLike
+from intensity_normalization._image import Image
 from intensity_normalization.errors import IntensityNormalizationError
 
 __all__ = ["require_ants", "to_ants"]
@@ -48,7 +48,7 @@ def _nibabel_to_ants(image: nib.spatialimages.SpatialImage) -> ANTsImage:
     )
 
 
-def to_ants(image: ImageLike | ANTsImage, /) -> ANTsImage:
+def to_ants(image: Image | ANTsImage) -> ANTsImage:
     """Convert an image to an :class:`ants.ANTsImage`, preserving geometry."""
     ants = require_ants()
     if isinstance(image, ants.core.ants_image.ANTsImage):

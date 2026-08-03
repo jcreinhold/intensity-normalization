@@ -5,16 +5,15 @@ from __future__ import annotations
 import numpy as np
 
 from intensity_normalization import _image, histogram
-from intensity_normalization._image import ImageLike
+from intensity_normalization._image import Image, IntensityArray, Mask
 from intensity_normalization.errors import IntensityNormalizationError
 
-__all__ = ["whitestripe"]
+__all__ = ["whitestripe", "whitestripe_array"]
 
 
-def whitestripe(
-    image: ImageLike,
-    /,
-    mask: ImageLike | None = None,
+def whitestripe_array(
+    data: IntensityArray,
+    mask: IntensityArray | None = None,
     *,
     modality: str = "t1",
     peak: histogram.Peak | None = None,
@@ -23,17 +22,17 @@ def whitestripe(
     width_u: float | None = None,
     norm_value: float = 1.0,
     seed: int | None = 0,
-) -> ImageLike:
-    """WhiteStripe normalization (Shinohara et al., 2014).
+) -> IntensityArray:
+    """WhiteStripe normalization of an intensity array (Shinohara et al., 2014).
 
     Finds the normal-appearing white matter (NAWM) as the intensities within
     ``width`` quantile around the white matter mode of the smoothed foreground
-    histogram (the "white stripe"), then standardizes the image to the mean
+    histogram (the "white stripe"), then standardizes the array to the mean
     and standard deviation of that stripe, scaled by ``norm_value``.
 
     Args:
-        image: numpy array or nibabel image; the same type is returned.
-        mask: foreground (brain) mask. If None, estimated as positive voxels.
+        data: intensity array.
+        mask: foreground (brain) mask array. If None, estimated as positive voxels.
         modality: one of "t1", "t2", "flair", "pd", "md", "other"; selects
             which histogram peak anchors the stripe.
         peak: explicit peak override ("last", "largest", "first") for
@@ -41,19 +40,17 @@ def whitestripe(
         width: quantile half-width of the stripe around the tissue mode.
         width_l: asymmetric override for the lower width.
         width_u: asymmetric override for the upper width.
-        norm_value: multiply the standardized image by this value.
+        norm_value: multiply the standardized array by this value.
         seed: RNG seed for the KDE subsample; ``None`` is nondeterministic.
 
     Returns:
-        The normalized image, same type as ``image``.
+        The normalized intensity array.
     """
     if width_l is None:
         width_l = width
     if width_u is None:
         width_u = width
-    data, restore = _image.unwrap(image)
-    mask_data = _image.unwrap_mask(image, mask)
-    foreground_mask = _image.get_mask(data, mask_data)
+    foreground_mask = _image.get_mask(data, mask)
     foreground = data[foreground_mask]
 
     mode = histogram.tissue_mode(foreground, modality=modality, peak=peak, seed=seed)
@@ -75,5 +72,49 @@ def whitestripe(
     if std == 0.0:
         msg = "The white stripe has zero standard deviation; cannot normalize by it."
         raise IntensityNormalizationError(msg)
-    normalized = (data - stripe_values.mean()) / std * norm_value
+    return (data - stripe_values.mean()) / std * norm_value
+
+
+def whitestripe(
+    image: Image,
+    mask: Mask | None = None,
+    *,
+    modality: str = "t1",
+    peak: histogram.Peak | None = None,
+    width: float = 0.05,
+    width_l: float | None = None,
+    width_u: float | None = None,
+    norm_value: float = 1.0,
+    seed: int | None = 0,
+) -> Image:
+    """WhiteStripe normalize an MR image (numpy or nibabel); see :func:`whitestripe_array`.
+
+    Args:
+        image: numpy array or nibabel image; the same type is returned.
+        mask: foreground (brain) mask. If None, estimated as positive voxels.
+        modality: one of "t1", "t2", "flair", "pd", "md", "other"; selects
+            which histogram peak anchors the stripe.
+        peak: explicit peak override ("last", "largest", "first") for
+            non-standard data.
+        width: quantile half-width of the stripe around the tissue mode.
+        width_l: asymmetric override for the lower width.
+        width_u: asymmetric override for the upper width.
+        norm_value: multiply the standardized image by this value.
+        seed: RNG seed for the KDE subsample; ``None`` is nondeterministic.
+
+    Returns:
+        The normalized image, same type as ``image``.
+    """
+    data, restore = _image.unwrap(image)
+    normalized = whitestripe_array(
+        data,
+        _image.unwrap_mask(image, mask),
+        modality=modality,
+        peak=peak,
+        width=width,
+        width_l=width_l,
+        width_u=width_u,
+        norm_value=norm_value,
+        seed=seed,
+    )
     return restore(normalized)

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pathlib
 import typing
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 
 import nibabel as nib
 import nibabel.spatialimages  # explicit so nib.spatialimages resolves
@@ -29,7 +29,7 @@ __all__ = [
 IMAGE_EXTENSIONS: tuple[str, ...] = (".nii.gz", ".nii", ".mgz", ".mgh", ".mnc", ".img")
 
 
-def load_image(path: str | pathlib.Path, /) -> nib.spatialimages.SpatialImage:
+def load_image(path: str | pathlib.Path) -> nib.spatialimages.SpatialImage:
     """Load a neuroimage from disk (any nibabel-supported format)."""
     path = pathlib.Path(path)
     if not path.exists():
@@ -40,11 +40,7 @@ def load_image(path: str | pathlib.Path, /) -> nib.spatialimages.SpatialImage:
         raise IntensityNormalizationError(f"Could not read {path} as a neuroimage: {exn}") from exn
 
 
-def save_image(
-    image: nib.spatialimages.SpatialImage,
-    path: str | pathlib.Path,
-    /,
-) -> pathlib.Path:
+def save_image(image: nib.spatialimages.SpatialImage, path: str | pathlib.Path) -> pathlib.Path:
     """Save a nibabel image to disk, creating parent directories."""
     path = pathlib.Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -52,7 +48,7 @@ def save_image(
     return path
 
 
-def split_filename(filepath: str | pathlib.Path, /) -> tuple[pathlib.Path, str, str]:
+def split_filename(filepath: str | pathlib.Path) -> tuple[pathlib.Path, str, str]:
     """Split a path into ``(directory, base, extension)``; handles ``.nii.gz``.
 
     >>> split_filename("path/base.nii.gz")
@@ -71,9 +67,8 @@ def split_filename(filepath: str | pathlib.Path, /) -> tuple[pathlib.Path, str, 
 
 def find_images(
     directory: str | pathlib.Path,
-    /,
     *,
-    exclude: Sequence[str] = (),
+    exclude: Collection[str] = (),
 ) -> list[pathlib.Path]:
     """Sorted neuroimage paths in a directory (non-recursive).
 
@@ -99,7 +94,6 @@ def find_images(
 def match_masks(
     image_paths: Sequence[pathlib.Path],
     mask_dir: str | pathlib.Path,
-    /,
 ) -> list[pathlib.Path]:
     """Mask path for each image path, matched by filename within ``mask_dir``.
 
@@ -123,7 +117,6 @@ def match_masks(
 
 def output_path(
     image_path: str | pathlib.Path,
-    /,
     *,
     suffix: str,
     output_dir: str | pathlib.Path | None = None,

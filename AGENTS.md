@@ -33,6 +33,17 @@ src/intensity_normalization/
 
 Invariants to preserve:
 
+- Methods are split into **array cores and image wrappers**: the `*_array`
+  functions (e.g. `zscore_array`, `fcm_array`, `fit_array`, `transform_array`)
+  are the actual methods — pure numpy, no nibabel. The plain-named functions
+  (`zscore`, `fcm`, `fit`, `transform`) are thin convenience wrappers:
+  unwrap → core → restore. RAVEL's core is `ravel_array` (registration-free);
+  registration lives in the `fit_transform` wrapper.
+- Type aliases live in `_image.py`: `IntensityArray` (float image data),
+  `ForegroundIntensities` (1-D in-mask samples), `MaskArray` (bool mask array),
+  `Image`/`Mask` (user-facing unions incl. nibabel). PEP 695 `type` statements
+  — but never for aliases consumed at runtime (typer `Annotated` options,
+  `histogram.Peak` used with `typing.get_args`): those stay plain assignments.
 - Math takes numpy, returns numpy. Type preservation (nibabel in → nibabel out)
   happens only in `_image.py`. No adapter/protocol layers — they were deleted
   on purpose.

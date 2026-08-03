@@ -7,21 +7,20 @@ import typing
 from collections.abc import Sequence
 
 import numpy as np
-import numpy.typing as npt
 from scipy.interpolate import interp1d
 
 from intensity_normalization import _image
-from intensity_normalization._image import ImageLike
+from intensity_normalization._image import Image, IntensityArray, Mask
 from intensity_normalization.errors import IntensityNormalizationError
 from intensity_normalization.methods._transform import FittedTransform
 
-__all__ = ["NyulTransform", "fit", "fit_transform"]
+__all__ = ["NyulTransform", "fit", "fit_array", "fit_transform"]
 
 #: default landmark percentiles (Nyúl & Udupa 1998; Shah et al. 2011)
 _DEFAULT_LANDMARKS = (1.0, *range(10, 91, 10), 99.0)
 
 
-def _validate_landmarks(landmarks: Sequence[float] | None) -> npt.NDArray[np.floating]:
+def _validate_landmarks(landmarks: Sequence[float] | None) -> IntensityArray:
     """The percentile grid, validated once: strictly increasing within (0, 100)."""
     grid = np.asarray(landmarks if landmarks is not None else _DEFAULT_LANDMARKS, dtype=np.float64)
     if grid.ndim != 1 or grid.size < 3:
@@ -40,8 +39,8 @@ class NyulTransform(FittedTransform):
     after construction, so a saved transform always matches the in-memory one.
     """
 
-    standard_scale: npt.NDArray[np.floating]
-    landmark_percentiles: npt.NDArray[np.floating]
+    standard_scale: IntensityArray
+    landmark_percentiles: IntensityArray
 
     method: typing.ClassVar[str] = "nyul"
 
@@ -51,20 +50,20 @@ class NyulTransform(FittedTransform):
         self.standard_scale.setflags(write=False)
         self.landmark_percentiles.setflags(write=False)
 
-    def landmark_intensities(self, intensities: npt.NDArray[np.floating], /) -> npt.NDArray[np.floating]:
+    def landmark_intensities(self, intensities: IntensityArray) -> IntensityArray:
         """Landmark intensities of a 1D foreground array."""
         return np.percentile(intensities, self.landmark_percentiles)
 
-    def transform(self, image: ImageLike, /, mask: ImageLike | None = None) -> ImageLike:
-        data, restore = _image.unwrap(image)
-        mask_data = _image.unwrap_mask(image, mask)
-        foreground = _image.foreground_values(data, mask_data)
+    def transform_array(
+        self, data: IntensityArray, mask: IntensityArray | None = None, **kwargs: typing.Any
+    ) -> IntensityArray:
+        foreground = _image.foreground_values(data, mask)
         mapping = interp1d(
             self.landmark_intensities(foreground),
             self.standard_scale,
             fill_value="extrapolate",
         )
-        return restore(mapping(data).astype(np.float32))
+        return mapping(data).astype(np.float32)
 
     def _state_dict(self) -> dict[str, np.ndarray]:
         return {
@@ -77,19 +76,64 @@ class NyulTransform(FittedTransform):
         return cls(state["standard_scale"], state["landmark_percentiles"])
 
 
-def fit(
-    images: Sequence[ImageLike],
-    /,
-    masks: Sequence[ImageLike | None] | None = None,
+def fit_array(
+    datas: Sequence[IntensityArray],
+    masks: Sequence[IntensityArray | None] | None = None,
     *,
     landmarks: Sequence[float] | None = None,
     output_min_value: float = 1.0,
     output_max_value: float = 100.0,
 ) -> NyulTransform:
-    """Learn the standard histogram scale from a population of images.
+    """Learn the standard histogram scale from a population of intensity arrays.
 
-    Streams one image at a time, keeping only per-image landmark percentiles —
+    Streams one array at a time, keeping only per-array landmark percentiles —
     the dataset size never bounds memory.
+
+    Args:
+        datas: intensity arrays, all one modality.
+        masks: optional foreground (brain) mask array per array; where omitted,
+            the foreground is estimated as positive voxels.
+        landmarks: landmark percentiles, strictly increasing within (0, 100);
+            defaults to the standard grid 1, 10, ..., 90, 99.
+        output_min_value: intensity the first landmark maps to.
+        output_max_value: intensity the last landmark maps to.
+
+    Returns:
+        A fitted :class:`NyulTransform`.
+    """
+    if len(datas) == 0:
+        raise IntensityNormalizationError("No images provided to fit.")
+    if masks is not None and len(masks) != len(datas):
+        raise ValueError(f"Got {len(datas)} images but {len(masks)} masks.")
+
+    percentiles = _validate_landmarks(landmarks)
+    standard_scale = np.zeros(len(percentiles))
+    for i, data in enumerate(datas):
+        mask = masks[i] if masks is not None else None
+        foreground = _image.foreground_values(data, mask)
+        intensities = np.percentile(foreground, percentiles)
+        lo, hi = intensities[0], intensities[-1]
+        if hi == lo:
+            msg = (
+                f"Image {i} has a degenerate foreground (the {percentiles[0]:g}th and "
+                f"{percentiles[-1]:g}th percentiles are both {lo:.3f}). Check its mask."
+            )
+            raise IntensityNormalizationError(msg)
+        to_output = interp1d([lo, hi], [output_min_value, output_max_value])
+        standard_scale += to_output(intensities)
+    standard_scale /= len(datas)
+    return NyulTransform(standard_scale, percentiles)
+
+
+def fit(
+    images: Sequence[Image],
+    masks: Sequence[Mask | None] | None = None,
+    *,
+    landmarks: Sequence[float] | None = None,
+    output_min_value: float = 1.0,
+    output_max_value: float = 100.0,
+) -> NyulTransform:
+    """Learn the standard histogram scale from a population of images; see :func:`fit_array`.
 
     Args:
         images: MR images (numpy arrays or nibabel images), all one modality.
@@ -107,34 +151,22 @@ def fit(
         raise IntensityNormalizationError("No images provided to fit.")
     if masks is not None and len(masks) != len(images):
         raise ValueError(f"Got {len(images)} images but {len(masks)} masks.")
-
-    percentiles = _validate_landmarks(landmarks)
-    standard_scale = np.zeros(len(percentiles))
-    for i, image in enumerate(images):
-        data, _ = _image.unwrap(image)
-        mask = masks[i] if masks is not None else None
-        mask_data = _image.unwrap_mask(image, mask)
-        foreground = _image.foreground_values(data, mask_data)
-        intensities = np.percentile(foreground, percentiles)
-        lo, hi = intensities[0], intensities[-1]
-        if hi == lo:
-            msg = (
-                f"Image {i} has a degenerate foreground (the {percentiles[0]:g}th and "
-                f"{percentiles[-1]:g}th percentiles are both {lo:.3f}). Check its mask."
-            )
-            raise IntensityNormalizationError(msg)
-        to_output = interp1d([lo, hi], [output_min_value, output_max_value])
-        standard_scale += to_output(intensities)
-    standard_scale /= len(images)
-    return NyulTransform(standard_scale, percentiles)
+    datas = [_image.unwrap(image)[0] for image in images]
+    mask_datas = [_image.unwrap_mask(image, masks[i] if masks is not None else None) for i, image in enumerate(images)]
+    return fit_array(
+        datas,
+        mask_datas if masks is not None else None,
+        landmarks=landmarks,
+        output_min_value=output_min_value,
+        output_max_value=output_max_value,
+    )
 
 
 def fit_transform(
-    images: Sequence[ImageLike],
-    /,
-    masks: Sequence[ImageLike | None] | None = None,
+    images: Sequence[Image],
+    masks: Sequence[Mask | None] | None = None,
     **kwargs: typing.Any,
-) -> tuple[NyulTransform, list[ImageLike]]:
+) -> tuple[NyulTransform, list[Image]]:
     """Fit on ``images`` and return the transform plus the normalized images."""
     tx = fit(images, masks, **kwargs)
     normed = [tx(img, masks[i] if masks is not None else None) for i, img in enumerate(images)]

@@ -61,7 +61,7 @@ def register(app: typer.Typer) -> None:
         if output is not None:
             typer.echo(f"wrote {output}")
         else:
-            import matplotlib.pyplot as plt
+            import matplotlib.pyplot as plt  # ty: ignore[unresolved-import]  # optional dep
 
             plt.show()
 
