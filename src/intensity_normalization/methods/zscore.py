@@ -7,6 +7,7 @@ import numpy as np
 from intensity_normalization import _image
 from intensity_normalization._image import BinaryMask, Image, IntensityArray, Mask
 from intensity_normalization.errors import IntensityNormalizationError
+from intensity_normalization.methods._common import standardize
 
 __all__ = ["zscore", "zscore_array"]
 
@@ -39,8 +40,7 @@ def zscore_array(
     if std == 0.0:
         msg = "Foreground intensities have zero standard deviation; cannot z-score normalize."
         raise IntensityNormalizationError(msg)
-    normalized = (data - foreground64.mean()) / std * norm_value
-    return normalized.astype(np.float32)
+    return standardize(data, float(foreground64.mean()), std, norm_value)
 
 
 def zscore(

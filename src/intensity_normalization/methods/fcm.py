@@ -8,6 +8,7 @@ from intensity_normalization import _image
 from intensity_normalization._image import BinaryMask, Image, IntensityArray, Mask
 from intensity_normalization.errors import IntensityNormalizationError
 from intensity_normalization.methods import _fcm
+from intensity_normalization.methods._common import standardize
 
 __all__ = ["TISSUES", "fcm", "fcm_array", "tissue_means"]
 
@@ -108,7 +109,7 @@ def fcm_array(
     if tissue_mean == 0.0:
         msg = f"The {tissue} mean is zero; cannot scale by it. Check the image and mask."
         raise IntensityNormalizationError(msg)
-    return data / tissue_mean * norm_value
+    return standardize(data, 0.0, tissue_mean, norm_value)
 
 
 def fcm(

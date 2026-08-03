@@ -7,6 +7,7 @@ import numpy as np
 from intensity_normalization import _image, histogram
 from intensity_normalization._image import BinaryMask, Image, IntensityArray, Mask
 from intensity_normalization.errors import IntensityNormalizationError
+from intensity_normalization.methods._common import standardize
 
 __all__ = ["whitestripe", "whitestripe_array"]
 
@@ -69,7 +70,7 @@ def whitestripe_array(
     if std == 0.0:
         msg = "The white stripe has zero standard deviation; cannot normalize by it."
         raise IntensityNormalizationError(msg)
-    return (data - stripe_values.mean()) / std * norm_value
+    return standardize(data, float(stripe_values.mean()), std, norm_value)
 
 
 def whitestripe(

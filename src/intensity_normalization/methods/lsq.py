@@ -15,6 +15,7 @@ import numpy as np
 from intensity_normalization import _image
 from intensity_normalization._image import BinaryMask, Image, IntensityArray, Mask
 from intensity_normalization.errors import IntensityNormalizationError
+from intensity_normalization.methods._common import standardize
 from intensity_normalization.methods._transform import FittedTransform
 from intensity_normalization.methods.fcm import tissue_means
 
@@ -112,7 +113,7 @@ class LSQTransform(FittedTransform):
         if scale == 0.0:
             msg = "Least-squares scale factor is zero; cannot normalize. Check the image and mask."
             raise IntensityNormalizationError(msg)
-        return data / scale * self.norm_value
+        return standardize(data, 0.0, scale, self.norm_value)
 
     def _state_dict(self) -> dict[str, np.ndarray]:
         return {
