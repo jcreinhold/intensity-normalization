@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pathlib
+
 import nibabel as nib
 import numpy as np
 import pytest
@@ -82,4 +84,4 @@ def test_io_match_masks_missing(nifti_dir) -> None:
 
 def test_io_output_path() -> None:
     out = io.output_path("/data/sub0.nii.gz", suffix="ws", output_dir="/out")
-    assert str(out) == "/out/sub0_ws.nii.gz"
+    assert out == pathlib.Path("/out") / "sub0_ws.nii.gz"
