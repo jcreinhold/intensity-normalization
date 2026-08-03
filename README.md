@@ -32,9 +32,9 @@ import intensity_normalization as inorm
 
 normed = inorm.whitestripe(t1w_image, mask=brain_mask)  # numpy or nibabel in → same type out
 
-tx = inorm.nyul.fit(train_images, masks=train_masks)    # population: fit once...
+tx = inorm.nyul.fit(train_images, masks=train_masks)  # population: fit once...
 tx.save("nyul.npz")
-normed_new = tx(new_image)                              # ...apply to new scans
+normed_new = tx(new_image)  # ...apply to new scans
 ```
 
 ```bash

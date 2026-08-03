@@ -37,7 +37,7 @@ pip install "intensity-normalization[plot]"   # histogram plotting
 ```python
 import intensity_normalization as inorm
 
-normed = inorm.whitestripe(t1w_image, mask=brain_mask)   # numpy or nibabel in, same type out
+normed = inorm.whitestripe(t1w_image, mask=brain_mask)  # numpy or nibabel in, same type out
 
 # population method: fit once, apply to new scans
 tx = inorm.nyul.fit(training_images, masks=training_masks)

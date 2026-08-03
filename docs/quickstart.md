@@ -32,7 +32,7 @@ image** (non-gadolinium-enhanced). No T1-w? Use `zscore` or `kde`.
     ```python
     import intensity_normalization as inorm
 
-    normed = inorm.fcm(t1w_image, mask=brain_mask)          # wm mean -> 1
+    normed = inorm.fcm(t1w_image, mask=brain_mask)  # wm mean -> 1
     normed = inorm.fcm(t1w_image, mask=brain_mask, tissue="gm", norm_value=2.0)
     ```
 
@@ -86,8 +86,8 @@ once, apply at inference time.
     tx = inorm.nyul.fit(train_images, masks=train_masks)
     tx.save("nyul.npz")
 
-    normed = tx(new_image)                       # callable, type-preserving
-    tx = inorm.NyulTransform.load("nyul.npz")    # reload later
+    normed = tx(new_image)  # callable, type-preserving
+    tx = inorm.NyulTransform.load("nyul.npz")  # reload later
     ```
 
 !!! note "RAVEL is different"

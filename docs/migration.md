@@ -37,11 +37,13 @@ Classes with `setup`/`teardown` and a `modality` keyword became:
 ```python
 # v2
 from intensity_normalization.normalize.whitestripe import WhiteStripeNormalize
+
 ws = WhiteStripeNormalize(norm_value=1.0)
 normalized = ws(image, mask)
 
 # v4
 import intensity_normalization as inorm
+
 normalized = inorm.whitestripe(image, mask=mask)
 ```
 
