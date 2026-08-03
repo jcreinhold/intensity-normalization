@@ -105,6 +105,15 @@ def test_float64_dtype_preserved(pair) -> None:
 
 
 @given(pair=phantom_3d())
+@FAST
+def test_non64_dtypes_canonicalize_to_float32(pair) -> None:
+    image, mask = pair
+    for dtype in (np.float16, np.int16, np.int32):
+        out = inorm.zscore(image.astype(dtype), mask)
+        assert out.dtype == np.float32, dtype
+
+
+@given(pair=phantom_3d())
 @SLOW
 def test_all_individual_methods_finite(pair) -> None:
     image, mask = pair
