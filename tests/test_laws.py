@@ -114,6 +114,17 @@ def test_non64_dtypes_canonicalize_to_float32(pair) -> None:
 
 
 @given(pair=phantom_3d())
+@FAST
+def test_input_array_never_mutated(pair) -> None:
+    """unwrap may alias the caller's array (no-copy path); methods must not write to it."""
+    image, mask = pair
+    original = image.copy()
+    for method in (inorm.zscore, inorm.whitestripe, inorm.kde, inorm.fcm):
+        method(image, mask)
+        assert np.array_equal(image, original), method.__name__
+
+
+@given(pair=phantom_3d())
 @SLOW
 def test_all_individual_methods_finite(pair) -> None:
     image, mask = pair

@@ -20,5 +20,14 @@ def standardize(data: IntensityArray, center: float, spread: float, norm_value: 
     Spread validity is the *caller's* check: the zero-spread error must name
     the statistic that failed ("white stripe has zero standard deviation"),
     so each core validates before calling and keeps its actionable message.
+
+    Memory: one volume-sized allocation. ``data - center`` allocates the
+    output (never mutates ``data`` — ``unwrap`` may hand back the caller's
+    own array), the remaining steps run in place, and Python-scalar
+    arithmetic keeps ``data``'s dtype (NEP 50 weak promotion), so no
+    ``astype`` copy is needed.
     """
-    return ((data - center) / spread * norm_value).astype(data.dtype)
+    out = data - center
+    out /= spread
+    out *= norm_value
+    return out
