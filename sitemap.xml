@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://jcreinhold.github.io/intensity-normalization/</loc>
+         <lastmod>2026-08-03</lastmod>
+    </url>
+    <url>
+         <loc>https://jcreinhold.github.io/intensity-normalization/algorithms/</loc>
+         <lastmod>2026-08-03</lastmod>
+    </url>
+    <url>
+         <loc>https://jcreinhold.github.io/intensity-normalization/api/</loc>
+         <lastmod>2026-08-03</lastmod>
+    </url>
+    <url>
+         <loc>https://jcreinhold.github.io/intensity-normalization/cli/</loc>
+         <lastmod>2026-08-03</lastmod>
+    </url>
+    <url>
+         <loc>https://jcreinhold.github.io/intensity-normalization/how-to/</loc>
+         <lastmod>2026-08-03</lastmod>
+    </url>
+    <url>
+         <loc>https://jcreinhold.github.io/intensity-normalization/methods/</loc>
+         <lastmod>2026-08-03</lastmod>
+    </url>
+    <url>
+         <loc>https://jcreinhold.github.io/intensity-normalization/migration/</loc>
+         <lastmod>2026-08-03</lastmod>
+    </url>
+    <url>
+         <loc>https://jcreinhold.github.io/intensity-normalization/quickstart/</loc>
+         <lastmod>2026-08-03</lastmod>
+    </url>
+</urlset>

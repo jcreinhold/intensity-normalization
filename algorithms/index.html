@@ -1,0 +1,958 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Normalize the intensities of MR images">
+      
+      
+      
+        <link rel="canonical" href="https://jcreinhold.github.io/intensity-normalization/algorithms/">
+      
+      
+        <link rel="prev" href="../methods/">
+      
+      
+        <link rel="next" href="../cli/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>How the methods work - intensity-normalization</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue-grey" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#how-the-methods-work" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="intensity-normalization" class="md-header__button md-logo" aria-label="intensity-normalization" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            intensity-normalization
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              How the methods work
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="blue-grey" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="blue-grey" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jcreinhold/intensity-normalization" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jcreinhold/intensity-normalization
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="intensity-normalization" class="md-nav__button md-logo" aria-label="intensity-normalization" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    intensity-normalization
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jcreinhold/intensity-normalization" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jcreinhold/intensity-normalization
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How-to guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../methods/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choosing a method
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How the methods work
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How the methods work
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#z-score" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Z-score
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fuzzy-c-means-fcm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fuzzy C-means (FCM)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kernel-density-estimation-kde" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kernel Density Estimation (KDE)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#piecewise-linear-histogram-matching-nyul-udupa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Piecewise Linear Histogram Matching (Nyúl &amp; Udupa)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Piecewise Linear Histogram Matching (Nyúl &amp; Udupa)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#learning-the-standard-histogram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Learning the standard histogram
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#normalizing-new-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Normalizing new images
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#whitestripe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WhiteStripe
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#least-squares-lsq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Least Squares (LSQ)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ravel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RAVEL
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migrating to v4
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#z-score" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Z-score
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fuzzy-c-means-fcm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fuzzy C-means (FCM)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kernel-density-estimation-kde" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kernel Density Estimation (KDE)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#piecewise-linear-histogram-matching-nyul-udupa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Piecewise Linear Histogram Matching (Nyúl &amp; Udupa)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Piecewise Linear Histogram Matching (Nyúl &amp; Udupa)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#learning-the-standard-histogram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Learning the standard histogram
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#normalizing-new-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Normalizing new images
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#whitestripe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WhiteStripe
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#least-squares-lsq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Least Squares (LSQ)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ravel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RAVEL
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="how-the-methods-work">How the methods work<a class="headerlink" href="#how-the-methods-work" title="Permanent link">&para;</a></h1>
+<p>For all descriptions, let <span class="arithmatex">\(I(\mathbf{x})\)</span> be the MR brain image under consideration where <span class="arithmatex">\(\mathbf{x} \in [0,N] \times
+[0,M] \times [0,L] \subset \mathbb{N}^3\)</span>, and let <span class="arithmatex">\(B \subset I\)</span> be the brain mask (the set of voxels in the brain).</p>
+<h2 id="z-score">Z-score<a class="headerlink" href="#z-score" title="Permanent link">&para;</a></h2>
+<p>Z-score normalization uses the brain mask <span class="arithmatex">\(B\)</span> to determine the mean and standard deviation of the intensities inside the
+brain:</p>
+<div class="arithmatex">\[ \mu = \frac{1}{|B|} \sum_{\mathbf{b} \in B} I(\mathbf{b}) \quad \text{and} \quad \sigma =
+\sqrt{\frac{\sum_{\mathbf{b} \in B} (I(\mathbf{b}) - \mu)^2}{|B| - 1}} \]</div>
+<p>Then the z-score normalized image is</p>
+<div class="arithmatex">\[ I_{\text{z-score}}(\mathbf{x}) = \frac{I(\mathbf{x}) - \mu}{\sigma}. \]</div>
+<p>Z-score is not brain-specific and works for any anatomy.</p>
+<h2 id="fuzzy-c-means-fcm">Fuzzy C-means (FCM)<a class="headerlink" href="#fuzzy-c-means-fcm" title="Permanent link">&para;</a></h2>
+<p>FCM normalization scales the image so the mean of a chosen tissue class equals a constant. Let <span class="arithmatex">\(T \subset B\)</span> be the
+tissue of interest (CSF, GM, or WM). The tissue mean is</p>
+<div class="arithmatex">\[ \mu = \frac{1}{|T|} \sum_{\mathbf{t} \in T} I(\mathbf{t}) \]</div>
+<p>and the normalized image is</p>
+<div class="arithmatex">\[ I_{\text{fcm}}(\mathbf{x}) = \frac{c \cdot I(\mathbf{x})}{\mu} \]</div>
+<p>where <span class="arithmatex">\(c \in \mathbb{R}_{&gt;0}\)</span> is a constant (<code>norm_value</code>, default 1). We use three-class fuzzy c-means over the brain
+mask of a T1-w image to get soft tissue memberships, sorted ascending by cluster center so the classes map to CSF/GM/WM,
+and the tissue "mean" is the membership-weighted average. For other contrasts of the same subject, the memberships from
+the co-registered T1-w image are reused.</p>
+<h2 id="kernel-density-estimation-kde">Kernel Density Estimation (KDE)<a class="headerlink" href="#kernel-density-estimation-kde" title="Permanent link">&para;</a></h2>
+<p>KDE-based normalization estimates the empirical probability density of the foreground intensities and scales the image
+so the mode of the tissue of interest (white matter for T1-w) equals a constant:</p>
+<div class="arithmatex">\[ \hat{p}(x) = \frac{1}{n\,\delta} \sum_{i=1}^{n} K\left(\frac{x - x_i}{\delta}\right) \]</div>
+<p>where <span class="arithmatex">\(K\)</span> is a Gaussian kernel, <span class="arithmatex">\(\delta\)</span> the bandwidth, and <span class="arithmatex">\(n\)</span> the number of foreground voxels (subsampled
+deterministically for speed; the mode is statistically unchanged). The smooth density makes mode-finding robust. Which
+local maximum is the tissue of interest depends on the modality: the <strong>last</strong> mode for T1-w, the <strong>largest</strong> for
+T2-w/FLAIR, the <strong>first</strong> for PD/MD. If <span class="arithmatex">\(p\)</span> is the tissue mode,</p>
+<div class="arithmatex">\[ I_{\text{kde}}(\mathbf{x}) = \frac{c \cdot I(\mathbf{x})}{p}. \]</div>
+<h2 id="piecewise-linear-histogram-matching-nyul-udupa">Piecewise Linear Histogram Matching (Nyúl &amp; Udupa)<a class="headerlink" href="#piecewise-linear-histogram-matching-nyul-udupa" title="Permanent link">&para;</a></h2>
+<p>Histogram matching [1] learns a <em>standard histogram</em> for a set of images of one contrast and maps each image's
+intensities onto it, demarcated by landmark percentiles (default: <span class="arithmatex">\(1, 10, 20, \ldots, 90, 99\)</span>; values outside <span class="arithmatex">\([1\%,
+99\%]\)</span> are treated as outliers) [2].</p>
+<h3 id="learning-the-standard-histogram">Learning the standard histogram<a class="headerlink" href="#learning-the-standard-histogram" title="Permanent link">&para;</a></h3>
+<p>Let <span class="arithmatex">\(\mathbf{I} = \{I_1, I_2, \ldots, I_K\}\)</span> be <span class="arithmatex">\(K\)</span> images of one contrast. For each image <span class="arithmatex">\(I_i\)</span>, compute the 1% and 99%
+intensity values <span class="arithmatex">\(m_1^i, m_{99}^i\)</span> and linearly map the image to a standard range <span class="arithmatex">\([m_{\text{min}}^s, m_{\text{max}}^s]\)</span>
+(default <span class="arithmatex">\([1, 100]\)</span>):</p>
+<div class="arithmatex">\[ \tilde{I}_i(\mathbf{x}) = \left(I_i(\mathbf{x}) - m_1^i + m_{\text{min}}^s\right) \frac{m_{\text{max}}^s}{m_{99}^i}.
+\]</div>
+<p>Then compute the landmark percentiles of <span class="arithmatex">\(\tilde{I}_i\)</span> and average them across the set — the mean of each corresponding
+landmark is the learned standard scale:</p>
+<div class="arithmatex">\[ m_n^s = \frac{1}{K} \sum_{i=1}^{K} \tilde{m}_n^i \quad \text{for } n \in \{1, 10, \ldots, 90, 99\}. \]</div>
+<h3 id="normalizing-new-images">Normalizing new images<a class="headerlink" href="#normalizing-new-images" title="Permanent link">&para;</a></h3>
+<p>For a new image, compute its landmark percentiles <span class="arithmatex">\(\{m_1, m_{10}, \ldots, m_{99}\}\)</span> and piecewise-linearly interpolate
+each decile onto the standard scale:</p>
+<div class="arithmatex">\[ I_{\text{nyul}}(\mathbf{x}) = \frac{I(\mathbf{x}) - m_i}{m_j - m_i}\left(m_j^s - m_i^s\right) + m_i^s \quad \text{for
+} I(\mathbf{x}) \in [m_i, m_j). \]</div>
+<p>Because the mapping is a fixed piecewise-linear function after fitting, the saved transform applies identically to any
+later image.</p>
+<h2 id="whitestripe">WhiteStripe<a class="headerlink" href="#whitestripe" title="Permanent link">&para;</a></h2>
+<p>WhiteStripe [3] performs a z-score-like standardization within the normal-appearing white matter (NAWM). Smooth the
+foreground histogram (KDE) and take the tissue mode <span class="arithmatex">\(\mu\)</span> (last mode for T1-w). The "white stripe" is the intensity band
+within a quantile window around the mode: with <span class="arithmatex">\(F\)</span> the empirical CDF of the foreground and <span class="arithmatex">\(\tau = 5\%\)</span> (<code>width</code>),</p>
+<div class="arithmatex">\[ \Omega_\tau = \left\{ I(\mathbf{x}) \mid F^{-1}\left(F(\mu) - \tau\right) &lt; I(\mathbf{x}) &lt; F^{-1}\left(F(\mu) +
+\tau\right) \right\}. \]</div>
+<p>Let <span class="arithmatex">\(\hat\mu\)</span> and <span class="arithmatex">\(\hat\sigma\)</span> be the mean and standard deviation over <span class="arithmatex">\(\Omega_\tau\)</span>. Then</p>
+<div class="arithmatex">\[ I_{\text{ws}}(\mathbf{x}) = \frac{I(\mathbf{x}) - \hat\mu}{\hat\sigma}. \]</div>
+<h2 id="least-squares-lsq">Least Squares (LSQ)<a class="headerlink" href="#least-squares-lsq" title="Permanent link">&para;</a></h2>
+<p>LSQ pulls the CSF/GM/WM tissue means of every image toward a common standard in a least-squares sense. Tissue means are
+computed with fuzzy c-means memberships (as in FCM). The standard tissue means <span class="arithmatex">\(\mathbf{m}^s \in \mathbb{R}^3\)</span> are
+learned from a reference image (scaled so its CSF mean equals <code>norm_value</code>). Each image <span class="arithmatex">\(I\)</span> with tissue means
+<span class="arithmatex">\(\mathbf{m}\)</span> is then scaled by the factor minimizing <span class="arithmatex">\(\lVert \mathbf{m}/s - \mathbf{m}^s \rVert^2\)</span>:</p>
+<div class="arithmatex">\[ s = \frac{\mathbf{m}^\top \mathbf{m}}{\mathbf{m}^\top \mathbf{m}^s}, \qquad I_{\text{lsq}}(\mathbf{x}) = \frac{c
+\cdot I(\mathbf{x})}{s}. \]</div>
+<h2 id="ravel">RAVEL<a class="headerlink" href="#ravel" title="Permanent link">&para;</a></h2>
+<p>RAVEL [4] improves on WhiteStripe by removing unwanted technical variation (e.g., scanner effects). It assumes a
+population of WhiteStripe-normalized images of one contrast follows the additive model</p>
+<div class="arithmatex">\[ V = \alpha 1^\top + \beta X^\top + \gamma Z^\top + R \]</div>
+<p>where <span class="arithmatex">\(V\)</span> is the image matrix (rows are voxels, columns are images), <span class="arithmatex">\(\alpha 1^\top\)</span> the average scan, <span class="arithmatex">\(\beta X^\top\)</span>
+known clinical covariates, <span class="arithmatex">\(\gamma Z^\top\)</span> unknown unwanted factors, and <span class="arithmatex">\(R\)</span> residuals. Using voxels where clinical
+covariates are assumed absent — CSF control voxels — the unwanted factors are identifiable: with <span class="arithmatex">\(V_c\)</span> the control-voxel
+matrix,</p>
+<div class="arithmatex">\[ V_c = \gamma Z^\top + R = U \Sigma W^\top \]</div>
+<p>via the SVD. The first <span class="arithmatex">\(b\)</span> right singular vectors <span class="arithmatex">\(W_b\)</span> form an orthogonal basis for the unwanted factors <span class="arithmatex">\(Z\)</span> [5].
+Voxel-wise linear regression gives the coefficients <span class="arithmatex">\(\gamma\)</span>, and</p>
+<div class="arithmatex">\[ I_{\text{ravel}}(\mathbf{x}) = I_{\text{ws}}(\mathbf{x}) - \gamma_{\mathbf{x}} Z^\top. \]</div>
+<p>Following the original paper, the default is <span class="arithmatex">\(b = 1\)</span>; the first right singular vector is highly correlated (&gt;95%) with
+the mean CSF intensity. RAVEL requires same-shape, co-registered images and corrects the batch it was fit on — it is not
+a fit-once/apply-later method.</p>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ol>
+<li>L. G. Nyúl, J. K. Udupa, and X. Zhang, "New Variants of a Method of MRI Scale Standardization," <em>IEEE Trans. Med.
+   Imaging</em>, vol. 19, no. 2, pp. 143–150, 2000.</li>
+<li>M. Shah et al., "Evaluating intensity normalization on MRIs of human brain with multiple sclerosis," <em>Med. Image
+   Anal.</em>, vol. 15, no. 2, pp. 267–282, 2011.</li>
+<li>R. T. Shinohara et al., "Statistical normalization techniques for magnetic resonance imaging," <em>NeuroImage Clin.</em>,
+   vol. 6, pp. 9–19, 2014.</li>
+<li>J. P. Fortin et al., "Removing inter-subject technical variability in magnetic resonance imaging studies,"
+   <em>NeuroImage</em>, vol. 132, pp. 198–212, 2016.</li>
+<li>J. T. Leek and J. D. Storey, "Capturing heterogeneity in gene expression studies by surrogate variable analysis,"
+   <em>PLoS Genet.</em>, vol. 3, no. 9, pp. 1724–1735, 2007.</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
