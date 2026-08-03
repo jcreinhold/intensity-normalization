@@ -35,8 +35,7 @@ def test_tissue_membership_nibabel(phantom) -> None:
 
 
 def test_plot_histograms(phantom, tmp_path, monkeypatch) -> None:
-    import matplotlib
-
+    matplotlib = pytest.importorskip("matplotlib")
     monkeypatch.setattr(matplotlib.pyplot, "show", lambda: None)
     from intensity_normalization import plot_histograms, zscore
 

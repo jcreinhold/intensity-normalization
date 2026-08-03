@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from tests.conftest import make_phantom, make_population
+from phantoms import make_phantom, make_population
 
 import intensity_normalization as inorm
 from intensity_normalization import io

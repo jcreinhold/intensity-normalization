@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from tests.conftest import make_population
+from phantoms import make_population
 
 from intensity_normalization import histogram
 from intensity_normalization.errors import IntensityNormalizationError

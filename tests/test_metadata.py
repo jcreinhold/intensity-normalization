@@ -15,7 +15,7 @@ import numpy as np
 import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
-from tests.conftest import make_phantom
+from phantoms import make_phantom
 
 import intensity_normalization as inorm
 from intensity_normalization import io

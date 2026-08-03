@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-import matplotlib
 import numpy as np
 import pytest
 from typer.testing import CliRunner
-
-matplotlib.use("Agg")
 
 from intensity_normalization import io
 from intensity_normalization.cli import app, main  # noqa: F401  (main registers commands)
@@ -84,6 +81,8 @@ def test_tissue_membership_cmd(nifti_dir, tmp_path) -> None:
 
 
 def test_plot_histograms_cmd(nifti_dir, tmp_path) -> None:
+    matplotlib = pytest.importorskip("matplotlib")
+    matplotlib.use("Agg")
     image_dir, mask_dir = nifti_dir
     out = tmp_path / "hist.png"
     result = runner.invoke(app, ["plot-histograms", str(image_dir), "-m", str(mask_dir), "-o", str(out)])
