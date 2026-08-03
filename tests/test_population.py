@@ -23,7 +23,7 @@ def test_nyul_maps_landmarks_to_output_range(population) -> None:
 def test_nyul_aligns_population_histograms(population) -> None:
     images, masks = population
     _, normed = nyul.fit_transform(images, masks)
-    modes = [histogram.tissue_mode(n[m > 0], modality="t1") for n, m in zip(normed, masks, strict=True)]
+    modes = [histogram.tissue_mode(n[m > 0], peak="last") for n, m in zip(normed, masks, strict=True)]
     assert np.std(modes) < 2.0  # raw modes range over ~2x; aligned should be tight
 
 

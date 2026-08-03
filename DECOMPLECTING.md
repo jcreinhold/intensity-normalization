@@ -100,8 +100,10 @@ the CLI is a thin dispatch layer.
 ```python
 # _image.py — the only place these rules exist
 
+
 def unwrap_mask(image: Image, mask: Mask | None) -> BinaryMask | None:
     """Boundary: nibabel-aware. Affine validation + binarization (> 0)."""
+
 
 def resolve_foreground(data: IntensityArray, mask: BinaryMask | None) -> BinaryMask:
     """The one owner of foreground semantics.
@@ -145,6 +147,7 @@ out of the mechanisms.
 ```python
 # methods/_common.py
 
+
 def standardize(data: IntensityArray, center: float, spread: float, norm_value: float) -> IntensityArray:
     """(data - center) / spread * norm_value, stored float32.
 
@@ -182,12 +185,15 @@ graph. The FCM modality rule ("memberships are only meaningful on T1-w") is
 ```python
 # _image.py
 
+
 @dataclasses.dataclass(frozen=True)
 class ImageMeta:
     """Everything needed to rebuild the user's image from an array."""
-    cls: type            # np.ndarray or the nibabel image class
+
+    cls: type  # np.ndarray or the nibabel image class
     affine: IntensityArray | None
-    header: typing.Any | None   # nibabel header copy (duck-typed by nibabel)
+    header: typing.Any | None  # nibabel header copy (duck-typed by nibabel)
+
 
 def unwrap(image: Image) -> tuple[IntensityArray, ImageMeta]: ...
 def restore(meta: ImageMeta, data: IntensityArray) -> Image: ...

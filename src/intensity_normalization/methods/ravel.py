@@ -19,7 +19,7 @@ import numpy as np
 import scipy.sparse
 import scipy.sparse.linalg
 
-from intensity_normalization import _image
+from intensity_normalization import _image, histogram
 from intensity_normalization._image import BinaryMask, Image, IntensityArray, Mask
 from intensity_normalization.errors import IntensityNormalizationError
 from intensity_normalization.methods._transform import _load_stamped, _save_stamped
@@ -293,6 +293,7 @@ def fit_transform(
 
     ws_kwargs = dict(whitestripe_kwargs or {})
     ws_kwargs.setdefault("seed", seed)
+    ws_kwargs["peak"] = histogram.resolve_peak(ws_kwargs.pop("modality", "t1"), ws_kwargs.pop("peak", None))
     ws_datas = [
         whitestripe_array(data, _image.resolve_foreground(data, mask_data), **ws_kwargs)
         for data, mask_data in zip(datas, mask_datas, strict=True)

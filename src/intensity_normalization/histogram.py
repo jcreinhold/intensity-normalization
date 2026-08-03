@@ -27,6 +27,7 @@ __all__ = [
     "first_mode",
     "largest_mode",
     "last_mode",
+    "resolve_peak",
     "smooth_histogram",
     "tissue_mode",
 ]
@@ -129,24 +130,34 @@ def first_mode(intensities: ForegroundIntensities, *, tail_percentage: float = 9
     return float(grid[maxima[0]])
 
 
-def tissue_mode(
-    intensities: ForegroundIntensities, *, modality: str = "t1", peak: Peak | None = None, **kwargs: typing.Any
-) -> float:
-    """Mode of the tissue of interest for ``modality`` (or an explicit ``peak``).
+def resolve_peak(modality: str, peak: Peak | None) -> Peak:
+    """The modality -> peak policy, resolved once at the boundary.
 
     Args:
-        intensities: 1D array of foreground intensities.
         modality: one of "t1", "t2", "flair", "pd", "md", "other".
         peak: explicit peak override ("last", "largest", "first") for
             non-standard data; derived from ``modality`` when None.
     """
-    if peak is None:
-        modality = modality.lower()
-        if modality not in MODALITY_PEAKS:
-            choices = ", ".join(VALID_MODALITIES)
-            raise ValueError(f"Unknown modality {modality!r}. Choose one of: {choices}.")
-        peak = MODALITY_PEAKS[modality]
-    elif peak not in VALID_PEAKS:
+    if peak is not None:
+        if peak not in VALID_PEAKS:
+            raise ValueError(f"Unknown peak {peak!r}. Choose one of: {', '.join(VALID_PEAKS)}.")
+        return peak
+    modality = modality.lower()
+    if modality not in MODALITY_PEAKS:
+        choices = ", ".join(VALID_MODALITIES)
+        raise ValueError(f"Unknown modality {modality!r}. Choose one of: {choices}.")
+    return MODALITY_PEAKS[modality]
+
+
+def tissue_mode(intensities: ForegroundIntensities, *, peak: Peak, **kwargs: typing.Any) -> float:
+    """Mode of the tissue of interest at ``peak``.
+
+    Args:
+        intensities: 1D array of foreground intensities.
+        peak: which histogram peak carries the tissue ("last", "largest",
+            "first"); resolve modality names with :func:`resolve_peak`.
+    """
+    if peak not in VALID_PEAKS:
         raise ValueError(f"Unknown peak {peak!r}. Choose one of: {', '.join(VALID_PEAKS)}.")
     if peak == "last":
         return last_mode(intensities, **kwargs)

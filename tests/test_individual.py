@@ -46,7 +46,7 @@ def test_kde_tissue_mode_to_norm_value(phantom) -> None:
     # the wm peak (largest tissue mean, last mode on t1) should sit at 2.0
     from intensity_normalization import histogram
 
-    mode = histogram.tissue_mode(out[mask], modality="t1")
+    mode = histogram.tissue_mode(out[mask], peak="last")
     assert mode == pytest.approx(2.0, abs=0.1)
 
 

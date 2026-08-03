@@ -3,6 +3,18 @@
 v4 is a clean break from v2/v3: new package layout, new Python API, one CLI.
 The algorithms are the same (and better tested); the interface was redesigned.
 
+## v4.1 (unreleased): histogram policy resolved at the boundary
+
+`histogram.tissue_mode` no longer accepts `modality=`; it takes a required
+`peak=`. Resolve modality names first with the new `histogram.resolve_peak`:
+
+```python
+# before
+histogram.tissue_mode(intensities, modality="t1")
+# after
+histogram.tissue_mode(intensities, peak=histogram.resolve_peak("t1", None))
+```
+
 ## CLI
 
 Eleven separate scripts became subcommands of one binary:

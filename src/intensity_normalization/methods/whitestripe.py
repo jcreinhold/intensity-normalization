@@ -15,8 +15,7 @@ def whitestripe_array(
     data: IntensityArray,
     foreground: BinaryMask,
     *,
-    modality: str = "t1",
-    peak: histogram.Peak | None = None,
+    peak: histogram.Peak,
     width: float = 0.05,
     width_l: float | None = None,
     width_u: float | None = None,
@@ -33,10 +32,9 @@ def whitestripe_array(
     Args:
         data: intensity array.
         foreground: boolean foreground (brain) mask.
-        modality: one of "t1", "t2", "flair", "pd", "md", "other"; selects
-            which histogram peak anchors the stripe.
-        peak: explicit peak override ("last", "largest", "first") for
-            non-standard data.
+        peak: which histogram peak anchors the stripe ("last", "largest",
+            "first"); resolve modality names with
+            :func:`intensity_normalization.histogram.resolve_peak`.
         width: quantile half-width of the stripe around the tissue mode.
         width_l: asymmetric override for the lower width.
         width_u: asymmetric override for the upper width.
@@ -52,7 +50,7 @@ def whitestripe_array(
         width_u = width
     foreground_values = data[foreground]
 
-    mode = histogram.tissue_mode(foreground_values, modality=modality, peak=peak, seed=seed)
+    mode = histogram.tissue_mode(foreground_values, peak=peak, seed=seed)
     mode_quantile = float(np.mean(foreground_values < mode))
     lower = max(mode_quantile - width_l, 0.0)
     upper = min(mode_quantile + width_u, 1.0)
@@ -109,8 +107,7 @@ def whitestripe(
     normalized = whitestripe_array(
         data,
         foreground,
-        modality=modality,
-        peak=peak,
+        peak=histogram.resolve_peak(modality, peak),
         width=width,
         width_l=width_l,
         width_u=width_u,

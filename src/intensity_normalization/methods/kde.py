@@ -13,8 +13,7 @@ def kde_array(
     data: IntensityArray,
     foreground: BinaryMask,
     *,
-    modality: str = "t1",
-    peak: histogram.Peak | None = None,
+    peak: histogram.Peak,
     norm_value: float = 1.0,
     seed: int | None = 0,
 ) -> IntensityArray:
@@ -27,10 +26,9 @@ def kde_array(
     Args:
         data: intensity array.
         foreground: boolean foreground (brain) mask.
-        modality: one of "t1", "t2", "flair", "pd", "md", "other"; selects
-            which histogram peak is the tissue of interest.
-        peak: explicit peak override ("last", "largest", "first") for
-            non-standard data.
+        peak: which histogram peak carries the tissue of interest ("last",
+            "largest", "first"); resolve modality names with
+            :func:`intensity_normalization.histogram.resolve_peak`.
         norm_value: intensity the tissue mode is mapped to.
         seed: RNG seed for the KDE subsample; ``None`` is nondeterministic.
 
@@ -38,7 +36,7 @@ def kde_array(
         The normalized intensity array.
     """
     foreground_values = _image.foreground_values(data, foreground)
-    mode = histogram.tissue_mode(foreground_values, modality=modality, peak=peak, seed=seed)
+    mode = histogram.tissue_mode(foreground_values, peak=peak, seed=seed)
     if mode == 0.0:
         msg = "The tissue mode is at zero intensity; cannot scale by it. Check the image and mask."
         raise IntensityNormalizationError(msg)
@@ -71,5 +69,7 @@ def kde(
     """
     data, restore = _image.unwrap(image)
     foreground = _image.resolve_foreground(data, _image.unwrap_mask(image, mask))
-    normalized = kde_array(data, foreground, modality=modality, peak=peak, norm_value=norm_value, seed=seed)
+    normalized = kde_array(
+        data, foreground, peak=histogram.resolve_peak(modality, peak), norm_value=norm_value, seed=seed
+    )
     return restore(normalized)
