@@ -19,6 +19,14 @@ import importlib.metadata
 import logging
 
 from intensity_normalization import histogram, io
+from intensity_normalization._image import (
+    BinaryMask,
+    ForegroundIntensities,
+    Image,
+    IntensityArray,
+    Mask,
+    MaskArray,
+)
 from intensity_normalization.errors import IntensityNormalizationError
 from intensity_normalization.methods import fcm, kde, lsq, nyul, ravel, whitestripe, zscore
 from intensity_normalization.methods.lsq import LSQTransform
@@ -31,8 +39,14 @@ from intensity_normalization.tools.tissue import tissue_membership
 __version__ = importlib.metadata.version("intensity-normalization")
 
 __all__ = [
+    "BinaryMask",
+    "ForegroundIntensities",
+    "Image",
+    "IntensityArray",
     "IntensityNormalizationError",
     "LSQTransform",
+    "Mask",
+    "MaskArray",
     "NyulTransform",
     "RavelResult",
     "__version__",

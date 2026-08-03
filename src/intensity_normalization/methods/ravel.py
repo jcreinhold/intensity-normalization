@@ -26,7 +26,7 @@ from intensity_normalization.methods._transform import _load_stamped, _save_stam
 from intensity_normalization.methods.fcm import tissue_means
 from intensity_normalization.methods.whitestripe import WhiteStripeSpec, whitestripe_array
 
-__all__ = ["RavelResult", "fit_transform", "ravel_array"]
+__all__ = ["RavelResult", "fit_transform", "fit_transform_array"]
 
 
 @dataclasses.dataclass(frozen=True, eq=False)
@@ -311,7 +311,7 @@ def fit_transform(
 
     space = _template_space(images, ws_datas, mask_datas, template) if register else _native_space(ws_datas, mask_datas)
 
-    result, corrected_datas = ravel_array(
+    result, corrected_datas = fit_transform_array(
         space.ws_images,
         space.masks,
         membership_threshold=membership_threshold,
@@ -329,7 +329,7 @@ def fit_transform(
     return result, normalized
 
 
-def ravel_array(
+def fit_transform_array(
     ws_images: Sequence[IntensityArray],
     masks: Sequence[BinaryMask | None] | None = None,
     *,

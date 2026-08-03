@@ -37,8 +37,8 @@ Invariants to preserve:
   functions (e.g. `zscore_array`, `fcm_array`, `fit_array`, `transform_array`)
   are the actual methods — pure numpy, no nibabel. The plain-named functions
   (`zscore`, `fcm`, `fit`, `transform`) are thin convenience wrappers:
-  unwrap → core → restore. RAVEL's core is `ravel_array` (registration-free);
-  registration lives in the `fit_transform` wrapper.
+  unwrap → core → restore. Naming rule: a core is its wrapper's name +
+  `_array` (`zscore_array`, `fit_array`, `fit_transform_array`).
 - Decomplected boundaries (see `DECOMPLECTING.md`): no core accepts `None`
   masks, modality strings, or `**kwargs`. Foreground resolution
   (`resolve_foreground`), mask binarization (`unwrap_mask`), and modality→peak

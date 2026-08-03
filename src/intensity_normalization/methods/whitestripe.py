@@ -64,7 +64,7 @@ def whitestripe_array(
         width_l = width
     if width_u is None:
         width_u = width
-    foreground_values = data[foreground]
+    foreground_values = _image.foreground_values(data, foreground)
 
     mode = histogram.tissue_mode(foreground_values, peak=peak, seed=seed)
     mode_quantile = float(np.mean(foreground_values < mode))

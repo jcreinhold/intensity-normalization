@@ -136,7 +136,7 @@ def fcm_array(data, foreground: BinaryMask, *, modality, tissue, membership, ...
 
 Population cores take per-item resolved masks: `fit_array(datas,
 foregrounds: Sequence[BinaryMask], ...)`. The lone, *documented* exception is
-`ravel_array`: foregrounds must be estimated on WhiteStripe-normalized arrays
+`fit_transform_array`: foregrounds must be estimated on WhiteStripe-normalized arrays
 (inside the algorithm), so it accepts `Sequence[BinaryMask | None]` and
 resolves per item — through the same `resolve_foreground`, never its own
 logic.
@@ -280,6 +280,28 @@ phases 4–5 touch internals only.
    `**kwargs` from the transform chain. *Public API change*:
    `ravel.fit_transform(whitestripe_kwargs=...)` → `whitestripe=WhiteStripeSpec(...)`.
 5. **Strand 4** — `ImageMeta`; `Restorer` deleted (private, no API change).
+
+## Recorded rationale (apparent mishmash that is principled)
+
+- **No `Protocol`/ABC over the individual methods.** Their tail parameters
+  genuinely differ (`peak`, `tissue`, `membership`, `width`); a protocol would
+  be vacuous (`Callable[..., IntensityArray]`) or force unlike things into one
+  shape. The real uniformity — `(data, foreground, **method_options) ->
+  IntensityArray` — is visible in the code without a nominal type.
+- **The repeated four-line wrapper idiom** (unwrap → resolve → core →
+  restore) is deliberate: a template helper would braid boundary mechanics
+  with dispatch magic. Same layer, same abstraction (PoSD ch. 7).
+- **`WhiteStripeSpec` is a one-off on purpose**: only WhiteStripe is embedded
+  in another workflow. A second `Spec` appears when a second method is
+  embedded, not before.
+- **Two idioms for masked arrays, by rule**: extracting foreground intensity
+  samples goes through `_image.foreground_values` (it names the
+  `ForegroundIntensities` concept); masked *arithmetic* (`weights[foreground]`)
+  indexes directly.
+- **Naming rule for cores**: core = wrapper name + `_array`. Public type
+  vocabulary (`Image`, `Mask`, `IntensityArray`, `MaskArray`, `BinaryMask`,
+  `ForegroundIntensities`) is re-exported at the package root so public
+  signatures reference importable names.
 
 ## Non-goals
 

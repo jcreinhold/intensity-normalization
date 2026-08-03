@@ -70,6 +70,7 @@ class FittedTransform(abc.ABC):
     format_version: typing.ClassVar[int] = 1
 
     def __call__(self, image: Image, mask: Mask | None = None) -> Image:
+        """Sugar for :meth:`transform`."""
         return self.transform(image, mask)
 
     def transform(self, image: Image, mask: Mask | None = None) -> Image:
