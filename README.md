@@ -17,7 +17,7 @@ processing (especially ML). This package implements the standard fixes:
 ## Install
 
 ```bash
-pip install intensity-normalization            # or: uv pip install intensity-normalization
+pip install intensity-normalization            # or: uv add intensity-normalization
 pip install "intensity-normalization[ants]"  # ravel registration, preprocess, coregister
 pip install "intensity-normalization[plot]"  # histogram plotting
 ```
