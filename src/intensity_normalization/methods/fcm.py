@@ -139,7 +139,7 @@ def fcm(
     Returns:
         The normalized image, same type as ``image``.
     """
-    data, restore = _image.unwrap(image)
+    data, meta = _image.unwrap(image)
     if modality.lower() != "t1" and membership is None and mask is None:
         msg = (
             f"FCM tissue memberships are only meaningful on T1-w images; got "
@@ -158,4 +158,4 @@ def fcm(
         norm_value=norm_value,
         seed=seed,
     )
-    return restore(normalized)
+    return _image.restore(meta, normalized)

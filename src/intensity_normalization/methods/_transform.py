@@ -74,10 +74,10 @@ class FittedTransform(abc.ABC):
 
     def transform(self, image: Image, mask: Mask | None = None) -> Image:
         """Apply the learned transform to one image (numpy array or nibabel image)."""
-        data, restore = _image.unwrap(image)
+        data, meta = _image.unwrap(image)
         foreground = _image.resolve_foreground(data, _image.unwrap_mask(image, mask))
         out = self.transform_array(data, foreground)
-        return restore(out)
+        return _image.restore(meta, out)
 
     @abc.abstractmethod
     def transform_array(self, data: IntensityArray, foreground: BinaryMask) -> IntensityArray:

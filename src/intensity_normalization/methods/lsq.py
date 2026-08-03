@@ -98,9 +98,9 @@ class LSQTransform(FittedTransform):
 
     def transform(self, image: Image, mask: Mask | None = None, *, membership: IntensityArray | None = None) -> Image:
         """Apply the learned transform; ``membership`` overrides the FCM fit (non-T1-w data)."""
-        data, restore = _image.unwrap(image)
+        data, meta = _image.unwrap(image)
         foreground = _image.resolve_foreground(data, _image.unwrap_mask(image, mask))
-        return restore(self.transform_array(data, foreground, membership=membership))
+        return _image.restore(meta, self.transform_array(data, foreground, membership=membership))
 
     def transform_array(
         self,

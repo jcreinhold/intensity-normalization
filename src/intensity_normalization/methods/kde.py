@@ -68,9 +68,9 @@ def kde(
     Returns:
         The normalized image, same type as ``image``.
     """
-    data, restore = _image.unwrap(image)
+    data, meta = _image.unwrap(image)
     foreground = _image.resolve_foreground(data, _image.unwrap_mask(image, mask))
     normalized = kde_array(
         data, foreground, peak=histogram.resolve_peak(modality, peak), norm_value=norm_value, seed=seed
     )
-    return restore(normalized)
+    return _image.restore(meta, normalized)

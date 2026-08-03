@@ -61,7 +61,7 @@ def tissue_membership(
         (see :data:`intensity_normalization.methods.fcm.TISSUES`), or a 3D
         label map with ``hard_segmentation=True``.
     """
-    data, restore = _image.unwrap(image)
+    data, meta = _image.unwrap(image)
     foreground = _image.resolve_foreground(data, _image.unwrap_mask(image, mask))
     out = tissue_membership_array(data, foreground, hard_segmentation=hard_segmentation, seed=seed)
-    return restore(out)
+    return _image.restore(meta, out)

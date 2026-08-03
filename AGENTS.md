@@ -39,6 +39,13 @@ Invariants to preserve:
   (`zscore`, `fcm`, `fit`, `transform`) are thin convenience wrappers:
   unwrap → core → restore. RAVEL's core is `ravel_array` (registration-free);
   registration lives in the `fit_transform` wrapper.
+- Decomplected boundaries (see `DECOMPLECTING.md`): no core accepts `None`
+  masks, modality strings, or `**kwargs`. Foreground resolution
+  (`resolve_foreground`), mask binarization (`unwrap_mask`), and modality→peak
+  policy (`histogram.resolve_peak`) each happen once, at the boundary; policy
+  flows down as values (`BinaryMask`, `Peak`, `WhiteStripeSpec`). The affine
+  apply step is shared (`methods/_common.standardize`). Image context is a
+  value (`ImageMeta`), never a closure.
 - Type aliases live in `_image.py`: `IntensityArray` (float image data),
   `ForegroundIntensities` (1-D in-mask samples), `MaskArray` (bool mask array),
   `Image`/`Mask` (user-facing unions incl. nibabel). PEP 695 `type` statements

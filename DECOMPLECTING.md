@@ -1,5 +1,9 @@
 # Decomplecting intensity-normalization — a design for ease of reasoning
 
+> **Status: implemented.** All five strands landed (phases 1–5 below, commits
+> `c14f68a`..`f3cc910` and the `ImageMeta` phase). The standing rules at the
+> bottom are now invariants enforced in `AGENTS.md`.
+
 ## Context
 
 v4 (see `PLAN.md`) gave the package a sound *module* architecture: methods are

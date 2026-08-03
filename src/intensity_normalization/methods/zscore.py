@@ -60,6 +60,6 @@ def zscore(
     Returns:
         The normalized image, same type as ``image``.
     """
-    data, restore = _image.unwrap(image)
+    data, meta = _image.unwrap(image)
     foreground = _image.resolve_foreground(data, _image.unwrap_mask(image, mask))
-    return restore(zscore_array(data, foreground, norm_value=norm_value))
+    return _image.restore(meta, zscore_array(data, foreground, norm_value=norm_value))

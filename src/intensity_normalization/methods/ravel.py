@@ -278,7 +278,9 @@ def fit_transform(
     if masks is not None and len(masks) != len(images):
         raise ValueError(f"Got {len(images)} images but {len(masks)} masks.")
 
-    datas = [_image.unwrap(img)[0] for img in images]
+    unwrapped = [_image.unwrap(img) for img in images]
+    datas = [data for data, _ in unwrapped]
+    metas = [meta for _, meta in unwrapped]
     mask_datas: list[BinaryMask | None] = (
         [_image.unwrap_mask(img, m) for img, m in zip(images, masks, strict=True)] if masks else [None] * len(images)
     )
@@ -321,10 +323,9 @@ def fit_transform(
     )
 
     normalized: list[Image] = []
-    for i, image in enumerate(images):
-        _, restore = _image.unwrap(image)
+    for i, meta in enumerate(metas):
         corrected = space.warp_back(i, corrected_datas[i])
-        normalized.append(restore(corrected.astype(np.float32)))
+        normalized.append(_image.restore(meta, corrected.astype(np.float32)))
     return result, normalized
 
 

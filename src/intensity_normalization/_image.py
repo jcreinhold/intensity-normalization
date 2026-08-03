@@ -8,7 +8,8 @@ always handed to the math as float32 arrays.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+import dataclasses
+import typing
 
 import nibabel as nib
 import nibabel.spatialimages  # explicit so nib.spatialimages resolves
@@ -20,11 +21,13 @@ __all__ = [
     "BinaryMask",
     "ForegroundIntensities",
     "Image",
+    "ImageMeta",
     "IntensityArray",
     "Mask",
     "MaskArray",
     "foreground_values",
     "resolve_foreground",
+    "restore",
     "unwrap",
     "unwrap_mask",
 ]
@@ -50,36 +53,52 @@ type Image = IntensityArray | nib.spatialimages.SpatialImage
 type Mask = MaskArray | nib.spatialimages.SpatialImage
 """A mask as users hand it to us: a float or bool array, or a nibabel image."""
 
-type Restorer = Callable[[IntensityArray], Image]
+
+@dataclasses.dataclass(frozen=True)
+class ImageMeta:
+    """Everything needed to rebuild the user's image from an array (a value,
+    not a closure): the source class, its affine, and a copy of its header."""
+
+    cls: type
+    affine: np.ndarray | None
+    header: typing.Any | None  # nibabel header, copied at unwrap time
+
 
 _BACKGROUND_THRESHOLD = 1e-6
 
 
-def unwrap(image: Image | BinaryMask) -> tuple[IntensityArray, Restorer]:
-    """Return ``(data, restore)`` where ``restore`` wraps data back into image's type.
+def unwrap(image: Image | BinaryMask) -> tuple[IntensityArray, ImageMeta]:
+    """Split ``image`` into ``(data, meta)``: float32 array plus its context value.
 
-    ``data`` is a float32 array. ``restore`` must be called with an array of
-    the same shape as ``data`` (or any shape for numpy inputs).
+    Use :func:`restore` to wrap an array of the same shape back into the
+    source type (the header is copied at unwrap, so the source image's header
+    is never mutated).
     """
     if isinstance(image, np.ndarray):
-        return np.asarray(image, dtype=np.float32), np.asarray
+        return np.asarray(image, dtype=np.float32), ImageMeta(np.ndarray, None, None)
 
     if isinstance(image, nib.spatialimages.SpatialImage):
-
-        def restore_nibabel(data: IntensityArray) -> Image:
-            # Copy the header so the source image is never mutated, and set its
-            # datatype to the data's: without this, an int16 source header would
-            # silently truncate float32 normalized data on save. Clear any
-            # scaling so stored values equal the computed ones.
-            header = image.header.copy()
-            header.set_data_dtype(np.asanyarray(data).dtype)
-            if hasattr(header, "set_slope_inter"):
-                header.set_slope_inter(None, None)  # ty: ignore[call-non-callable]  # nibabel headers are duck-typed; hasattr guards this
-            return image.__class__(np.asanyarray(data), image.affine, header)
-
-        return np.asanyarray(image.dataobj, dtype=np.float32), restore_nibabel
+        meta = ImageMeta(type(image), image.affine, image.header.copy())
+        return np.asanyarray(image.dataobj, dtype=np.float32), meta
 
     raise TypeError(f"Unsupported image type: {type(image)}. Pass a numpy array or a nibabel spatial image.")
+
+
+def restore(meta: ImageMeta, data: IntensityArray) -> Image:
+    """Wrap ``data`` back into the image type ``meta`` describes (pure).
+
+    The header's datatype is set to the data's: without this, an int16 source
+    header would silently truncate float32 normalized data on save. Any
+    scaling is cleared so stored values equal the computed ones.
+    """
+    if meta.cls is np.ndarray:
+        return np.asarray(data)
+    assert meta.header is not None  # nibabel sources always carry a header copy
+    header = meta.header.copy()
+    header.set_data_dtype(np.asanyarray(data).dtype)
+    if hasattr(header, "set_slope_inter"):
+        header.set_slope_inter(None, None)  # nibabel headers are duck-typed; hasattr guards this
+    return meta.cls(np.asanyarray(data), meta.affine, header)
 
 
 def unwrap_mask(image: Image, mask: Mask | None) -> BinaryMask | None:
