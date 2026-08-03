@@ -1,219 +1,74 @@
-"""Pytest configuration and fixtures for intensity-normalization tests."""
+"""Shared fixtures: synthetic brain phantoms with known tissue statistics."""
 
-import tempfile
-from collections.abc import Generator, Sequence
-from pathlib import Path
+from __future__ import annotations
 
+import pathlib
+
+import nibabel as nib
 import numpy as np
-import numpy.typing as npt
 import pytest
 
-from intensity_normalization.adapters.images import NibabelImageAdapter, NumpyImageAdapter
-from intensity_normalization.domain.protocols import ImageProtocol
+TISSUE_MEANS = {1: 100.0, 2: 300.0, 3: 500.0}  # csf, gm, wm
 
 
-@pytest.fixture
-def sample_3d_data() -> npt.NDArray[np.floating]:
-    """Generate synthetic 3D brain-like data."""
-    import numpy as np
+def make_phantom(
+    shape: tuple[int, int, int] = (30, 30, 30),
+    *,
+    scale: float = 1.0,
+    shift: float = 0.0,
+    noise: float = 10.0,
+    seed: int = 42,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """T1-w-like phantom: background 0, csf/gm/wm at known means (x scale + shift).
 
-    shape = (64, 64, 32)
-    data = np.zeros(shape, dtype=np.float32)
-
-    # Create realistic MR intensities with tissue-like clusters
-    #   Background -> ~0
-    #   CSF -> low intensity ~200
-    data[10:20, 10:20, 10:20] = np.random.normal(200, 20, (10, 10, 10))
-    # GM (medium intensity ~600)
-    data[20:40, 20:40, 10:20] = np.random.normal(600, 30, (20, 20, 10))
-    # WM (high intensity ~1000)
-    data[40:60, 40:60, 10:20] = np.random.normal(1000, 40, (20, 20, 10))
-
-    # Ensure non-negative values
-    return np.clip(data, 0, None)
-
-
-@pytest.fixture
-def sample_mask() -> npt.NDArray[np.floating]:
-    """Generate brain mask."""
-    import numpy as np
-
-    shape = (64, 64, 32)
-    mask = np.zeros(shape, dtype=np.float32)
-    mask[10:60, 10:60, 10:20] = 1.0
-    return mask
+    Returns (image, foreground_mask, labels).
+    """
+    rng = np.random.default_rng(seed)
+    labels = np.zeros(shape, np.uint8)
+    a, b = shape[0] // 4, shape[0] // 8
+    c = int(shape[0] * 0.4)
+    labels[a:-a, a:-a, a:-a] = 1
+    inner = labels[b:-b, b:-b, b:-b]
+    inner[inner == 0] = 2
+    labels[c:-c, c:-c, c:-c] = 3
+    image = np.zeros(shape, np.float32)
+    for k, mean in TISSUE_MEANS.items():
+        n = int((labels == k).sum())
+        image[labels == k] = rng.normal(mean * scale + shift, noise, n)
+    return image, (labels > 0), labels
 
 
-@pytest.fixture
-def numpy_image(sample_3d_data: npt.NDArray[np.floating]) -> NumpyImageAdapter:
-    """Create numpy image adapter."""
-    return NumpyImageAdapter(sample_3d_data)
+def make_population(
+    n: int = 4,
+    shape: tuple[int, int, int] = (24, 24, 24),
+) -> tuple[list[np.ndarray], list[np.ndarray]]:
+    """Same phantom at different global scales/shifts, with masks."""
+    params = [(1.0, 0.0), (1.3, 40.0), (0.7, -20.0), (2.0, 100.0), (1.1, 10.0)][:n]
+    images, masks = [], []
+    for i, (scale, shift) in enumerate(params):
+        image, mask, _ = make_phantom(shape, scale=scale, shift=shift, seed=i)
+        images.append(image)
+        masks.append(mask.astype(np.float32))
+    return images, masks
 
 
-@pytest.fixture
-def numpy_mask(sample_mask: npt.NDArray[np.floating]) -> NumpyImageAdapter:
-    """Create numpy mask adapter."""
-    return NumpyImageAdapter(sample_mask)
+@pytest.fixture(scope="session")
+def phantom() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    return make_phantom()
 
 
-@pytest.fixture
-def nibabel_image(sample_3d_data: npt.NDArray[np.floating]) -> NibabelImageAdapter:
-    """Create nibabel image adapter."""
-    import nibabel as nib
-    import numpy as np
-
-    affine = np.eye(4)
-    nib_img = nib.nifti1.Nifti1Image(sample_3d_data, affine)
-    return NibabelImageAdapter(nib_img)
+@pytest.fixture(scope="session")
+def population() -> tuple[list[np.ndarray], list[np.ndarray]]:
+    return make_population()
 
 
-@pytest.fixture
-def nibabel_mask(sample_mask: npt.NDArray[np.floating]) -> NibabelImageAdapter:
-    """Create nibabel mask adapter."""
-    import nibabel as nib
-    import numpy as np
-
-    affine = np.eye(4)
-    nib_img = nib.nifti1.Nifti1Image(sample_mask, affine)
-    return NibabelImageAdapter(nib_img)
-
-
-@pytest.fixture
-def temp_nifti_file(sample_3d_data: npt.NDArray[np.floating]) -> Generator[Path, None, None]:
-    """Create temporary NIfTI file."""
-    import nibabel as nib
-    import numpy as np
-
-    with tempfile.NamedTemporaryFile(suffix=".nii.gz", delete=False) as f:
-        affine = np.eye(4)
-        img = nib.nifti1.Nifti1Image(sample_3d_data, affine)
-        nib.loadsave.save(img, f.name)
-        yield Path(f.name)
-        Path(f.name).unlink()
-
-
-@pytest.fixture
-def temp_mask_file(sample_mask: npt.NDArray[np.floating]) -> Generator[Path, None, None]:
-    """Create temporary mask NIfTI file."""
-    import nibabel as nib
-    import numpy as np
-
-    with tempfile.NamedTemporaryFile(suffix=".nii.gz", delete=False) as f:
-        affine = np.eye(4)
-        img = nib.nifti1.Nifti1Image(sample_mask, affine)
-        nib.loadsave.save(img, f.name)
-        yield Path(f.name)
-        Path(f.name).unlink()
-
-
-@pytest.fixture(params=["numpy", "nibabel"])
-def image_fixture(
-    request: pytest.FixtureRequest,
-    numpy_image: NumpyImageAdapter,
-    nibabel_image: NibabelImageAdapter,
-) -> ImageProtocol:
-    """Parametrized fixture that returns either numpy or nibabel image."""
-    if request.param == "numpy":
-        return numpy_image
-    return nibabel_image
-
-
-@pytest.fixture(params=["numpy", "nibabel"])
-def mask_fixture(
-    request: pytest.FixtureRequest,
-    numpy_mask: NumpyImageAdapter,
-    nibabel_mask: NibabelImageAdapter,
-) -> ImageProtocol:
-    """Parametrized fixture that returns either numpy or nibabel mask."""
-    if request.param == "numpy":
-        return numpy_mask
-    return nibabel_mask
-
-
-@pytest.fixture
-def multiple_images(sample_3d_data: npt.NDArray[np.floating]) -> Sequence[ImageProtocol]:
-    """Create multiple images for population-based testing."""
-    import numpy as np
-
-    images = []
-    for _ in range(3):
-        # Add some variation to each image
-        noise = np.random.normal(0, 50, sample_3d_data.shape)
-        data = sample_3d_data + noise
-        data = np.clip(data, 0, None)  # Ensure non-negative
-        images.append(NumpyImageAdapter(data))
-
-    return images
-
-
-@pytest.fixture
-def multiple_masks(sample_mask: npt.NDArray[np.floating]) -> list[ImageProtocol]:
-    """Create multiple masks for population-based testing."""
-    return [NumpyImageAdapter(sample_mask) for _ in range(3)]
-
-
-# Legacy fixtures for backwards compatibility
-@pytest.fixture
-def cwd() -> Path:
-    return Path.cwd().resolve()
-
-
-@pytest.fixture
-def temp_dir(tmpdir_factory: pytest.TempdirFactory) -> Path:
-    return Path(tmpdir_factory.mktemp("out"))
-
-
-@pytest.fixture
-def image_dir(temp_dir: Path) -> Path:
-    image_dir = temp_dir / "image"
-    image_dir.mkdir()
-    return image_dir
-
-
-@pytest.fixture
-def image(image_dir: Path) -> Path:
-    import nibabel as nib
-    import numpy as np
-
-    image_data = np.random.randn(5, 5, 5)
-    image_path = image_dir / "test_image.nii"
-    image = nib.nifti1.Nifti1Image(image_data, np.eye(4))
-    image.to_filename(image_path)
-    return image_path
-
-
-@pytest.fixture
-def mask_dir(temp_dir: Path) -> Path:
-    mask_dir = temp_dir / "mask"
-    mask_dir.mkdir()
-    return mask_dir
-
-
-@pytest.fixture
-def out_dir(temp_dir: Path) -> Path:
-    out_dir = temp_dir / "normalized"
-    out_dir.mkdir()
-    return out_dir
-
-
-@pytest.fixture
-def mask(mask_dir: Path) -> Path:
-    import nibabel as nib
-    import numpy as np
-
-    mask_data = np.random.randint(0, 2, (5, 5, 5)).astype(np.float32)
-    mask_path = mask_dir / "test_mask.nii"
-    mask = nib.nifti1.Nifti1Image(mask_data, np.eye(4))
-    mask.to_filename(mask_path)
-    return mask_path
-
-
-@pytest.fixture
-def base_cli_image_args(image: Path, mask: Path) -> list[str]:
-    return f"{image} -m {mask}".split()
-
-
-@pytest.fixture
-def base_cli_dir_args(image: Path, mask: Path) -> list[str]:
-    # use image, mask instead of image_dir, mask_dir so they are created
-    return f"{image.parent} -m {mask.parent}".split()
+@pytest.fixture(scope="session")
+def nifti_dir(tmp_path_factory: pytest.TempPathFactory) -> tuple[pathlib.Path, pathlib.Path]:
+    """A directory of NIfTI images + masks from the population fixture."""
+    images, masks = make_population(3)
+    image_dir = tmp_path_factory.mktemp("images")
+    mask_dir = tmp_path_factory.mktemp("masks")
+    for i, (image, mask) in enumerate(zip(images, masks, strict=True)):
+        nib.save(nib.Nifti1Image(image, np.eye(4)), image_dir / f"sub{i}.nii.gz")
+        nib.save(nib.Nifti1Image(mask, np.eye(4)), mask_dir / f"sub{i}.nii.gz")
+    return image_dir, mask_dir

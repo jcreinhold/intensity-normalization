@@ -113,3 +113,6 @@ ENV/
 
 # conda
 .conda/
+
+# pi sessions
+.pi/sessions/

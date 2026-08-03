@@ -1,0 +1,15 @@
+{
+  "skills": ["../.claude/skills"],
+  "prompts": ["../.claude/commands"],
+  "compaction": {
+    "enabled": true,
+    "reserveTokens": 24000,
+    "keepRecentTokens": 30000
+  },
+  "branchSummary": {
+    "reserveTokens": 24000,
+    "skipPrompt": false
+  },
+  "sessionDir": ".pi/sessions",
+  "packages": ["pi-skills"]
+}
