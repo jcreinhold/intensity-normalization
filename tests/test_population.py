@@ -83,12 +83,18 @@ def test_lsq_save_load_roundtrip(population, tmp_path) -> None:
     assert np.array_equal(tx(images[0], masks[0]), tx2(images[0], masks[0]))
 
 
-def test_lsq_return_tissue_maps(population) -> None:
+def test_lsq_reference_membership(population, tmp_path) -> None:
+    """The reference membership map is always fitted, stored, and persisted."""
     images, masks = population
-    _, tissue_map = lsq.fit(images, masks, return_tissue_maps=True)  # type: ignore[misc]
+    tx = lsq.fit(images, masks)
+    tissue_map = tx.reference_membership
     assert tissue_map.shape == (*images[0].shape, 3)
     fg = masks[0] > 0
     assert np.allclose(tissue_map[fg].sum(axis=1), 1.0, atol=1e-4)
+    # persisted: available after a save/load round-trip
+    path = tmp_path / "tx.npz"
+    tx.save(path)
+    assert np.array_equal(tissue_map, lsq.LSQTransform.load(path).reference_membership)
 
 
 def test_lsq_transform_with_membership(population) -> None:

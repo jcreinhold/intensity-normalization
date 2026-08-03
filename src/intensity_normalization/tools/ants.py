@@ -11,38 +11,13 @@ import typing
 import nibabel as nib
 import numpy as np
 
+from intensity_normalization._ants import require_ants, to_ants
 from intensity_normalization._image import ImageLike
-from intensity_normalization.errors import IntensityNormalizationError
 
 __all__ = ["coregister", "preprocess", "require_ants", "to_ants"]
 
 if typing.TYPE_CHECKING:
     from ants.core.ants_image import ANTsImage
-
-
-def require_ants() -> typing.Any:
-    """Import antspy or raise an actionable error."""
-    try:
-        import ants
-    except ImportError as exn:
-        msg = "This feature requires ANTsPy. Install it with: pip install 'intensity-normalization[ants]'"
-        raise IntensityNormalizationError(msg) from exn
-    return ants
-
-
-def _nibabel_to_ants(image: nib.spatialimages.SpatialImage) -> ANTsImage:
-    """Convert a nibabel image to ANTs, preserving origin/spacing/direction."""
-    ants = require_ants()
-    data = np.asanyarray(image.dataobj, dtype=np.float32)
-    affine = image.affine
-    spacing = np.sqrt((affine[:3, :3] ** 2).sum(axis=0))
-    direction = affine[:3, :3] / spacing
-    return ants.from_numpy(
-        data,
-        origin=tuple(affine[:3, 3]),
-        spacing=tuple(spacing),
-        direction=direction,
-    )
 
 
 def _ants_to_nibabel(
@@ -57,20 +32,6 @@ def _ants_to_nibabel(
     affine[:3, :3] = np.asarray(result.direction) * np.asarray(result.spacing)
     affine[:3, 3] = np.asarray(result.origin)
     return nib.nifti1.Nifti1Image(data, affine)
-
-
-def to_ants(image: ImageLike | ANTsImage, /) -> ANTsImage:
-    """Convert a numpy array, nibabel image, or ANTsImage to an ANTsImage."""
-    ants = require_ants()
-    from ants.core.ants_image import ANTsImage as _ANTsImage
-
-    if isinstance(image, _ANTsImage):
-        return image
-    if isinstance(image, nib.spatialimages.SpatialImage):
-        return _nibabel_to_ants(image)
-    if isinstance(image, np.ndarray):
-        return ants.from_numpy(np.asarray(image, dtype=np.float32))
-    raise TypeError(f"Cannot convert {type(image)} to an ANTsImage. Pass a numpy array, nibabel image, or ANTsImage.")
 
 
 def _from_ants(reference: ImageLike | ANTsImage, /, result: ANTsImage) -> ImageLike | ANTsImage:

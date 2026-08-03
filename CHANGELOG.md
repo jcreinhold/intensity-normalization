@@ -37,8 +37,17 @@ dropped in the short-lived v3 rewrite, on a new architecture.
 - scikit-fuzzy dependency replaced with an in-house, seeded fuzzy c-means
   (fixes Python 3.12+ incompatibility)
 - All stochastic steps are deterministic by default (`seed=0`)
+- Fitted transforms are immutable (frozen, write-protected arrays), so a
+  saved transform always matches the in-memory one
+- `LSQTransform.reference_membership` always holds the reference image's
+  CSF/GM/WM membership map (persisted in the saved state)
+- `nyul.fit` takes a single `landmarks` sequence instead of five percentile
+  grid parameters
+- RAVEL warps masks into template space alongside images; `masks_are_csf`
+  now composes with registration
 - Errors are validated upfront and actionable (empty foreground, mask/image
-  shape mismatch, unco-registered RAVEL input)
+  shape or space mismatch, unco-registered RAVEL input); normalized nibabel
+  images always store float32 data with the source affine and codes intact
 - Docs moved to MkDocs Material on GitHub Pages
 
 ## 3.0.1 and earlier

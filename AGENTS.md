@@ -17,12 +17,13 @@ transforms.** Don't blur it.
 src/intensity_normalization/
 ├── _image.py        # PRIVATE: the ONLY module that knows numpy vs nibabel;
 │                    # type-preserving unwrap/restore for every public function
+├── _ants.py         # PRIVATE: lazy antspy import + numpy/nibabel → ANTs bridge
 ├── errors.py        # one base exception, actionable messages
 ├── histogram.py     # KDE smoothing, tissue modes, modality→peak policy
 ├── io.py            # path I/O for the CLI (paths never enter the math API)
 ├── methods/         # the normalization algorithms
 │   ├── _fcm.py      # PRIVATE in-house fuzzy c-means (replaces scikit-fuzzy)
-│   ├── _transform.py# PRIVATE FittedTransform base (save/load stamped .npz)
+│   ├── _transform.py# PRIVATE FittedTransform base + stamped .npz save/load
 │   ├── zscore.py fcm.py kde.py whitestripe.py   # individual: one function each
 │   ├── nyul.py lsq.py                           # population: fit() -> transform
 │   └── ravel.py                                 # batch-only, no apply-to-new
@@ -37,6 +38,14 @@ Invariants to preserve:
   on purpose.
 - Construction *is* fitting for population methods: no unfitted states, no
   `is_fitted` flags. RAVEL is batch-only by design (no single-image transform).
+  Fitted transforms are frozen dataclasses with write-protected arrays.
+- The `.npz` file format is owned solely by `_transform.py`
+  (`_save_stamped`/`_load_stamped`); transforms and `RavelResult` only supply
+  state dicts.
+- `methods/` never imports from `tools/`; shared ants infrastructure lives in
+  the private root `_ants.py`.
+- The CLI's shared option vocabulary is defined once as `Annotated` aliases at
+  the top of `cli/normalize.py`; command functions are thin dispatchers.
 - All stochastic steps take `seed=` and default to `seed=0` (deterministic).
 - ants and matplotlib are optional and imported lazily inside functions.
 - Errors are validated at the boundary with actionable messages; no broad
@@ -91,3 +100,8 @@ Hard-won invariants the suite guards (do not regress):
   makes near-constant foregrounds look non-degenerate).
 - Constant/near-constant foregrounds raise actionable errors, never NaN or
   scipy `LinAlgError` leaks.
+- Fitted transforms and `RavelResult` are frozen dataclasses with
+  write-protected arrays: a saved transform always matches the in-memory one.
+- RAVEL's `_WorkSpace` owns images *and masks* in the working space (masks
+  are warped nearest-neighbor in template space), so a native-space mask can
+  never index a template-space matrix.

@@ -168,6 +168,29 @@ def test_methods_deterministic_with_default_seed(pair) -> None:
 
 @given(pop=population_3d())
 @SLOW
+def test_fitted_transforms_immutable(pop) -> None:
+    """A fitted transform cannot be corrupted: frozen fields, read-only arrays.
+
+    This guarantees a saved transform always matches the in-memory one.
+    """
+    import dataclasses
+
+    images, masks = pop
+    tx_nyul = inorm.nyul.fit(images, masks)
+    tx_lsq = inorm.lsq.fit(images, masks)
+    for tx in (tx_nyul, tx_lsq):
+        with pytest.raises(dataclasses.FrozenInstanceError):
+            tx.norm_value = 2.0  # type: ignore[attr-defined, misc]
+    with pytest.raises(ValueError, match="read-only"):
+        tx_nyul.standard_scale[0] = 0.0
+    with pytest.raises(ValueError, match="read-only"):
+        tx_lsq.standard_tissue_means[0] = 0.0
+    with pytest.raises(ValueError, match="read-only"):
+        tx_lsq.reference_membership[..., 0] = 0.0
+
+
+@given(pop=population_3d())
+@SLOW
 def test_nyul_mapping_monotonic(pop) -> None:
     """The learned piecewise-linear map never inverts intensity order."""
     images, masks = pop

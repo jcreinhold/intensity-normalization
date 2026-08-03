@@ -15,7 +15,46 @@ import numpy as np
 
 from intensity_normalization._image import ImageLike
 
-__all__ = ["FittedTransform"]
+__all__ = ["FittedTransform", "_load_stamped", "_save_stamped"]
+
+
+def _save_stamped(
+    path: str | PathLike[str],
+    /,
+    method: str,
+    version: int,
+    state: dict[str, np.ndarray],
+) -> None:
+    """Write a state dict to a stamped ``.npz`` (single owner of the file format)."""
+    np.savez_compressed(
+        path,
+        _method=np.array(method),
+        _format_version=np.array(version),
+        **state,  # type: ignore[arg-type]
+    )
+
+
+def _load_stamped(
+    path: str | PathLike[str],
+    /,
+    method: str,
+    version: int,
+) -> dict[str, np.ndarray]:
+    """Read a stamped ``.npz``, verifying the method stamp and format version."""
+    with np.load(path) as data:
+        state = {k: data[k] for k in data.files}
+    found_method = str(state.pop("_method"))
+    found_version = int(state.pop("_format_version"))
+    if found_method != method:
+        raise ValueError(
+            f"{path} holds {found_method!r} artifacts, not {method!r}. Load it with the matching class instead."
+        )
+    if found_version != version:
+        raise ValueError(
+            f"{path} uses {method} format version {found_version}; "
+            f"this version of intensity-normalization reads version {version}."
+        )
+    return state
 
 
 class FittedTransform(abc.ABC):
@@ -55,12 +94,7 @@ class FittedTransform(abc.ABC):
 
     def save(self, path: str | PathLike[str], /) -> None:
         """Save the fitted transform to ``path`` (``.npz``)."""
-        state: dict[str, np.ndarray] = {
-            "_method": np.array(self.method),
-            "_format_version": np.array(self.format_version),
-            **self._state_dict(),
-        }
-        np.savez(path, **state)  # type: ignore[arg-type]
+        _save_stamped(path, self.method, self.format_version, self._state_dict())
 
     @classmethod
     def load(cls, path: str | PathLike[str], /) -> FittedTransform:
@@ -70,18 +104,4 @@ class FittedTransform(abc.ABC):
             ValueError: the file was saved by a different method or format
                 version than this class.
         """
-        with np.load(path) as data:
-            state = {k: data[k] for k in data.files}
-        method = str(state.pop("_method"))
-        version = int(state.pop("_format_version"))
-        if method != cls.method:
-            raise ValueError(
-                f"{path} holds a {method!r} transform, not {cls.method!r}. "
-                f"Load it with the {method} transform class instead."
-            )
-        if version != cls.format_version:
-            raise ValueError(
-                f"{path} uses {method} format version {version}; "
-                f"this version of intensity-normalization reads version {cls.format_version}."
-            )
-        return cls._from_state_dict(state)
+        return cls._from_state_dict(_load_stamped(path, cls.method, cls.format_version))

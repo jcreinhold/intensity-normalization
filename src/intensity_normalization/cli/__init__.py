@@ -52,7 +52,6 @@ def _callback(
     independently. Population methods (nyul, lsq, ravel) learn a transform
     from a set of images. See the per-command help for details.
     """
-    _callback.debug = debug  # type: ignore[attr-defined]
 
 
 def main() -> None:
@@ -64,7 +63,7 @@ def main() -> None:
     try:
         app()
     except IntensityNormalizationError as exn:
-        if getattr(_callback, "debug", False):
+        if "--debug" in sys.argv:
             raise
         from rich.console import Console
 

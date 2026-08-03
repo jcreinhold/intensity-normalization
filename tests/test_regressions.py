@@ -37,10 +37,10 @@ def test_regression_constant_foreground_no_nan() -> None:
 
 
 def test_regression_nyul_degenerate_percentile_grid_rejected() -> None:
-    """A non-increasing percentile grid used to reach interp1d and produce NaN."""
+    """A non-increasing landmark grid used to reach interp1d and produce NaN."""
     images, masks = make_population(3)
     with pytest.raises(ValueError, match="strictly increasing"):
-        inorm.nyul.fit(images, masks, min_percentile=50.0, percentile_after_min=10.0)
+        inorm.nyul.fit(images, masks, landmarks=[50.0, 10.0, 90.0])
 
 
 def test_regression_discrete_image_memberships_finite() -> None:

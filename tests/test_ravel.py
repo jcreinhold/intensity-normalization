@@ -48,10 +48,18 @@ def test_ravel_save_load_roundtrip(tmp_path) -> None:
     assert np.array_equal(result.control_mask, loaded.control_mask)
 
 
-def test_ravel_register_and_csf_masks_conflict() -> None:
+def test_ravel_csf_masks_accepted_with_registration() -> None:
+    """masks_are_csf + register is no longer an error: CSF masks warp along.
+
+    Without antspy installed this fails at the registration step (needs ants),
+    not at argument validation — the old conflict error case is defined away.
+    """
     images, masks = make_population(2)
-    with pytest.raises(ValueError, match="masks_are_csf"):
-        ravel.fit_transform(images, masks, register=True, masks_are_csf=True)
+    csf = [(m > 0).astype(np.float32) for m in masks]
+    try:
+        ravel.fit_transform(images, csf, register=True, masks_are_csf=True, membership_threshold=0.9)
+    except IntensityNormalizationError as exn:
+        assert "ANTsPy" in str(exn)  # reached the registration step
 
 
 def test_ravel_float32_memory() -> None:

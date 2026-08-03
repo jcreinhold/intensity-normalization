@@ -6,6 +6,7 @@ sense, the standard tissue means learned from a reference image.
 
 from __future__ import annotations
 
+import dataclasses
 import typing
 from collections.abc import Sequence
 
@@ -21,24 +22,47 @@ from intensity_normalization.methods.fcm import tissue_means
 __all__ = ["LSQTransform", "fit", "fit_transform"]
 
 
+def _check_membership(
+    membership: npt.NDArray[np.floating] | None,
+    data_shape: tuple[int, ...],
+) -> npt.NDArray[np.floating] | None:
+    """The one owner of the membership-map contract (single validation site)."""
+    if membership is None:
+        return None
+    membership_map = np.asarray(membership, dtype=np.float32)
+    if membership_map.shape != (*data_shape, 3):
+        msg = (
+            f"Membership must have shape {(*data_shape, 3)}; got "
+            f"{membership_map.shape}. It must come from a co-registered T1-w image."
+        )
+        raise IntensityNormalizationError(msg)
+    return membership_map
+
+
+@dataclasses.dataclass(frozen=True, eq=False)
 class LSQTransform(FittedTransform):
     """Least-squares scaling toward standard tissue means.
 
-    Attributes are the learned parameters, exposed read-only.
+    ``reference_membership`` is the reference image's CSF/GM/WM membership map
+    (shape ``image.shape + (3,)``), always computed during fitting — for
+    diagnostics and tissue-map export, *not* for transforming new images (a
+    new image is segmented from itself unless it is co-registered to the
+    reference). Frozen and write-protected: the learned parameters cannot
+    change after construction.
     """
+
+    standard_tissue_means: npt.NDArray[np.floating]
+    reference_membership: npt.NDArray[np.floating]
+    norm_value: float = 1.0
+    seed: int | None = 0
 
     method: typing.ClassVar[str] = "lsq"
 
-    def __init__(
-        self,
-        standard_tissue_means: npt.NDArray[np.floating],
-        *,
-        norm_value: float = 1.0,
-        seed: int | None = 0,
-    ) -> None:
-        self.standard_tissue_means = np.asarray(standard_tissue_means, dtype=np.float32)
-        self.norm_value = norm_value
-        self.seed = seed
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "standard_tissue_means", np.asarray(self.standard_tissue_means, dtype=np.float32))
+        object.__setattr__(self, "reference_membership", np.asarray(self.reference_membership, dtype=np.float32))
+        self.standard_tissue_means.setflags(write=False)
+        self.reference_membership.setflags(write=False)
 
     def _scale(
         self,
@@ -46,14 +70,8 @@ class LSQTransform(FittedTransform):
         foreground_mask: npt.NDArray[np.bool_],
         membership: npt.NDArray[np.floating] | None,
     ) -> float:
-        if membership is not None:
-            if membership.shape[: data.ndim] != data.shape or membership.shape[-1] != 3:
-                msg = (
-                    f"Membership must have shape {(*data.shape, 3)}; got "
-                    f"{membership.shape}. It must come from a co-registered T1-w image."
-                )
-                raise IntensityNormalizationError(msg)
-            membership_map = np.asarray(membership, dtype=np.float32)
+        membership_map = _check_membership(membership, tuple(data.shape))
+        if membership_map is not None:
             means = np.array(
                 [
                     np.average(
@@ -95,12 +113,20 @@ class LSQTransform(FittedTransform):
     def _state_dict(self) -> dict[str, np.ndarray]:
         return {
             "standard_tissue_means": self.standard_tissue_means,
+            "reference_membership": self.reference_membership,
             "norm_value": np.array(self.norm_value),
+            "seed": np.array(-1 if self.seed is None else self.seed),
         }
 
     @classmethod
     def _from_state_dict(cls, state: dict[str, np.ndarray]) -> LSQTransform:
-        return cls(state["standard_tissue_means"], norm_value=float(state["norm_value"]))
+        seed = int(state["seed"])
+        return cls(
+            state["standard_tissue_means"],
+            state["reference_membership"],
+            norm_value=float(state["norm_value"]),
+            seed=None if seed < 0 else seed,
+        )
 
 
 def fit(
@@ -111,8 +137,7 @@ def fit(
     norm_value: float = 1.0,
     seed: int | None = 0,
     membership: npt.NDArray[np.floating] | None = None,
-    return_tissue_maps: bool = False,
-) -> LSQTransform | tuple[LSQTransform, npt.NDArray[np.floating]]:
+) -> LSQTransform:
     """Learn standard tissue means from a reference image.
 
     The first image is the reference (per the original method): its tissue
@@ -127,11 +152,10 @@ def fit(
         membership: precomputed membership map of the reference image (shape
             ``image.shape + (3,)``) for non-T1-w references; computed from the
             reference image itself when None.
-        return_tissue_maps: also return the reference image's membership map
-            (shape ``image.shape + (3,)``, CSF/GM/WM).
 
     Returns:
-        A fitted :class:`LSQTransform` (and the tissue map if requested).
+        A fitted :class:`LSQTransform`. Its ``reference_membership`` attribute
+        holds the reference image's CSF/GM/WM membership map.
     """
     if len(images) == 0:
         raise IntensityNormalizationError("No images provided to fit.")
@@ -143,15 +167,8 @@ def fit(
     mask_data = _image.unwrap_mask(images[0], mask)
     foreground_mask = _image.get_mask(data, mask_data)
 
-    if membership is not None:
-        if membership.shape[: data.ndim] != data.shape or membership.shape[-1] != 3:
-            msg = (
-                f"Membership must have shape {(*data.shape, 3)}; got "
-                f"{membership.shape}. It must come from a co-registered T1-w image."
-            )
-            raise IntensityNormalizationError(msg)
-        membership_map = np.asarray(membership, dtype=np.float32)
-    else:
+    membership_map = _check_membership(membership, tuple(data.shape))
+    if membership_map is None:
         _, membership_map = tissue_means(data, foreground_mask, seed=seed)
     foreground = data[foreground_mask]
     csf_mean = float(np.average(foreground, weights=membership_map[..., 0][foreground_mask]))
@@ -160,11 +177,7 @@ def fit(
         raise IntensityNormalizationError(msg)
     normed = data / csf_mean * norm_value
     standard_means, _ = tissue_means(normed, foreground_mask, seed=seed)
-
-    tx = LSQTransform(standard_means, norm_value=norm_value, seed=seed)
-    if return_tissue_maps:
-        return tx, membership_map
-    return tx
+    return LSQTransform(standard_means, membership_map, norm_value=norm_value, seed=seed)
 
 
 def fit_transform(
@@ -174,7 +187,6 @@ def fit_transform(
     **kwargs: typing.Any,
 ) -> tuple[LSQTransform, list[ImageLike]]:
     """Fit on the reference image and normalize all ``images``."""
-    kwargs.pop("return_tissue_maps", None)  # fit_transform always returns images
-    tx = typing.cast(LSQTransform, fit(images, masks, **kwargs))
+    tx = fit(images, masks, **kwargs)
     normed = [tx(img, masks[i] if masks is not None else None) for i, img in enumerate(images)]
     return tx, normed
