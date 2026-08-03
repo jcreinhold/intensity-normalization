@@ -9,6 +9,7 @@ from __future__ import annotations
 import typing
 
 import nibabel as nib
+import nibabel.spatialimages  # explicit so nib.spatialimages resolves
 import numpy as np
 
 from intensity_normalization._ants import require_ants, to_ants
@@ -17,7 +18,7 @@ from intensity_normalization._image import ImageLike
 __all__ = ["coregister", "preprocess", "require_ants", "to_ants"]
 
 if typing.TYPE_CHECKING:
-    from ants.core.ants_image import ANTsImage
+    from ants.core.ants_image import ANTsImage  # ty: ignore[unresolved-import]  # optional dep
 
 
 def _ants_to_nibabel(
@@ -36,7 +37,7 @@ def _ants_to_nibabel(
 
 def _from_ants(reference: ImageLike | ANTsImage, /, result: ANTsImage) -> ImageLike | ANTsImage:
     """Convert an ANTs result back to the type of the input it came from."""
-    from ants.core.ants_image import ANTsImage as _ANTsImage
+    from ants.core.ants_image import ANTsImage as _ANTsImage  # ty: ignore[unresolved-import]  # optional dep
 
     if isinstance(reference, _ANTsImage):
         return result

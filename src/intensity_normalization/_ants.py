@@ -11,6 +11,7 @@ from __future__ import annotations
 import typing
 
 import nibabel as nib
+import nibabel.spatialimages  # explicit so nib.spatialimages resolves
 import numpy as np
 
 from intensity_normalization._image import ImageLike
@@ -19,13 +20,13 @@ from intensity_normalization.errors import IntensityNormalizationError
 __all__ = ["require_ants", "to_ants"]
 
 if typing.TYPE_CHECKING:
-    from ants.core.ants_image import ANTsImage
+    from ants.core.ants_image import ANTsImage  # ty: ignore[unresolved-import]  # optional dep
 
 
 def require_ants() -> typing.Any:
     """Import antspy or raise an actionable error."""
     try:
-        import ants
+        import ants  # ty: ignore[unresolved-import]  # optional dep
     except ImportError as exn:
         msg = "This feature requires ANTsPy. Install it with: pip install 'intensity-normalization[ants]'"
         raise IntensityNormalizationError(msg) from exn

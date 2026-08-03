@@ -13,6 +13,7 @@ from concurrent.futures import ProcessPoolExecutor
 from typing import Annotated
 
 import nibabel as nib
+import nibabel.spatialimages  # explicit so nib.spatialimages resolves
 import numpy as np
 import typer
 

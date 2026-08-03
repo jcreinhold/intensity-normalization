@@ -58,7 +58,7 @@ uv sync --dev                    # setup
 uv run pytest                    # tests (phantom-based correctness, CLI e2e)
 uv run ruff check src tests      # lint
 uv run ruff format src tests     # format (CI checks this)
-uv run mypy src                  # types
+uv run ty check src             # types
 uv run mkdocs build --strict     # docs
 ```
 

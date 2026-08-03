@@ -30,7 +30,7 @@ def _save_stamped(
         path,
         _method=np.array(method),
         _format_version=np.array(version),
-        **state,  # type: ignore[arg-type]
+        **state,  # ty: ignore[invalid-argument-type]  # **dict[str, NDArray] is valid here
     )
 
 

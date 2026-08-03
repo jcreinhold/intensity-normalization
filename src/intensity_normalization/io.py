@@ -11,6 +11,7 @@ import typing
 from collections.abc import Sequence
 
 import nibabel as nib
+import nibabel.spatialimages  # explicit so nib.spatialimages resolves
 
 from intensity_normalization.errors import IntensityNormalizationError
 

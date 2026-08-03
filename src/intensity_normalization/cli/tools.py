@@ -6,6 +6,7 @@ import pathlib
 import typing
 
 import nibabel as nib
+import nibabel.spatialimages  # explicit so nib.spatialimages resolves
 import typer
 
 from intensity_normalization import io

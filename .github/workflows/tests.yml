@@ -69,5 +69,5 @@ jobs:
       - name: Run ruff linter
         run: uv run ruff check src/
 
-      - name: Run mypy
-        run: uv run mypy src/intensity_normalization/
+      - name: Run ty
+        run: uv run ty check src

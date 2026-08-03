@@ -207,7 +207,7 @@ import intensity_normalization as intnorm
 # numpy or nibabel in → same type out; mask optional (foreground estimated otherwise)
 
 normed = intnorm.zscore(img, mask=mask)
-normed = intnorm.fcm(img, tissue="wm", seed=0)              # modality="t1" default
+normed = intnorm.fcm(img, tissue="wm", seed=0)  # modality="t1" default
 normed = intnorm.kde(img, modality="t2")
 normed = intnorm.whitestripe(img, mask=mask, width=0.05, norm_value=1.0)
 # escape hatch for non-standard data: modality="other" + explicit peak choice
@@ -215,14 +215,14 @@ normed = intnorm.kde(img, modality="other", peak="largest")
 
 # --- Population methods: fit returns a reusable, savable transform ---
 
-tx = intnorm.nyul.fit(train_imgs, masks=train_masks)      # construction is fitting
-normed = tx(new_img)                                      # callable, type-preserving
+tx = intnorm.nyul.fit(train_imgs, masks=train_masks)  # construction is fitting
+normed = tx(new_img)  # callable, type-preserving
 normed_train = [tx(i) for i in train_imgs]
 tx.save("nyul.npz")
-tx = intnorm.NyulTransform.load("nyul.npz")               # only fitted states exist
-tx.landmarks                                              # learned data, read-only
+tx = intnorm.NyulTransform.load("nyul.npz")  # only fitted states exist
+tx.landmarks  # learned data, read-only
 
-tx, normed = intnorm.nyul.fit_transform(train_imgs)       # fit + apply in one call
+tx, normed = intnorm.nyul.fit_transform(train_imgs)  # fit + apply in one call
 
 # ravel: registration to the template happens inside fit/transform (lazy ants)
 tx = intnorm.ravel.fit(imgs, masks=masks, template="mni", template_mask=None)
@@ -230,10 +230,10 @@ tx = intnorm.ravel.fit(imgs, masks=masks, template="mni", template_mask=None)
 tx = intnorm.lsq.fit(imgs, masks=masks, return_tissue_maps=True)  # optional intermediates
 
 # --- Supporting tools ---
-probs = intnorm.tissue_membership(img)                    # FCM probability maps
-intnorm.plot_histograms(imgs, masks=masks)                # validation workflow [plot]
-intnorm.preprocess(img, n4=True, resample=(1, 1, 1))      # [ants]
-intnorm.coregister(img, template=tpl)                     # [ants]
+probs = intnorm.tissue_membership(img)  # FCM probability maps
+intnorm.plot_histograms(imgs, masks=masks)  # validation workflow [plot]
+intnorm.preprocess(img, n4=True, resample=(1, 1, 1))  # [ants]
+intnorm.coregister(img, template=tpl)  # [ants]
 ```
 
 Why this is ergonomic:
@@ -364,5 +364,5 @@ output dirs writable, `--load-state` file is a stamped npz for the right method.
   deterministic methods must match to float tolerance; stochastic (FCM) with fixed seed
 - Determinism: same seed → bit-identical output; float32 memory ceiling test on a
   large synthetic image; KDE subsample invariance (mode within tolerance at 50k samples)
-- `ruff check` + `mypy` clean; `mkdocs build --strict` in CI; Pages deploy on tag
+- `ruff check` + `ty` clean; `mkdocs build --strict` in CI; Pages deploy on tag
 - Manual: `intensity-normalize whitestripe img.nii -m mask.nii -p` shows histograms

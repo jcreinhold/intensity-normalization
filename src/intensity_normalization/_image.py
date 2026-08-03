@@ -11,6 +11,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 import nibabel as nib
+import nibabel.spatialimages  # explicit so nib.spatialimages resolves
 import numpy as np
 import numpy.typing as npt
 
@@ -43,7 +44,7 @@ def unwrap(image: ImageLike, /) -> tuple[npt.NDArray[np.floating], Restorer]:
             header = image.header.copy()
             header.set_data_dtype(np.asanyarray(data).dtype)
             if hasattr(header, "set_slope_inter"):
-                header.set_slope_inter(None, None)
+                header.set_slope_inter(None, None)  # ty: ignore[call-non-callable]  # nibabel headers are duck-typed; hasattr guards this
             return image.__class__(np.asanyarray(data), image.affine, header)
 
         return np.asanyarray(image.dataobj, dtype=np.float32), restore_nibabel
@@ -89,7 +90,7 @@ def get_mask(
             with messages that say how to fix it.
     """
     if mask is None:
-        if image.min() < 0.0:
+        if np.min(image) < 0.0:
             msg = (
                 "The image contains negative values, so the foreground cannot "
                 "be estimated as positive voxels. Provide a foreground (brain) mask."
