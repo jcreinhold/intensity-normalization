@@ -69,23 +69,18 @@ class FittedTransform(abc.ABC):
     #: serialization format version, bumped on incompatible changes
     format_version: typing.ClassVar[int] = 1
 
-    def __call__(self, image: Image, mask: Mask | None = None, **kwargs: typing.Any) -> Image:
-        return self.transform(image, mask, **kwargs)
+    def __call__(self, image: Image, mask: Mask | None = None) -> Image:
+        return self.transform(image, mask)
 
-    def transform(self, image: Image, mask: Mask | None = None, **kwargs: typing.Any) -> Image:
+    def transform(self, image: Image, mask: Mask | None = None) -> Image:
         """Apply the learned transform to one image (numpy array or nibabel image)."""
         data, restore = _image.unwrap(image)
         foreground = _image.resolve_foreground(data, _image.unwrap_mask(image, mask))
-        out = self.transform_array(data, foreground, **kwargs)
+        out = self.transform_array(data, foreground)
         return restore(out)
 
     @abc.abstractmethod
-    def transform_array(
-        self,
-        data: IntensityArray,
-        foreground: BinaryMask,
-        **kwargs: typing.Any,
-    ) -> IntensityArray:
+    def transform_array(self, data: IntensityArray, foreground: BinaryMask) -> IntensityArray:
         """Apply the learned transform to an intensity array within ``foreground``."""
 
     @abc.abstractmethod

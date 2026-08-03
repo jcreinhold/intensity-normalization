@@ -54,7 +54,7 @@ class NyulTransform(FittedTransform):
         """Landmark intensities of a 1D foreground array."""
         return np.percentile(intensities, self.landmark_percentiles)
 
-    def transform_array(self, data: IntensityArray, foreground: BinaryMask, **kwargs: typing.Any) -> IntensityArray:
+    def transform_array(self, data: IntensityArray, foreground: BinaryMask) -> IntensityArray:
         foreground_values = _image.foreground_values(data, foreground)
         mapping = interp1d(
             self.landmark_intensities(foreground_values),

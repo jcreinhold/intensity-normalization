@@ -5,6 +5,17 @@ The algorithms are the same (and better tested); the interface was redesigned.
 
 ## v4.1 (unreleased): histogram policy resolved at the boundary
 
+`ravel.fit_transform` takes `whitestripe=WhiteStripeSpec(...)` instead of
+`whitestripe_kwargs=dict(...)` — typed, documented in one place, typo-proof:
+
+```python
+# before
+ravel.fit_transform(images, whitestripe_kwargs={"width": 0.1})
+# after
+from intensity_normalization.methods.whitestripe import WhiteStripeSpec
+ravel.fit_transform(images, whitestripe=WhiteStripeSpec(width=0.1))
+```
+
 `histogram.tissue_mode` no longer accepts `modality=`; it takes a required
 `peak=`. Resolve modality names first with the new `histogram.resolve_peak`:
 

@@ -24,7 +24,7 @@ from intensity_normalization._image import BinaryMask, Image, IntensityArray, Ma
 from intensity_normalization.errors import IntensityNormalizationError
 from intensity_normalization.methods._transform import _load_stamped, _save_stamped
 from intensity_normalization.methods.fcm import tissue_means
-from intensity_normalization.methods.whitestripe import whitestripe_array
+from intensity_normalization.methods.whitestripe import WhiteStripeSpec, whitestripe_array
 
 __all__ = ["RavelResult", "fit_transform", "ravel_array"]
 
@@ -240,7 +240,7 @@ def fit_transform(
     quantile_to_label_csf: float = 1.0,
     masks_are_csf: bool = False,
     template: Image | None = None,
-    whitestripe_kwargs: dict[str, typing.Any] | None = None,
+    whitestripe: WhiteStripeSpec | None = None,
     seed: int | None = 0,
 ) -> tuple[RavelResult, list[Image]]:
     """WhiteStripe-normalize then RAVEL-correct a set of co-registered images.
@@ -265,7 +265,8 @@ def fit_transform(
             to be a control voxel (1.0 = strict intersection).
         masks_are_csf: ``masks`` are boolean CSF masks, not brain masks.
         template: registration target; defaults to the first image.
-        whitestripe_kwargs: extra kwargs for the WhiteStripe step.
+        whitestripe: WhiteStripe parameters for the normalization step
+            (a :class:`WhiteStripeSpec`); defaults used when None.
         seed: RNG seed for the FCM tissue fits; ``None`` is nondeterministic.
 
     Returns:
@@ -291,11 +292,18 @@ def fit_transform(
             )
             raise IntensityNormalizationError(msg)
 
-    ws_kwargs = dict(whitestripe_kwargs or {})
-    ws_kwargs.setdefault("seed", seed)
-    ws_kwargs["peak"] = histogram.resolve_peak(ws_kwargs.pop("modality", "t1"), ws_kwargs.pop("peak", None))
+    spec = whitestripe if whitestripe is not None else WhiteStripeSpec()
+    peak = histogram.resolve_peak(spec.modality, spec.peak)
     ws_datas = [
-        whitestripe_array(data, _image.resolve_foreground(data, mask_data), **ws_kwargs)
+        whitestripe_array(
+            data,
+            _image.resolve_foreground(data, mask_data),
+            peak=peak,
+            width=spec.width,
+            width_l=spec.width_l,
+            width_u=spec.width_u,
+            seed=seed,
+        )
         for data, mask_data in zip(datas, mask_datas, strict=True)
     ]
 

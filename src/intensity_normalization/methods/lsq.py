@@ -93,13 +93,21 @@ class LSQTransform(FittedTransform):
             raise IntensityNormalizationError(msg)
         return numerator / denominator
 
+    def __call__(self, image: Image, mask: Mask | None = None, *, membership: IntensityArray | None = None) -> Image:
+        return self.transform(image, mask, membership=membership)
+
+    def transform(self, image: Image, mask: Mask | None = None, *, membership: IntensityArray | None = None) -> Image:
+        """Apply the learned transform; ``membership`` overrides the FCM fit (non-T1-w data)."""
+        data, restore = _image.unwrap(image)
+        foreground = _image.resolve_foreground(data, _image.unwrap_mask(image, mask))
+        return restore(self.transform_array(data, foreground, membership=membership))
+
     def transform_array(
         self,
         data: IntensityArray,
         foreground: BinaryMask,
         *,
         membership: IntensityArray | None = None,
-        **kwargs: typing.Any,
     ) -> IntensityArray:
         """Apply the learned least-squares scale to an intensity array.
 

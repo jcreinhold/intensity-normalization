@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import dataclasses
+
 import numpy as np
 
 from intensity_normalization import _image, histogram
@@ -9,7 +11,20 @@ from intensity_normalization._image import BinaryMask, Image, IntensityArray, Ma
 from intensity_normalization.errors import IntensityNormalizationError
 from intensity_normalization.methods._common import standardize
 
-__all__ = ["whitestripe", "whitestripe_array"]
+__all__ = ["WhiteStripeSpec", "whitestripe", "whitestripe_array"]
+
+
+@dataclasses.dataclass(frozen=True)
+class WhiteStripeSpec:
+    """WhiteStripe parameters as data, for embedding WhiteStripe in larger
+    workflows (e.g. RAVEL's normalization step). ``seed`` and ``norm_value``
+    are excluded: the embedding workflow owns those."""
+
+    modality: str = "t1"
+    peak: histogram.Peak | None = None
+    width: float = 0.05
+    width_l: float | None = None
+    width_u: float | None = None
 
 
 def whitestripe_array(
