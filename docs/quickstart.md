@@ -7,6 +7,11 @@ A five-minute lesson: install, normalize one T1-w image, check the result.
 ```bash
 pip install intensity-normalization  # or: uv add intensity-normalization
 ```
+Alternatively, you can install via conda:
+
+```sh
+conda install conda-forge::intensity-normalization
+```
 
 ## Get a brain mask
 
