@@ -1,6 +1,7 @@
 # intensity-normalization
 
 [![PyPI](https://img.shields.io/pypi/v/intensity-normalization.svg)](https://pypi.org/project/intensity-normalization/)
+[![Conda Version](https://img.shields.io/conda/v/conda-forge/intensity-normalization?logoColor=green&color=green)](https://anaconda.org/channels/conda-forge/packages/intensity-normalization/overview)
 [![Docs](https://img.shields.io/badge/docs-github%20pages-blue)](https://jcreinhold.github.io/intensity-normalization/)
 
 Normalize the intensities of magnetic resonance (MR) images — T1-w, T2-w, FLAIR, PD-w — across scanners, sites, and
