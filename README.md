@@ -22,6 +22,12 @@ pip install "intensity-normalization[ants]"  # ravel registration, preprocess, c
 pip install "intensity-normalization[plot]"  # histogram plotting
 ```
 
+Alternatively, you can install via conda:
+
+```sh
+conda install conda-forge::intensity-normalization
+```
+
 The CLI also runs without installing: `uvx intensity-normalize --help`.
 
 ## Quickstart
